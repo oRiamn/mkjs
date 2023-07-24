@@ -1,0 +1,34 @@
+name: deploy-gh-pages
+on:
+  push:
+    branches:
+      - 'master'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
+        fetch-depth: 0 
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    - name: Install
+      run: yarn install
+    - name: Build
+      run: |
+        yarn run build
+        mkdir dist
+        cp index.html dist/index.html 
+        cp index.html dist/404.html
+        cp bundle.js dist/bundle.js
+
+    - name: Commit files
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git checkout --orphan gh-pages
+        git --work-tree dist add --all
+        git --work-tree dist commit -m $(npm pkg get version | xargs echo)
+        git push origin HEAD:gh-pages --force
