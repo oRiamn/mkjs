@@ -1,4 +1,5 @@
 *.nds
 *.exe
-mongoose.conf
-Code/Engine/col.lua
+rom
+node_modules
+bundle.js

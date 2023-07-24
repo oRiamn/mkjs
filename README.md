@@ -38,8 +38,3 @@ The base game mostly works. A lot of the grunt work is done - the current setup 
 - Battle Mode & Mission Mode
 - Multiplayer (custom courses? >8 players?)
 - Lots of bug fixes for collisions and format readers!
-
-# Multiplayer
-![mkmulti](https://cloud.githubusercontent.com/assets/6294155/25496283/3c681532-2b78-11e7-86a1-9f710a9fae19.png)
-
-While multiplayer using a Websockets server is semi-functional, it is very simplistic and only exists for testing purposes. A future implementation would ideally connect to peers using WebRTC rather than connecting through a central server.
