@@ -1,9 +1,14 @@
 # mkjs
+
+This is a fork from [riperiperi/mkjs](https://github.com/riperiperi/mkjs)
+
+
 ![mkscrn2s](https://cloud.githubusercontent.com/assets/6294155/25496279/34c8808c-2b78-11e7-90ee-b0d1350244bb.png)
 **mkjs** is an experimental javascript engine reimplemention of Mario Kart DS. Users of the application must provide their own Mario Kart DS ROM, dumped using a DS or 3DS. This project exists for entirely educational purposes.
 
 If you have a ROM of MKDS available, you can give mkjs a shot here:
-http://riperiperi.github.io/mkjs
+https://oriamn.github.io/mkjs/
+
 
 # Purpose
 I started working on mkjs a few years ago to get a better grasp on a lot things, mainly for fun. Here are the key factors:
@@ -26,6 +31,7 @@ The base game mostly works. A lot of the grunt work is done - the current setup 
 - Work in progress Kart vs. Moving object physics (see Tick Tock Clock, Bowser's Castle DS)
 - Functional AI karts that follow the same waypoints as MKDS AI. (battle and race AI modes)
 - Content system for work in progress course objects, eg. routed car obstacles, moving platforms.
+- TypeSrcipt Support
 
 # Possible Future
 - UI engine

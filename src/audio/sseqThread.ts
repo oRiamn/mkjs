@@ -260,7 +260,7 @@ export class SSEQThread {
 		this._Instructions[0xC4] = () => {
 			this.pitchBend = this._forcableValue();
 			if (this.pitchBend & 128) this.pitchBend -= 256;
-			if (this.lastNote !== null) {
+			if (this.lastNote) {
 				this.lastNote.pitched = true;
 				this._player.updateNoteFreq(this, this.lastNote);
 			}
@@ -298,7 +298,7 @@ export class SSEQThread {
 			this._player.setTempo(value);
 		} //set BPM
 
-		this._Instructions[0xE3] = () => { this.sweepPitch = this._forcableValueFunc(false, this._reads16); } //sweep pitch
+		this._Instructions[0xE3] = () => { this.sweepPitch = this._forcableValueFunc(false, this._reads16.bind(this)); } //sweep pitch
 
 		this._Instructions[0xFF] = () => {
 			if (this.lastNote != null) this._player.cutNoteShort(this, this.lastNote);
@@ -312,7 +312,7 @@ export class SSEQThread {
 		var varNum = this._forcableValue(true);
 		var arg = this._forcableValue();
 		if (arg & 0x80) arg -= 256;
-		this._comparisonResult = this._boolFunc[inst - 0xB8](varNum, arg);
+		this._comparisonResult = this._boolFunc[inst - 0xB8].bind(this)(varNum, arg);
 	}
 
 	_varInst(inst: number) {
@@ -320,7 +320,7 @@ export class SSEQThread {
 		var arg = this._forcableValue();
 		if (arg & 0x80) arg -= 256;
 		if (inst == 0xB4 && arg == 0) return;
-		this._varFunc[inst - 0xB0](varNum, arg)
+		this._varFunc[inst - 0xB0].bind(this)(varNum, arg)
 	}
 
 	tick(time: number) {
