@@ -8,11 +8,9 @@
 // render stuff idk
 //
 
-import { mat4 } from "gl-matrix";
 import { nkm_section_OBJI } from "../../formats/nkm";
 import { nitroAnimator, nitroAnimator_matStack } from "../../render/nitroAnimator";
 import { ObjDecor } from "../objDecor";
-import { nitroRender } from "../../render/nitroRender";
 
 export class BeachTree extends ObjDecor {
 	collidable: boolean;

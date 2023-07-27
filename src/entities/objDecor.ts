@@ -8,15 +8,12 @@
 // render stuff idk
 //
 
-import { mat4 } from "gl-matrix";
 import { nkm_section_OBJI } from "../formats/nkm";
 import { nsbca } from "../formats/nsbca";
 import { nsbta } from "../formats/nsbta";
 import { nsbtp } from "../formats/nsbtp";
 import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
 import { nitroRender } from "../render/nitroRender";
-import { Item } from "./item";
-
 export class ObjDecor implements SceneEntityObject {
 	collidable: boolean;
 	_res: ProvidedRes;

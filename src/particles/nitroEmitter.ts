@@ -7,7 +7,6 @@
 
 import { spa, spa_particule } from "../formats/spa"
 import { NitroParticle } from "./nitroParticle"
-import { Kart } from "../entities/kart"
 
 export type NitroEmitter_target = {
     pos: vec3;

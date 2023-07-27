@@ -86,10 +86,7 @@ export class courseScene implements Scene {
 	camera: Camera;
 	paths: nkm_section_POIT[][];
 	lightDir: vec3;
-	typeRes: {
-		mdl: nitroModel[];
-		other: (nsbtx | nsbta | nsbtp | nsbmd | nsbca)[];
-	}[];
+	typeRes: ProvidedRes[];
 
 	farShad: { color: CustomWebGLTexture; depth: CustomWebGLTexture; fb: WebGLFramebuffer; }; // set in sceneDrawer.drawTest...
 
@@ -519,7 +516,7 @@ export class courseScene implements Scene {
 	}
 
 	loadRes(res: { mdl: { nsbmd: string; nsbtx?: string }[]; other?: string[] }, id: number) {
-		var models = [];
+		var models: nitroModel[] = [];
 
 		for (var i = 0; i < res.mdl.length; i++) {
 			var inf = res.mdl[i];

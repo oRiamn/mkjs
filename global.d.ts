@@ -1,16 +1,16 @@
 import * as glMatrix from "gl-matrix";
-import { nkm, nkm_section_OBJI, nkm_section_POIT } from "./formats/nkm";
-import { IngameRes } from "./engine/ingameRes";
-import { nitroModel, nitromodel_BoundingCollisionModel_dat } from "./render/nitroModel";
-import { nsbca } from "./formats/nsbca";
-import { nsbmd } from "./formats/nsbmd";
-import { nsbta } from "./formats/nsbta";
-import { nsbtp } from "./formats/nsbtp";
-import { nsbtx } from "./formats/nsbtx";
-import { kcl, kcl_plane } from "./formats/kcl";
-import { Item } from "./entities/item";
-import { Kart } from "./entities/kart";
-import { ndsFS } from "./formats/ndsFS";
+import { IngameRes } from "./src/engine/ingameRes";
+import { Item } from "./src/entities/item";
+import { Kart } from "./src/entities/kart";
+import { kcl_plane, kcl } from "./src/formats/kcl";
+import { ndsFS } from "./src/formats/ndsFS";
+import { nkm_section_OBJI, nkm, nkm_section_POIT } from "./src/formats/nkm";
+import { nsbca } from "./src/formats/nsbca";
+import { nsbmd } from "./src/formats/nsbmd";
+import { nsbta } from "./src/formats/nsbta";
+import { nsbtp } from "./src/formats/nsbtp";
+import { nsbtx } from "./src/formats/nsbtx";
+import { nitromodel_BoundingCollisionModel_dat, nitroModel } from "./src/render/nitroModel";
 
 declare global {
 
@@ -93,11 +93,13 @@ declare global {
     const mat4: typeof glMatrix.mat4;
     const mat3: typeof glMatrix.mat3;
     const vec3: typeof glMatrix.vec3;
+    const vec2: typeof glMatrix.vec2;
     const vec4: typeof glMatrix.vec4;
 
     type mat4 = glMatrix.mat4;
     type mat3 = glMatrix.mat3;
     type vec3 = glMatrix.vec3;
+    type vec2 = glMatrix.vec2;
     type vec4 = glMatrix.vec4;
 
     interface CamView {

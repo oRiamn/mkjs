@@ -7,8 +7,6 @@
 // includes: gl-matrix.js (glMatrix 2.0)
 // /formats/kcl.js
 //
-
-import { vec2 } from "gl-matrix";
 import { nitroAudio } from "../audio/nitroAudio";
 import { NitroEmitter } from "../particles/nitroEmitter";
 import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
