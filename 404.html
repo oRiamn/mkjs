@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+	<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
+      integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ=="
+      crossorigin="anonymous"
+      defer
+    ></script>
+	<script 
+		src="https://cdnjs.cloudflare.com/ajax/libs/IndexedDBShim/12.0.0/indexeddbshim.min.js" integrity="sha512-SRJ8jDBbdbHT4SDAJ2xdgs57dFd9GZgIjQy/ScMdy2+3qY95HcLfoHMSzOrxZolZ7pDA60ZoqgRAjc5b6U+KAA=="
+		integrity="sha512-SRJ8jDBbdbHT4SDAJ2xdgs57dFd9GZgIjQy/ScMdy2+3qY95HcLfoHMSzOrxZolZ7pDA60ZoqgRAjc5b6U+KAA=="
+		crossorigin="anonymous" 
+		referrerpolicy="no-referrer"
+		defer
+	></script>
+	<script src="bundle.js"></script>
+	<!-- Inline code (because that's always a good idea) -->
+	<script>
+		const requestAnimationFrameFnct = getRequestAnimationFrameFnct(window);
+
+		var files = {};
+		var fileQuota;
+		var filesLoaded = 0;
+		var mobile = mobilecheck(window)
+		var mainRT;
+		var waitForROM = false;
+
+		var canvas3D = null;
+
+		window.onload = function(argument) {
+			window.simpleMatStack = {dat:mat4.create(), built:true};
+			canvas3D = document.getElementById("canvas3d");
+			setupHUD();
+			init();
+		}
+
+		window.onerror = function(...args) {
+			console.debug(args)
+			const [msg, url, line, col, e] = args;
+			if(e) {
+				var stack = e.stack.replace(/^[^\(]+?[\n$]/gm, '')
+				.replace(/^\s+at\s+/gm, '')
+				.replace(/^Object.<anonymous>\s*\(/gm, '{anonymous}()@')
+				.split('\n');
+		  		console.error(stack);
+			}
+			
+		}
+
+		function init() {
+			var canvas = document.getElementById("canvas3d");
+			document.body.addEventListener("click", lockPtr);
+			fileStore.getInstance().requestGameFiles(initNitro);
+		}
+
+		function initNitro(rom) {
+			gl = initGL(document.getElementById("canvas3d"));
+			gameROM = new ndsFS(rom);
+
+			nitroRender.init(gl);
+			shadowRender.init(gl);
+			sceneDrawer.getInstance().init(gl);
+			objDatabase.init();
+
+			nitroAudio.init(new sdat(gameROM.getFile("/data/Sound/sound_data.sdat")));
+
+			var ctx = nitroAudio.ctx;
+				buf = ctx.createBuffer(1, 1, 44000);
+				osc = ctx.createBufferSource();
+				osc.buffer = buf;
+			osc.connect(ctx.destination);
+			if (osc.noteOn) osc.start = osc.noteOn;
+
+			var res = new IngameRes(gameROM);
+			vert = 0;
+
+			var canvas = document.getElementById("canvas3d");
+
+			document.addEventListener("mousemove", mouseMove);
+			document.addEventListener("keydown", keyDown);
+			document.addEventListener("keyup", keyUp);
+
+			document.addEventListener("touchstart", touchStart, { passive: false });
+			document.addEventListener("touchend", touchEnd, { passive: false });
+			document.addEventListener("touchcancel", touchCancel, { passive: false });
+			document.addEventListener("touchmove", touchMove, { passive: false });
+
+			canvas.addEventListener('click', function() {
+				if (!osc.donezo) {
+					osc.start(0);
+					osc.donezo = true;
+				}
+			});
+			mainScene = new singleScene("mkds/" + MKDSCONST.CURRENTCOURSE, 0, res);
+
+			big();
+			render();
+		}
+
+		var keysArray = new Array(255);
+		var touches = [];
+
+		var timeSync = 0;
+		var lastTime = Date.now();
+		function render() {
+			timeSync += Date.now()-lastTime;
+			lastTime = Date.now();
+			big();
+
+			gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+			while (timeSync>0) {
+				mainScene.update();
+				processTouches();
+				if (timeSync > 1000) timeSync = 1000; //don't run way too many frames.
+				timeSync -= 1000/60;
+			}
+			
+			nitroAudio.tick();
+			//mainScene2.update();
+
+			mainScene.render();
+			//sceneDrawer.getInstance().drawWithShadow(gl, mainScene2, gl.viewportWidth/2, 0, gl.viewportWidth/2, gl.viewportHeight)
+
+			requestAnimationFrameFnct(render);
+		}
+
+		function keyDown(e) {
+			//e.preventDefault();
+			//e.stopPropagation();
+			keysArray[e.keyCode] = true;
+		}
+
+		function keyUp(e) {
+			// e.preventDefault();
+			// e.stopPropagation();
+			keysArray[e.keyCode] = false;
+		}
+
+		function processTouches() {
+			for (var i=0; i<touches.length; i++) {
+				var touch = touches[i];
+				touch.pressed = false;
+				touch.lastx = touch.x;
+				touch.lasty = touch.y;
+				if (touch.released) touches.splice(i--, 1);
+			}
+		}
+
+		function setTouchPos(obj, touch) {
+			obj.x = touch.clientX / document.body.clientWidth;
+			obj.y = touch.clientY / document.body.clientHeight;
+		}
+
+		function getTouchObj(touch) {
+			// console.log('getting obj')
+			for (var i=0; i<touches.length; i++) {
+				var mkTouch = touches[i];
+				if (mkTouch.id == touch.identifier) {
+					setTouchPos(mkTouch, touch);
+					return mkTouch;
+				}
+			}
+			//couldn't find this touch. give it a new object.
+			var result = {id: touch.identifier};
+			setTouchPos(result, touch);
+			touches.push(result);
+			return result;
+		}
+
+		function touchStart(e) {
+			//identifier
+			if (!osc.donezo) {
+				osc.start(0);
+				osc.donezo = true;
+			}
+			e.preventDefault();
+			for (var i=0; i<e.changedTouches.length; i++) {
+				var obj = getTouchObj(e.changedTouches[i]);
+				obj.pressed = true;
+			}
+		}
+
+		function touchEnd(e) {
+			e.preventDefault();
+			for (var i=0; i<e.changedTouches.length; i++) {
+				var obj = getTouchObj(e.changedTouches[i]);
+				obj.released = true;
+			}
+		}
+
+		function touchMove(e) {
+			e.preventDefault();
+			for (var i=0; i<e.changedTouches.length; i++) {
+				var obj = getTouchObj(e.changedTouches[i]);
+			}
+		}
+
+		function touchCancel(e) {
+			e.preventDefault();
+			for (var i=0; i<e.changedTouches.length; i++) {
+				var obj = getTouchObj(e.changedTouches[i]);
+				obj.released = true;
+			}
+		}
+
+		function lockPtr(e) {			
+			if (fileStore.getInstance().waitForROM) {
+				document.getElementById("fileIn").click();
+			}
+		}
+
+		function mouseMove(e) {
+			var movementX = e.movementX ||
+			    e.mozMovementX          ||
+			    e.webkitMovementX       ||
+			    0;
+
+			var movementY = e.movementY ||
+			    e.mozMovementY      ||
+			    e.webkitMovementY   ||
+			    0;
+		}
+
+		function initGL(canvas) {
+			try {
+				var gl = canvas.getContext('webgl', {premultipliedAlpha: false, stencil: true, antialias: !mobile})// || canvas.getContext("experimental-webgl");
+				gl.clearColor(0.46,0.47,0.36,1);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.enable(gl.DEPTH_TEST);
+				gl.viewportWidth = canvas.width;
+				gl.viewportHeight = canvas.height;
+				return gl;
+			} catch (err) {
+				alert("WebGL could not be initialized.")
+				return false;
+			}
+		}
+		
+		function big() {
+			const width = window.innerWidth
+						|| document.documentElement.clientWidth
+						|| document.body.clientWidth;
+
+			const height = window.innerHeight
+						|| document.documentElement.clientHeight
+						|| document.body.clientHeight;
+
+
+			canvas3D.width = width;
+			canvas3D.height = height;
+			gl.viewportWidth = width;
+			gl.viewportHeight = height;
+		}
+	</script>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+		html,body {
+			margin:0; 
+			background-color:black;
+			position: fixed; 
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+		}
+		#hud {
+			z-index: 10;
+			position: fixed; 
+			top: 0;
+		}
+
+		#hud {
+  			opacity: 0;
+		}
+		
+		body:hover #hud {
+  			opacity: 1;
+		}
+
+	</style>
+</head>
+
+<body>
+	<canvas id="canvas3d"></canvas>
+	<div id="hud">
+		<select id="kcls"></select>
+		<select id="klang"></select>
+		<select id="klaptype"></select>
+		<select id="kcontrols"></select>
+	</div>
+	<input type="file" id="fileIn" style="display:none;">
+</body>
+</html>
