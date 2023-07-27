@@ -26,9 +26,10 @@ jobs:
 
     - name: Commit files
       run: |
+        version=$(./.github/version.sh)
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git checkout --orphan gh-pages
         git --work-tree dist add --all
-        git --work-tree dist commit -m $(npm pkg get version | xargs echo)
+        git --work-tree dist commit -m $version
         git push origin HEAD:gh-pages --force
