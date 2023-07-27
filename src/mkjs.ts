@@ -88,6 +88,7 @@ import { BeachTree } from "./entities/objDecor/BeachTree";
 import { MKDS_COLTYPE } from "./engine/collisionTypes";
 import { SSEQThread } from "./audio/sseqThread";
 import { BananaGroupC, MushroomC, MushroomGroupC, QueenMushroomC, StarC, ThunderC, BlooperC, BooC, KillerC, BlueShellC } from "./entities/items/placeholder";
+import { mobilecheck, getRequestAnimationFrameFnct, setupHUD } from "./app";
 
 Object.assign(window, {
     TileFlattener,
@@ -183,5 +184,8 @@ Object.assign(window, {
     singleScene,
     BeachTree,
     MKDS_COLTYPE,
-    SSEQThread
+    SSEQThread,
+    setupHUD,
+    getRequestAnimationFrameFnct,
+    mobilecheck
 })
