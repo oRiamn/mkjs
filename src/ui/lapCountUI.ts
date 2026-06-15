@@ -25,6 +25,7 @@ export class LapCountUI implements SceneEntity {
 		this.scene = scene;
 		this.kart = kart;
 		this.transparent = false;
+		this.animFrame = 0;
 
 		this.zoom = 1.3;
 		this.pos = {

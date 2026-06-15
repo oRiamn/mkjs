@@ -47,6 +47,7 @@ import { nitroShaders } from "./render/nitroShaders";
 import { CountD3DUI } from "./ui/countD3DUI";
 import { Goal3DUI } from "./ui/goal3DUI";
 import { LapCountUI } from "./ui/lapCountUI";
+import { ItemUi } from "./ui/itemUi";
 import { PlacementUI } from "./ui/placementUI";
 import { Start3DUI } from "./ui/start3DUI";
 
@@ -137,6 +138,7 @@ Object.assign(window, {
     Goal3DUI,
     LapCountUI,
     PlacementUI,
+    ItemUi,
     Start3DUI,
     ItemShard,
     RedShellC,

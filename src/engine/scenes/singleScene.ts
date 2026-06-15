@@ -8,6 +8,7 @@
 import { Kart } from "../../entities/kart";
 import { lz77 } from "../../formats/lz77";
 import { narc } from "../../formats/narc";
+import { ItemUi } from "../../ui/itemUi";
 import { LapCountUI } from "../../ui/lapCountUI";
 import { PlacementUI } from "../../ui/placementUI";
 import { controlRaceCPU } from "../controls/controlRaceCPU";
@@ -123,6 +124,7 @@ export class singleScene {
 		this.activeScene.entities.push(
 			new PlacementUI(this.activeScene, this.myKart),
 			new LapCountUI(this.activeScene, this.myKart),
+			new ItemUi(this.activeScene, this.myKart)
 		);
 
 	}

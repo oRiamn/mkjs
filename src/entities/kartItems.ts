@@ -10,10 +10,10 @@ export class KartItems {
 	static items = [
 		'koura_g', // greenshell
 		'koura_r', // redshell
-		//'banana', // banana
-		//'f_box', // fake_box
-		//'bomb',
-		//'koura_group',
+		'banana', // banana
+		'f_box', // fake_box
+		'bomb',
+		'koura_group',
 		// 'koura_group-bomb-7' bug (too many bomb)
 	]
 	kart: Kart;
