@@ -7,26 +7,42 @@
 
 import { sdat } from "../formats/sdat";
 import { SSEQWaveCache } from "./SSEQWaveCache";
-import { SSEQPlayer } from "./sseqPlayer";
+import { SSEQPlayer, SSEQPlayer_param } from "./sseqPlayer";
 
-window.AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+type AudioWindow = Window &
+	typeof globalThis & {
+		webkitAudioContext?: typeof AudioContext;
+	};
 
+const audioWindow = window as AudioWindow;
+audioWindow.AudioContext = audioWindow.AudioContext || audioWindow.webkitAudioContext!;
+
+export type nitroAudioSoundProps = {
+	pos?: vec3;
+	vel?: vec3;
+	lastPos?: vec3 | null;
+	refDistance?: number;
+	rolloffFactor?: number;
+	panningModel?: PanningModelType;
+};
+
+export type nitroAudioSoundTarget = nitroAudioSoundProps & {
+	soundProps?: nitroAudioSoundProps;
+};
 
 export type nitroAudioSound = {
 	seq: SSEQPlayer;
 	panner: PannerNode;
 	gainN: GainNode;
-	dead: boolean,
-	killing: boolean,
-	obj: any;
+	dead: boolean;
+	killing: boolean;
+	obj: nitroAudioSoundTarget | null;
 };
 
 export class nitroAudio {
-
-	static ctx: AudioContext = undefined;
+	static ctx: AudioContext;
 	static sounds: nitroAudioSound[] = [];
-	static sdat: sdat = null;
-
+	static sdat: sdat;
 
 	static init(sdat: sdat) {
 		nitroAudio.ctx = new AudioContext();
@@ -40,8 +56,9 @@ export class nitroAudio {
 		nitroAudio.sdat = sdat;
 	}
 
-	static updateListener(pos: vec3, view: mat4) {
-		var listener = nitroAudio.ctx.listener;
+	static updateListener(pos: vec3 | null, view: mat4) {
+		if (pos == null) return;
+		const listener = nitroAudio.ctx.listener;
 		if (listener.positionX == null) {
 			//use old setters. safari ios
 			listener.setPosition(pos[0], pos[1], pos[2]);
@@ -60,13 +77,14 @@ export class nitroAudio {
 	}
 
 	static tick() {
-		for (var i = 0; i < nitroAudio.sounds.length; i++) {
-			var snd = nitroAudio.sounds[i];
+		for (let i = 0; i < nitroAudio.sounds.length; i++) {
+			const snd = nitroAudio.sounds[i];
 			snd.seq.tick();
-			if (snd.obj != null && snd.obj.soundProps != null && snd.panner != null) nitroAudio._updatePanner(snd.panner, snd.obj.soundProps);
+			if (snd.obj != null && snd.obj.soundProps != null && snd.panner != null)
+				nitroAudio._updatePanner(snd.panner, snd.obj.soundProps);
 		}
-		for (var i = 0; i < nitroAudio.sounds.length; i++) {
-			var snd = nitroAudio.sounds[i];
+		for (let i = 0; i < nitroAudio.sounds.length; i++) {
+			const snd = nitroAudio.sounds[i];
 			snd.dead = snd.seq.dead;
 			if (snd.dead) {
 				snd.gainN.disconnect();
@@ -82,35 +100,43 @@ export class nitroAudio {
 		}
 	}
 
-	static instaKill(sound: nitroAudioSound) { //instantly kills a sound
+	static instaKill(sound: nitroAudioSound | null) {
+		//instantly kills a sound
 		if (sound == null) return;
-		var ind = nitroAudio.sounds.indexOf(sound)
+		const ind = nitroAudio.sounds.indexOf(sound);
 		sound.gainN.disconnect();
 		if (ind == -1) return;
 		nitroAudio.sounds.splice(ind, 1);
 	}
 
-	static playSound(seqN: number, params: any, arcN: number, obj: any) { //if arc is not specified, we just play a normal sequence. this allows 3 overloads. 
+	static playSound(
+		seqN: number,
+		params: SSEQPlayer_param | null,
+		arcN: number | null,
+		obj: nitroAudioSoundTarget | null
+	): nitroAudioSound | null {
+		//if arc is not specified, we just play a normal sequence. this allows 3 overloads.
 		//obj should have a property "soundProps" where it sets its falloff, position and velocity relative to the oberver occasionally
-		var sound: nitroAudioSound = { 
-			dead: false, 
-			killing: false, 
+		const sound: nitroAudioSound = {
+			dead: false,
+			killing: false,
 			obj: obj,
-			seq:undefined,
-			panner:undefined,
-			gainN:undefined,
+			seq: undefined!,
+			panner: undefined!,
+			gainN: undefined!,
 		};
 
-		var output;
-		if (obj != null) { //if obj is not null then we have a 3d target to assign this sound to.
+		let output: PannerNode | GainNode;
+		if (obj != null) {
+			//if obj is not null then we have a 3d target to assign this sound to.
 			output = nitroAudio.ctx.createPanner();
 			sound.gainN = nitroAudio.ctx.createGain();
 			sound.gainN.connect(nitroAudio.ctx.destination);
 			output.connect(sound.gainN);
 			sound.panner = output;
 
-			if (sound.obj.soundProps == null) sound.obj.soundProps = obj;
-			nitroAudio._updatePanner(sound.panner, sound.obj.soundProps);
+			if (obj.soundProps == null) obj.soundProps = obj;
+			nitroAudio._updatePanner(sound.panner, obj.soundProps);
 		} else {
 			output = nitroAudio.ctx.createGain();
 			sound.gainN = output;
@@ -118,14 +144,14 @@ export class nitroAudio {
 		}
 
 		if (arcN == null) {
-			var seq0 = nitroAudio.sdat.sections["$INFO"][0][seqN];
-			if (seq0 == null) return;
+			const seq0 = nitroAudio.sdat.sections["$INFO"][0][seqN];
+			if (seq0 == null) return null;
 			sound.seq = new SSEQPlayer(seq0, nitroAudio.sdat, nitroAudio.ctx, output, params);
 		} else {
-			var arc = nitroAudio.sdat.sections["$INFO"][1][arcN];
-			if (arc == null) return;
-			var seq = arc.arc.entries[seqN];
-			if (seq == null) return;
+			const arc = nitroAudio.sdat.sections["$INFO"][1][arcN];
+			if (arc == null) return null;
+			const seq = arc.arc.entries[seqN];
+			if (seq == null) return null;
 			sound.seq = new SSEQPlayer(seq, nitroAudio.sdat, nitroAudio.ctx, output, params);
 		}
 
@@ -134,7 +160,7 @@ export class nitroAudio {
 		return sound;
 	}
 
-	static _updatePanner(panner: PannerNode, soundProps: any) {
+	private static _updatePanner(panner: PannerNode, soundProps: nitroAudioSoundProps | null) {
 		if (panner == null || soundProps == null) return;
 		if (soundProps.pos != null) panner.setPosition(soundProps.pos[0], soundProps.pos[1], soundProps.pos[2]);
 		//if (soundProps.vel != null) panner.setVelocity(soundProps.vel[0], soundProps.vel[1], soundProps.vel[2]);

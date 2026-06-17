@@ -1,7 +1,7 @@
 //
 // water.js
 //--------------------
-// Provides multiple types of traffic. 
+// Provides multiple types of traffic.
 // by RHY3756547
 //
 // includes:
@@ -12,7 +12,7 @@ import { nkm_section_OBJI } from "../formats/nkm";
 import { nitroRender } from "../render/nitroRender";
 
 export class ObjWater implements SceneEntityObject {
-	collidable: boolean;
+	collidable!: boolean;
 	scene: Scene;
 	obji: nkm_section_OBJI;
 	res: ProvidedRes;
@@ -27,7 +27,7 @@ export class ObjWater implements SceneEntityObject {
 	constructor(obji: nkm_section_OBJI, scene: Scene) {
 		this.scene = scene;
 		this.obji = obji;
-		this.res = undefined;
+		this.res = undefined!;
 		this.pos = vec3.clone(this.obji.pos);
 		//this.angle = vec3.clone(obji.angle);
 		this.scale = vec3.clone(this.obji.scale);
@@ -42,27 +42,27 @@ export class ObjWater implements SceneEntityObject {
 
 	draw(view: mat4, pMatrix: mat4) {
 		if (nitroRender.flagShadow) return;
-		var waterM = mat4.create();
+		let waterM = mat4.create();
 
 		gl.enable(gl.STENCIL_TEST);
-		gl.stencilMask(0xFF);
+		gl.stencilMask(0xff);
 
-		gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+		gl.stencilFunc(gl.ALWAYS, 1, 0xff);
 		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE); //when depth test passes for water lower layer, pixel is already drawn, do not cover it with the white overlay (set stencil bit)
 
-		var height = (this.pos[1]) + this.wheight + Math.sin(this.frame / 150) * this.wosc //0.106
+		let height = this.pos[1] + this.wheight + Math.sin(this.frame / 150) * this.wosc; //0.106
 
-		mat4.translate(waterM, view, [Math.sin(this.frame / 180) * 96, height, Math.cos(this.frame / 146) * 96])
+		mat4.translate(waterM, view, [Math.sin(this.frame / 180) * 96, height, Math.cos(this.frame / 146) * 96]);
 		if (this.useAlpha) {
-			nitroRender.setColMult([1, 1, 1, 0x0A / 31]);
+			nitroRender.setColMult([1, 1, 1, 0x0a / 31]);
 		}
 		this.res.mdl[0].drawPoly(mat4.scale(mat4.create(), waterM, [16, 16, 16]), pMatrix, 0, 0); //water
 
-		gl.stencilFunc(gl.EQUAL, 0, 0xFF);
+		gl.stencilFunc(gl.EQUAL, 0, 0xff);
 		gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
 
 		if (this.obji.ID != 9) {
-			mat4.translate(waterM, view, [0, height, 0])
+			mat4.translate(waterM, view, [0, height, 0]);
 			if (this.useAlpha) {
 				nitroRender.setColMult([1, 1, 1, 0x10 / 31]);
 			}
@@ -73,7 +73,7 @@ export class ObjWater implements SceneEntityObject {
 		gl.disable(gl.STENCIL_TEST);
 
 		if (this.res.mdl[1] != null) {
-			mat4.translate(waterM, view, [-Math.sin((this.frame + 30) / 180) * 96, height, Math.cos((this.frame + 100) / 146) * 96])
+			mat4.translate(waterM, view, [-Math.sin((this.frame + 30) / 180) * 96, height, Math.cos((this.frame + 100) / 146) * 96]);
 			if (this.useAlpha) nitroRender.setColMult([1, 1, 1, 0x04 / 31]);
 			this.res.mdl[1].draw(mat4.scale(mat4.create(), waterM, [16, 16, 16]), pMatrix); //water white detail part. stencil should do nothing here, since it's in the same position as the above.
 		}
@@ -86,7 +86,8 @@ export class ObjWater implements SceneEntityObject {
 		//TODO: physics and void-out for karts
 	}
 
-	requireRes() { //scene asks what resources to load
+	requireRes() {
+		//scene asks what resources to load
 		switch (this.obji.ID) {
 			case 0x0001:
 				return { mdl: [{ nsbmd: "beach_waterC.nsbmd" }, { nsbmd: "beach_waterA.nsbmd" }] };
@@ -99,7 +100,7 @@ export class ObjWater implements SceneEntityObject {
 			case 0x0009:
 				this.useAlpha = false;
 				return { mdl: [{ nsbmd: "hyudoro_waterC.nsbmd" }, { nsbmd: "hyudoro_waterA.nsbmd" }] };
-			case 0x000C:
+			case 0x000c:
 				this.wheight = 38;
 				this.wosc = 16;
 				return { mdl: [{ nsbmd: "mini_stage3_waterC.nsbmd" }, { nsbmd: "mini_stage3_waterA.nsbmd" }] };

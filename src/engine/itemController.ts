@@ -28,31 +28,31 @@ export class ItemController {
 	}
 
 	update(scene: courseScene) {
-		var itC = this.items.slice(0);
-		for (var i = 0; i < itC.length; i++) {
-			var ent = itC[i];
+		let itC = this.items.slice(0);
+		for (let i = 0; i < itC.length; i++) {
+			let ent = itC[i];
 			ent.update(scene);
 		}
 	}
 
 	draw(mvMatrix: mat4, pMatrix: mat4) {
 		nitroRender.setShadBias(0.001);
-		for (var i = 0; i < this.items.length; i++) {
-			var e = this.items[i];
+		for (let i = 0; i < this.items.length; i++) {
+			let e = this.items[i];
 			e.draw(mvMatrix, pMatrix);
 		}
 		nitroRender.resetShadOff();
 	}
 
-	createItem(type:  keyof items_IngameRes, kart: Kart) {
+	createItem(type: keyof items_IngameRes, kart: Kart) {
 		// KartItems._createItem
-		var item = new Item(this.scene, kart, type, this.curInd++);
+		let item = new Item(this.scene, kart, type, this.curInd++);
 		this.items.push(item);
 		return item;
 	}
 
 	removeItem(item: Item) {
-		var ind = this.items.indexOf(item);
+		let ind = this.items.indexOf(item);
 		if (ind !== -1) {
 			this.items.splice(ind, 1);
 		}

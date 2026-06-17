@@ -10,34 +10,31 @@
 import { Kart } from "../../entities/kart";
 export class controlDefault implements Controls {
 	local: boolean;
-	kart: Kart;
+	kart!: Kart;
 
 	constructor() {
 		this.local = true;
-		this.kart = null;
 	}
 
 	setKart(k: Kart) {
 		this.kart = k;
 	}
 
-	fetchInput() {
-		const left = (window as any).keysArray[37] ? 1 : 0;
-		const right = (window as any).keysArray[39] ? 1 : 0;
-		const up = (window as any).keysArray[38] ? 1 : 0;
-		const down = (window as any).keysArray[40] ? 1 : 0;
+	fetchInput(): InputData {
+		const left = window.keysArray[37] ? 1 : 0;
+		const right = window.keysArray[39] ? 1 : 0;
+		const up = window.keysArray[38] ? 1 : 0;
+		const down = window.keysArray[40] ? 1 : 0;
 
 		return {
-			accel: !!(window as any).keysArray[88], //x
-			decel: !!(window as any).keysArray[90], //z
-			drift: !!(window as any).keysArray[83], //s
-			item: !!(window as any).keysArray[65], //a
+			accel: !!window.keysArray[88], //x
+			decel: !!window.keysArray[90], //z
+			drift: !!window.keysArray[83], //s
+			item: !!window.keysArray[65], //a
 
 			//-1 to 1, intensity.
 			turn: right - left,
-			airTurn: up - down //air excitebike turn, item fire direction
+			airTurn: up - down, //air excitebike turn, item fire direction
 		};
 	}
-
 }
-

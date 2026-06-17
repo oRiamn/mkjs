@@ -22,29 +22,29 @@ import { TileFlattener } from "./2d/tileFlattener";
 import { MKDSCONST } from "./mkdsConst";
 
 export type items_IngameRes = {
-	banana: nitroModel,
-	bomb: nitroModel,
-	gesso: nitroModel,
-	kinoko: nitroModel,
-	kinoko_p: nitroModel,
-	koura_g: nitroModel,
-	koura_r: nitroModel,
-	star: nitroModel,
-	teresa: nitroModel,
-	thunder: nitroModel,
-	koura_w: nitroModel,
-	f_box: nitroModel,
-	killer: nitroModel,
-	blueShell: nitroModel,
-	splat: nitroModel,
-	fakeBox: nitroModel,
-}
+	banana: nitroModel;
+	bomb: nitroModel;
+	gesso: nitroModel;
+	kinoko: nitroModel;
+	kinoko_p: nitroModel;
+	koura_g: nitroModel;
+	koura_r: nitroModel;
+	star: nitroModel;
+	teresa: nitroModel;
+	thunder: nitroModel;
+	koura_w: nitroModel;
+	f_box: nitroModel;
+	killer: nitroModel;
+	blueShell: nitroModel;
+	splat: nitroModel;
+	fakeBox: nitroModel;
+};
 
-type tires = {
-	kart_tire_L: nitroModel,
-	kart_tire_M: nitroModel,
-	kart_tire_S: nitroModel,
-}
+export type tires = {
+	kart_tire_L: nitroModel;
+	kart_tire_M: nitroModel;
+	kart_tire_S: nitroModel;
+};
 
 export type IngameRes_character = {
 	model: nitroModel;
@@ -53,9 +53,9 @@ export type IngameRes_character = {
 	spinA: nsbca;
 	winA: nsbca;
 	sndOff: number;
-	emblem: nsbtx,
-	thumb: CustomWebGLTexture
-}
+	emblem: nsbtx;
+	thumb: CustomWebGLTexture;
+};
 
 //
 export class IngameRes {
@@ -79,29 +79,29 @@ export class IngameRes {
 	characters: IngameRes_character[];
 	karts: nitroModel[];
 	letters: string[];
-	items: items_IngameRes;
-	tireRes: tires;
+	items!: items_IngameRes;
+	tireRes!: tires;
 	Main2DLoc: narc;
-	playerThumb: TileFlattener;
+	playerThumb!: TileFlattener;
 	constructor(rom: ndsFS) {
 		this.rom = rom;
-		this.kartPhys = new kartphysicalparam(this.rom.getFile("/data/KartModelMenu/kartphysicalparam.bin"));
-		this.kartOff = new kartoffsetdata(this.rom.getFile("/data/KartModelMenu/kartoffsetdata.bin"));
-		this.MapObj = new narc(lz77.decompress(this.rom.getFile("/data/Main/MapObj.carc"))); //contains generic map obj, look in here when mapobj res is missing fthis.rom course. (itembox etc)
-		this.MainRace = new narc(lz77.decompress(this.rom.getFile("/data/MainRace.carc"))); //contains item models.
-		this.MainEffect = new narc(lz77.decompress(this.rom.getFile("/data/MainEffect.carc"))); //contains particles.
-		this.Main2D = new narc(lz77.decompress(this.rom.getFile("/data/Main2D.carc")));
-		this.Main2DLoc = new narc(lz77.decompress(this.rom.getFile(`/data/Main2D_${MKDSCONST.CURRENTLANG}.carc`)));
+		this.kartPhys = new kartphysicalparam(this.rom.getFile("/data/KartModelMenu/kartphysicalparam.bin")!);
+		this.kartOff = new kartoffsetdata(this.rom.getFile("/data/KartModelMenu/kartoffsetdata.bin")!);
+		this.MapObj = new narc(lz77.decompress(this.rom.getFile("/data/Main/MapObj.carc")!)); //contains generic map obj, look in here when mapobj res is missing fthis.rom course. (itembox etc)
+		this.MainRace = new narc(lz77.decompress(this.rom.getFile("/data/MainRace.carc")!)); //contains item models.
+		this.MainEffect = new narc(lz77.decompress(this.rom.getFile("/data/MainEffect.carc")!)); //contains particles.
+		this.Main2D = new narc(lz77.decompress(this.rom.getFile("/data/Main2D.carc")!));
+		this.Main2DLoc = new narc(lz77.decompress(this.rom.getFile(`/data/Main2D_${MKDSCONST.CURRENTLANG}.carc`)!));
 
-		this.KartModelSub = new narc(lz77.decompress(this.rom.getFile("/data/KartModelSub.carc"))); //contains characters + animations
+		this.KartModelSub = new narc(lz77.decompress(this.rom.getFile("/data/KartModelSub.carc")!)); //contains characters + animations
 
-		this.Race = new narc(lz77.decompress(this.rom.getFile("/data/Scene/Race.carc"))); //contains lakitu, count, various graphics
-		this.RaceLoc = new narc(lz77.decompress(this.rom.getFile(`/data/Scene/Race_${MKDSCONST.CURRENTLANG}.carc`))); //contains lakitu lap signs, START, YOU WIN etc. some of these will be replaced by hi res graphics by default.
-		this.RaceEffect = new spa(this.MainEffect.getFile("RaceEffect.spa"));
+		this.Race = new narc(lz77.decompress(this.rom.getFile("/data/Scene/Race.carc")!)); //contains lakitu, count, various graphics
+		this.RaceLoc = new narc(lz77.decompress(this.rom.getFile(`/data/Scene/Race_${MKDSCONST.CURRENTLANG}.carc`)!)); //contains lakitu lap signs, START, YOU WIN etc. some of these will be replaced by hi res graphics by default.
+		this.RaceEffect = new spa(this.MainEffect.getFile("RaceEffect.spa")!);
 
-		this.MainFont = new nftr(this.Main2D.getFile("marioFont.NFTR"));
-		this.MFont = new nftr(this.Main2D.getFile("LC_Font_m.NFTR"));
-		this.SFont = new nftr(this.Main2D.getFile("LC_Font_s.NFTR"));
+		this.MainFont = new nftr(this.Main2D.getFile("marioFont.NFTR")!);
+		this.MFont = new nftr(this.Main2D.getFile("LC_Font_m.NFTR")!);
+		this.SFont = new nftr(this.Main2D.getFile("LC_Font_s.NFTR")!);
 
 		//testFont(this.MainFont, 0);
 		//testFont(this.MFont, 16*4);
@@ -112,15 +112,11 @@ export class IngameRes {
 		listRecursive(this.rom);
 		*/
 
-
 		//debugger;
-
 
 		//order
 		//donkey, toad, bowser?, luigi, mario, peach, wario, yoshi, daisy, waluigi, dry bones (karon), robo, heyho
-		this.toSoundOff = [
-			4, 0, 1, 2, 5, 6, 7, 3, 10, 8, 9, 11, 12
-		];
+		this.toSoundOff = [4, 0, 1, 2, 5, 6, 7, 3, 10, 8, 9, 11, 12];
 
 		this.charNames = [
 			"mario",
@@ -135,45 +131,31 @@ export class IngameRes {
 			"daisy",
 			"waluigi",
 			"robo",
-			"heyho"
+			"heyho",
 		];
 
-		this.charAbbrv = [
-			"MR",
-			"DK",
-			"KO",
-			"KP",
-			"PC",
-			"WR",
-			"YS",
-			"LG",
-			"KA",
-			"DS",
-			"WL",
-			"RB",
-			"HH"
-		];
+		this.charAbbrv = ["MR", "DK", "KO", "KP", "PC", "WR", "YS", "LG", "KA", "DS", "WL", "RB", "HH"];
 
 		this.characters = [];
 		this.karts = [];
-		this.letters = ["a", "b", "c"]
+		this.letters = ["a", "b", "c"];
 
 		this._loadItems();
 		this._loadTires();
 		this._loadPlayerThumb();
 	}
 
-	testFont(font: nftr, off: number, name: string) {
-		var all = Object.keys(font.charMap).join("");
-		var split = document.createElement("h3");
+	private testFont(font: nftr, off: number, name: string) {
+		let all = Object.keys(font.charMap).join("");
+		let split = document.createElement("h3");
 		split.innerText = name;
 		document.body.appendChild(split);
 
-		for (var i = 0; i < 4; i++) {
-			var sliceF = Math.floor((all.length * i) / 4);
-			var sliceT = Math.floor((all.length * (i + 1)) / 4);
+		for (let i = 0; i < 4; i++) {
+			let sliceF = Math.floor((all.length * i) / 4);
+			let sliceT = Math.floor((all.length * (i + 1)) / 4);
 
-			var canvas = font.drawToCanvas(
+			let canvas = font.drawToCanvas(
 				all.substring(sliceF, sliceT),
 				[
 					[0, 0, 0, 0],
@@ -182,60 +164,62 @@ export class IngameRes {
 					[32, 0, 0, 255],
 					[64, 0, 0, 255],
 					[96, 0, 0, 255],
-					[128, 0, 0, 255]
+					[128, 0, 0, 255],
 				],
-				1);
+				1
+			);
 			document.body.appendChild(canvas);
 			//canvas.style.position = "absolute";
 			//canvas.style.left = 0;
-			//canvas.style.top = off + "px";
+			//canvas.style.top = `${off}px`;
 
 			//off += 16;
 		}
 	}
 
-	listRecursive(resource: narc, path: string) {
+	private listRecursive(resource: narc, path: string) {
 		path = path || "";
-		var files = resource.list();
-		for (var i = 0; i < files.length; i++) {
-			var file = files[i];
+		let files = resource.list();
+		for (let i = 0; i < files.length; i++) {
+			let file = files[i];
 			// console.log(path + file);
 			if (file.toLowerCase().endsWith(".carc")) {
-				this.listRecursive(new narc(lz77.decompress(resource.getFile(file))), path + file);
+				this.listRecursive(new narc(lz77.decompress(resource.getFile(file)!)), path + file);
 			}
 			if (file.toLowerCase().endsWith(".nftr")) {
 				// if (file == "/selectFont.NFTR") debugger;
-				this.testFont(new nftr(resource.getFile(file)), 0, path + file);
+				this.testFont(new nftr(resource.getFile(file)!), 0, path + file);
 			}
 		}
 	}
 
-	_loadItems() { //loads physical representations of items
+	private _loadItems() {
+		//loads physical representations of items
 
-		var t: { [x: string]: nitroModel } = {
-			banana: undefined,
-			bomb: undefined,
-			gesso: undefined /*squid*/,
-			kinoko: undefined /*mushroom*/,
-			kinoko_p: undefined /*queen shroom*/,
-			koura_g: undefined /*green shell*/,
-			koura_r: undefined /*red shell*/,
-			star: undefined,
-			teresa: undefined /*boo*/,
-			thunder: undefined,
-			koura_w: undefined /*blue shell item rep*/,
-			f_box: undefined,
-			killer: undefined /*bullet bill*/
+		const itemModelNames = [
+			"banana",
+			"bomb",
+			"gesso",
+			"kinoko",
+			"kinoko_p",
+			"koura_g",
+			"koura_r",
+			"star",
+			"teresa",
+			"thunder",
+			"koura_w",
+			"f_box",
+			"killer",
+		] as const;
+		let t = {} as Pick<items_IngameRes, (typeof itemModelNames)[number]>;
+
+		for (const n of itemModelNames) {
+			t[n] = new nitroModel(new nsbmd(this.MainRace.getFile(`/Item/it_${n}.nsbmd`)!), null);
 		}
 
-
-		for (const n in t) {
-			t[n] = new nitroModel(new nsbmd(this.MainRace.getFile("/Item/it_" + n + ".nsbmd")), null);
-		}
-
-		const blueShell = new nitroModel(new nsbmd(this.MainRace.getFile("/Item/koura_w.nsbmd")), null);
-		const splat = new nitroModel(new nsbmd(this.MainRace.getFile("/Item/geso_sumi.nsbmd")), null);
-		const fakeBox = new nitroModel(new nsbmd(this.MainRace.getFile("/MapObj/box.nsbmd")), null);
+		const blueShell = new nitroModel(new nsbmd(this.MainRace.getFile("/Item/koura_w.nsbmd")!), null);
+		const splat = new nitroModel(new nsbmd(this.MainRace.getFile("/Item/geso_sumi.nsbmd")!), null);
+		const fakeBox = new nitroModel(new nsbmd(this.MainRace.getFile("/MapObj/box.nsbmd")!), null);
 		this.items = {
 			banana: t.banana,
 			bomb: t.bomb,
@@ -256,18 +240,18 @@ export class IngameRes {
 		};
 	}
 
-	_loadTires() {
-		var path = "/data/KartModelMenu/kart/tire/";
+	private _loadTires() {
+		let path = "/data/KartModelMenu/kart/tire/";
 
-		var tires: { [x: string]: nitroModel } = {
-			kart_tire_L: undefined,
-			kart_tire_M: undefined,
-			kart_tire_S: undefined,
+		let tires: { [x: string]: nitroModel } = {
+			kart_tire_L: undefined!,
+			kart_tire_M: undefined!,
+			kart_tire_S: undefined!,
 		};
 
 		for (const tirename in tires) {
-			const bmd = new nsbmd(this.rom.getFile(path + tirename + ".nsbmd"));
-			const btx = new nsbtx(this.rom.getFile(path + tirename + ".nsbtx"), false);
+			const bmd = new nsbmd(this.rom.getFile(`${path + tirename}.nsbmd`)!);
+			const btx = new nsbtx(this.rom.getFile(`${path + tirename}.nsbtx`)!, false);
 			tires[tirename] = new nitroModel(bmd, btx);
 		}
 		this.tireRes = {
@@ -277,10 +261,10 @@ export class IngameRes {
 		};
 	}
 
-	_loadPlayerThumb() {
-		var ncgrFile = this.Main2DLoc.getFile("player_character_L.nce.ncgr");
-		var nclrFile = this.Main2DLoc.getFile("player_character_L_o.NCLR");
-		var ncerFile = this.Main2DLoc.getFile('player_character_L.nce.ncer');
+	private _loadPlayerThumb() {
+		let ncgrFile = this.Main2DLoc.getFile("player_character_L.nce.ncgr")!;
+		let nclrFile = this.Main2DLoc.getFile("player_character_L_o.NCLR")!;
+		let ncerFile = this.Main2DLoc.getFile("player_character_L.nce.ncer")!;
 
 		const ncgrF = new ncgr(ncgrFile);
 		const nclrF = new nclr(nclrFile);
@@ -294,53 +278,44 @@ export class IngameRes {
 			return this.characters[ind];
 		}
 
-		const emblembtxFile = this.rom.getFile(`/data/KartModelMenu/emblem/${this.charAbbrv[ind]}_emblem.nsbtx`);
+		const emblembtxFile = this.rom.getFile(`/data/KartModelMenu/emblem/${this.charAbbrv[ind]}_emblem.nsbtx`)!;
 		const thumb = this.playerThumb.toTexture(true, ind);
 
-		var base = "/character/" + this.charNames[ind] + "/P_" + this.charAbbrv[ind];
-		const bmd = new nsbmd(this.KartModelSub.getFile(base + ".nsbmd"));
-		const btx = new nsbtx(this.KartModelSub.getFile(base + ".nsbtx"), false);
+		let base = `/character/${this.charNames[ind]}/P_${this.charAbbrv[ind]}`;
+		const bmd = new nsbmd(this.KartModelSub.getFile(`${base}.nsbmd`)!);
+		const btx = new nsbtx(this.KartModelSub.getFile(`${base}.nsbtx`)!, false);
 		const texMap = { tex: { 1: 2 }, pal: { 1: 2 } };
-		var obj = {
-			model: new nitroModel(
-				bmd,
-				btx,
-				texMap
-			),
-			driveA: new nsbca(this.KartModelSub.getFile(base + "_drive.nsbca")),
-			loseA: new nsbca(this.KartModelSub.getFile(base + "_lose.nsbca")),
-			spinA: new nsbca(this.KartModelSub.getFile(base + "_spin.nsbca")),
-			winA: new nsbca(this.KartModelSub.getFile(base + "_win.nsbca")),
+		let obj = {
+			model: new nitroModel(bmd, btx, texMap),
+			driveA: new nsbca(this.KartModelSub.getFile(`${base}_drive.nsbca`)!),
+			loseA: new nsbca(this.KartModelSub.getFile(`${base}_lose.nsbca`)!),
+			spinA: new nsbca(this.KartModelSub.getFile(`${base}_spin.nsbca`)!),
+			winA: new nsbca(this.KartModelSub.getFile(`${base}_win.nsbca`)!),
 			sndOff: this.toSoundOff[ind] * 14,
 			emblem: new nsbtx(emblembtxFile, false),
 			thumb,
-		}
+		};
 		this.characters[ind] = obj;
 		return this.characters[ind];
 	}
 
-	getKart(ind: number) { //returns a nitroModel, but also includes a property "shadVol" containing the kart's shadow volume.
+	getKart(ind: number) {
+		//returns a nitroModel, but also includes a property "shadVol" containing the kart's shadow volume.
 		if (this.karts[ind] != null) {
 			return this.karts[ind];
 		}
 
-		var c = Math.floor(ind / 3);
-		var t = ind % 3;
+		let c = Math.floor(ind / 3);
+		let t = ind % 3;
 		if (t == 0) {
 			c = 0; //only mario has standard kart
 		}
 
-		var name = this.charAbbrv[c] + "_" + this.letters[t];
-		var path = "/data/KartModelMenu/kart/" + this.charNames[c] + "/kart_" + name;
+		let name = `${this.charAbbrv[c]}_${this.letters[t]}`;
+		let path = `/data/KartModelMenu/kart/${this.charNames[c]}/kart_${name}`;
 
-		var model = new nitroModel(
-			new nsbmd(this.rom.getFile(path + ".nsbmd")),
-			new nsbtx(this.rom.getFile(path + ".nsbtx"), false)
-		);
-		model.shadVol = new nitroModel(
-			new nsbmd(this.rom.getFile("/data/KartModelMenu/kart/shadow/sh_" + name + ".nsbmd")),
-			null
-		);
+		let model = new nitroModel(new nsbmd(this.rom.getFile(`${path}.nsbmd`)!), new nsbtx(this.rom.getFile(`${path}.nsbtx`)!, false));
+		model.shadVol = new nitroModel(new nsbmd(this.rom.getFile(`/data/KartModelMenu/kart/shadow/sh_${name}.nsbmd`)!), null);
 		//todo, assign special pallete for A karts
 
 		this.karts[ind] = model;

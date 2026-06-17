@@ -2,19 +2,18 @@
 
 This is a fork from [riperiperi/mkjs](https://github.com/riperiperi/mkjs)
 
-
 ![mkscrn2s](https://cloud.githubusercontent.com/assets/6294155/25496279/34c8808c-2b78-11e7-90ee-b0d1350244bb.png)
 **mkjs** is an experimental javascript engine reimplemention of Mario Kart DS. Users of the application must provide their own Mario Kart DS ROM, dumped using a DS or 3DS. This project exists for entirely educational purposes.
 
 If you have a ROM of MKDS available, you can give mkjs a shot here:
 https://oriamn.github.io/mkjs/
 
-
 # Purpose
+
 I started working on mkjs a few years ago to get a better grasp on a lot things, mainly for fun. Here are the key factors:
 
 - WebGL game engine with no dependancies. Entirely written using vanilla Javascript ES5. (will not accept contributions using libraries!)
-   - (exception is GLMatrix, which is required for matrix and vector operations)
+    - (exception is GLMatrix, which is required for matrix and vector operations)
 - Entirely implement readers for NDS file formats, and ways to utilise them in an actual game environment.
 - SSEQ (midi) music and sfx player using Web Audio API features. Supports 3D sound, and used to support doppler...
 - Custom simple collision engine with swept sphere collision against quadtree partitioned triangle collision meshes. Performs well enough in javascript, but could likely be faster.
@@ -23,6 +22,7 @@ I started working on mkjs a few years ago to get a better grasp on a lot things,
 - Works on many platforms, including iOS at 60 fps!
 
 # Current Features
+
 The base game mostly works. A lot of the grunt work is done - the current setup shows a good prototype of the game working.
 
 - Nitro filesystem management for real .nds files, allowing a ROM to be provided with no changes.
@@ -34,6 +34,7 @@ The base game mostly works. A lot of the grunt work is done - the current setup 
 - TypeSrcipt Support
 
 # Possible Future
+
 - UI engine
 - Race Logic (checkpoints, lap count, lap tracking, race completion...)
 - All course obstacles (enemies, bridge in delfino)

@@ -7,63 +7,77 @@
 // includes: gl-matrix.js (glMatrix 2.0)
 // /formats/kcl.js
 //
-import { nitroAudio } from "../audio/nitroAudio";
+import { nitroAudio, nitroAudioSound, nitroAudioSoundProps } from "../audio/nitroAudio";
 import { NitroEmitter } from "../particles/nitroEmitter";
 import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
 import { KartItems } from "./kartItems";
 import { nkm, nkm_section_CPOI, nkm_section_KTPJ, nkm_section_KTPS, nkm_section_MEPO } from "../formats/nkm";
-import { kcl_plane } from "../formats/kcl";
+import { kartphysicalparam_kart } from "../formats/kartphysicalparam";
+import { kartoffsetdata_kart } from "../formats/kartoffsetdata";
 import { MKDSCONST } from "../engine/mkdsConst";
 import { MKDS_COLTYPE } from "../engine/collisionTypes";
-import { IngameRes_character } from "../engine/ingameRes";
+import { IngameRes_character, tires } from "../engine/ingameRes";
 import { courseScene } from "../engine/scenes/courseScene";
 import { lsc } from "../engine/largeSphereCollider";
-type kart_sound = {
+import { nsbmd_modelData } from "../formats/nsbmd";
+import { nitroModel } from "../render/nitroModel";
+
+type KartCollisionSounds = {
 	hit?: number;
-	land?: number; //sounds that can be simultaneous
-	kart?: any;
-	drift?: any;
-	lastTerrain?: number;
-	lastBE?: number;
-	drive?: any;
-	boost?: any;
-	powerslide?: any;
-	boostSoundTrig?: boolean; //true if a new boost sound can be played
-	transpose?: number;
-	lastPos?: vec3
-	pos?: vec3;
-	refDistance?: number;
-	rolloffFactor?: number;
+	land?: number;
+	drift?: number;
+	brake?: number;
+	drive?: number;
+	particle?: number;
 };
 
+type KartRuntimeSounds = {
+	kart?: nitroAudioSound | null;
+	drift?: nitroAudioSound | null;
+	lastTerrain?: number;
+	lastBE?: number;
+	drive?: nitroAudioSound | null;
+	boost?: nitroAudioSound | null;
+	powerslide?: nitroAudioSound | null;
+	boostSoundTrig?: boolean; //true if a new boost sound can be played
+	transpose?: number;
+};
 
-type kart_checkpoint = nkm_section_CPOI | nkm_section_MEPO & { respawn: 1 }
+type KartPhysicsBasis = {
+	mat: mat4;
+	inv: mat4;
+	normal: vec3;
+	time: number;
+	loop: boolean;
+};
+
+type kart_checkpoint = nkm_section_CPOI | (nkm_section_MEPO & { respawn: 1 });
 
 export class Kart {
 	pos: vec3;
 	angle: number;
 	speed: number;
 	controller: Controls;
-	_scene: courseScene;
-	_kartN: number;
-	_charN: number;
-	_minimumMove: number;
-	_MAXSPEED: number;
-	_BOOSTTIME: number;
-	_kartSoundBase: number;
-	_COLBOUNCE_TIME: number;
-	_COLBOUNCE_STRENGTH: number;
-	_params: any;
-	_offsets: any;
+	private _scene: courseScene;
+	private _kartN: number;
+	private _charN: number;
+	private _minimumMove: number;
+	private _MAXSPEED: number;
+	private _BOOSTTIME: number;
+	private _kartSoundBase: number;
+	private _COLBOUNCE_TIME: number;
+	private _COLBOUNCE_STRENGTH: number;
+	private _params: kartphysicalparam_kart;
+	private _offsets: kartoffsetdata_kart;
 	wheelClass: number;
-	local: any;
+	local: boolean;
 	active: boolean;
 	preboost: boolean;
 	items: KartItems;
-	soundProps: kart_sound;
+	soundProps: nitroAudioSoundProps;
 	vel: vec3;
-	weight: any;
-	params: any;
+	weight: number;
+	params: kartphysicalparam_kart;
 	drifting: boolean;
 	driftMode: number;
 	driftLanded: boolean;
@@ -77,11 +91,11 @@ export class Kart {
 	mat: mat4;
 	basis: mat4;
 	ylock: number;
-	cannon: number;
+	cannon: number | null;
 	gravity: vec3;
 	damageTime: number;
 	damageType: number;
-	trackAttach: null;
+	trackAttach: vec3 | null;
 	boostMT: number;
 	boostNorm: number;
 	kartColVel: vec3;
@@ -90,60 +104,54 @@ export class Kart {
 	charSoundTimer: number;
 	placement: number;
 	lastPlacement: number;
-	_charRes: IngameRes_character;
-	_kartRes: any;
-	_kartPolys: any[];
-	_kObj: any;
-	_tireRes: any;
+	private _charRes: IngameRes_character;
+	private _kartRes: nitroModel;
+	private _kartPolys: number[];
+	private _kObj: nsbmd_modelData;
+	private _tireRes: tires;
 	anim: nitroAnimator;
 	charRes: IngameRes_character;
 	animMode: string;
 	driveAnimF: number;
 	animFrame: number;
-	animMat: nitroAnimator_matStack;
-	lastInput: InputData;
+	animMat!: nitroAnimator_matStack;
+	lastInput: InputData | null;
 	lapNumber: number;
 	passedKTP2: boolean;
 	checkPointNumber: number;
 	OOB: number;
 	wheelParticles: NitroEmitter[];
-	_nkm: nkm;
-	_startLine: nkm_section_KTPS;
-	_passLine: nkm_section_KTPS;
-	_respawns: nkm_section_KTPJ[];
-	_checkpoints: kart_checkpoint[];
+	private _nkm: nkm;
+	private _startLine: nkm_section_KTPS;
+	private _passLine: nkm_section_KTPS;
+	private _respawns: nkm_section_KTPJ[];
+	private _checkpoints: kart_checkpoint[];
 
-	_futureChecks: number[];
-	_hitGroundAnim: number[];
-	_charGroundAnim: number[];
+	private _futureChecks: number[];
+	private _hitGroundAnim: number[];
+	private _charGroundAnim: number[];
 	_lastCollided: number;
-	_lastBE: number;
-	_lastColSounds: kart_sound;
-	_ylvel: number;
+	private _lastBE: number;
+	private _lastColSounds: KartCollisionSounds;
+	private _ylvel: number;
 	_wheelTurn: number;
-	_onGround: any;
-	_kartAnim: number;
-	_groundAnim: number;
-	_stuckTo: lsc_taget;
-	_updateMat: boolean;
-	_drawMat: {
+	private _onGround: boolean;
+	private _kartAnim: number;
+	private _groundAnim: number;
+	private _stuckTo: lsc_taget | null;
+	private _updateMat: boolean;
+	private _drawMat: {
 		kart: mat4;
 		wheels: mat4[];
 		character: mat4;
 	};
-	_soundMode: number;
-	_sounds: kart_sound;
-	lWheelParticle: null;
-	specialControlHandler: boolean;
+	private _soundMode: number;
+	private _sounds: KartRuntimeSounds;
+	lWheelParticle: NitroEmitter | null;
+	specialControlHandler!: boolean;
 
-	damageMat: mat4;
-	physBasis: {
-		mat: mat4;
-		inv: mat4;
-		normal: any;
-		time: number;
-		loop: boolean;
-	};
+	damageMat: mat4 | null;
+	physBasis: KartPhysicsBasis | null;
 	profile: {
 		name: string;
 		emblem: HTMLCanvasElement;
@@ -151,7 +159,6 @@ export class Kart {
 	};
 
 	constructor(pos: vec3, angle: number, speed: number, kartN: number, charN: number, controller: Controls, scene: courseScene) {
-
 		this.pos = pos;
 		this.angle = angle;
 		this.speed = speed;
@@ -160,7 +167,6 @@ export class Kart {
 
 		this._kartN = kartN;
 		this._charN = charN;
-
 
 		this._minimumMove = 0.05;
 		this._MAXSPEED = 24;
@@ -173,7 +179,7 @@ export class Kart {
 
 		this._params = this._scene.gameRes.kartPhys.karts[this._kartN];
 		this._offsets = this._scene.gameRes.kartOff.karts[this._kartN];
-		this.wheelClass = (this._offsets.name[10] == "L") ? 2 : ((this._offsets.name[10] == "M") ? 1 : 0);
+		this.wheelClass = this._offsets.name[10] == "L" ? 2 : this._offsets.name[10] == "M" ? 1 : 0;
 
 		this.local = this.controller.local;
 		this.active = true;
@@ -188,8 +194,6 @@ export class Kart {
 		this.weight = this._params.weight;
 		this.params = this._params;
 
-
-
 		this.drifting = false;
 		this.driftMode = 0; //1 left, 2 right, 0 undecided
 		this.driftLanded = false; //if we haven't landed then apply a constant turn.
@@ -201,7 +205,6 @@ export class Kart {
 		this.kartTargetNormal = [0, 1, 0];
 		this.kartNormal = [0, 1, 0];
 		this.airTime = 0;
-
 
 		this.driftOff = 0;
 		this.physicalDir = this.angle;
@@ -233,18 +236,18 @@ export class Kart {
 		this._charRes = this._scene.gameRes.getChar(this._charN);
 		this._kartRes = this._scene.gameRes.getKart(this._kartN);
 		this._kartPolys = [];
-		
+
 		this.profile = {
 			name: this._scene.gameRes.charNames[this._charN],
 			emblem: this._charRes.emblem.readTexWithPal(0, 0),
 			thumb: this._scene.gameRes.playerThumb.toCanvas(true, this._charN),
-		}
+		};
 
 		this._kObj = this._kartRes.bmd.modelData.objectData[0];
 
-		for (var i = 0; i < this._kObj.polys.objectData.length; i++) {
+		for (let i = 0; i < this._kObj.polys.objectData.length; i++) {
 			if (this._kObj.materials.names[this._kObj.polys.objectData[i].mat] != "kart_tire") {
-				this._kartPolys.push(i)
+				this._kartPolys.push(i);
 			}
 		}
 
@@ -255,8 +258,6 @@ export class Kart {
 		this.animMode = "drive";
 		this.driveAnimF = 14; //29 frames in total, 14 is mid
 		this.animFrame = 0; //only used for non drive anim
-		this.animMat = null;
-
 		this.lastInput = null;
 
 		//race statistics
@@ -267,7 +268,7 @@ export class Kart {
 
 		this.wheelParticles = [
 			new NitroEmitter(this._scene, this, -1, [1, 1.5, -1]),
-			new NitroEmitter(this._scene, this, -1, [-1, 1.5, -1])
+			new NitroEmitter(this._scene, this, -1, [-1, 1.5, -1]),
 		];
 
 		this._scene.particles.push(this.wheelParticles[0]);
@@ -279,52 +280,29 @@ export class Kart {
 		this._respawns = this._nkm.sections["KTPJ"].entries;
 		this._checkpoints = this._nkm.sections["CPOI"].entries;
 
-		if (this._checkpoints.length <= 0) { // mini_stages games
-			this._checkpoints = this._nkm.sections["MEPO"].entries.map(
-				e => ({ ...e, respawn: 1 })
-			);
+		if (this._checkpoints.length <= 0) {
+			// mini_stages games
+			this._checkpoints = this._nkm.sections["MEPO"].entries.map((e) => ({ ...e, respawn: 1 }));
 		}
 
 		this._futureChecks = [1];
 
-		this._hitGroundAnim = [ //length 13, on y axis
-			1.070,
-			1.130,
-			1.170,
-			1.190,
-			1.2,
-			1.190,
-			1.170,
-			1.130,
-			1.070,
-			1,
-			0.950,
-			0.920,
-			0.950,
-		]
+		this._hitGroundAnim = [
+			//length 13, on y axis
+			1.07, 1.13, 1.17, 1.19, 1.2, 1.19, 1.17, 1.13, 1.07, 1, 0.95, 0.92, 0.95,
+		];
 
-		this._charGroundAnim = [ //length 13, on y axis
-			1,
-			1,
-			1,
-			1,
-			1,
-			1.080,
-			1.140,
-			1.180,
-			1.140,
-			1.060,
-			0.970,
-			0.960,
-			0.980,
-		]
+		this._charGroundAnim = [
+			//length 13, on y axis
+			1, 1, 1, 1, 1, 1.08, 1.14, 1.18, 1.14, 1.06, 0.97, 0.96, 0.98,
+		];
 
 		this._lastCollided = -1;
 		this._lastBE = -1;
 		this._lastColSounds = {};
 		this._ylvel = 0;
 		this._wheelTurn = 0;
-		this._onGround;
+		this._onGround = false;
 
 		this._kartAnim = 0;
 		this._groundAnim = -1;
@@ -335,13 +313,14 @@ export class Kart {
 		this._drawMat = {
 			kart: mat4.create(),
 			wheels: [mat4.create(), mat4.create(), mat4.create(), mat4.create()],
-			character: mat4.create()
-		}
+			character: mat4.create(),
+		};
 
 		this.controller.setKart(this);
 
 		this._soundMode = -1;
-		this._sounds = { //sounds that can be simultaneous
+		this._sounds = {
+			//sounds that can be simultaneous
 			kart: null,
 			drift: null,
 			lastTerrain: -1,
@@ -350,53 +329,63 @@ export class Kart {
 			boost: null,
 			powerslide: null,
 			boostSoundTrig: true, //true if a new boost sound can be played
-			transpose: 0
-		}
+			transpose: 0,
+		};
 		this._updateKartSound(0, {
 			turn: 0,
 			accel: false,
 			decel: false,
 			drift: false,
 			item: false,
-			airTurn: 0
+			airTurn: 0,
 		});
 
 		this.lWheelParticle = null;
+		this.damageMat = null;
+		this.physBasis = null;
 	}
 
-	_recalcMat(view: mat4) {
-		var mat = mat4.mul(mat4.create(), view, this.mat);
-		var xscale = 1 + Math.cos((this._kartAnim / 4) * Math.PI) * 0.015;
-		var yscale = 1 + Math.cos(((this._kartAnim + 4) / 4) * Math.PI) * 0.015;
+	private _recalcMat(view: mat4) {
+		let mat = mat4.mul(mat4.create(), view, this.mat);
+		let xscale = 1 + Math.cos((this._kartAnim / 4) * Math.PI) * 0.015;
+		let yscale = 1 + Math.cos(((this._kartAnim + 4) / 4) * Math.PI) * 0.015;
 
 		if (this._groundAnim != -1) yscale *= this._hitGroundAnim[this._groundAnim];
 
 		mat4.translate(mat, mat, [0, -this._params.colRadius, 0]); //main part
-		var kmat = mat4.scale(this._drawMat.kart, mat, [16 * xscale, 16 * yscale, 16]);
+		let kmat = mat4.scale(this._drawMat.kart, mat, [16 * xscale, 16 * yscale, 16]);
 
 		//wheels
-		for (var i = 0; i < 4; i++) {
-			var scale = 16 * ((i < 2) ? this._offsets.frontTireSize : 1);
-			var wmat = mat4.translate(this._drawMat.wheels[i], mat, [0, 0, 0]);
+		for (let i = 0; i < 4; i++) {
+			let scale = 16 * (i < 2 ? this._offsets.frontTireSize : 1);
+			let wmat = mat4.translate(this._drawMat.wheels[i], mat, [0, 0, 0]);
 
 			if (this._groundAnim != -1) mat4.scale(wmat, wmat, [1, this._hitGroundAnim[this._groundAnim], 1]);
 
 			mat4.translate(wmat, wmat, this._offsets.wheels[i]);
 			mat4.scale(wmat, wmat, [scale, scale, scale]);
-			if (i < 2) mat4.rotateY(wmat, wmat, ((this.driveAnimF - 14) / 14) * Math.PI / 6);
+			if (i < 2) mat4.rotateY(wmat, wmat, (((this.driveAnimF - 14) / 14) * Math.PI) / 6);
 			mat4.rotateX(wmat, wmat, this._wheelTurn);
 
 			if (i > 1) {
-				this.wheelParticles[i - 2].offset = vec3.scale(this.wheelParticles[i - 2].offset, vec3.add(this.wheelParticles[i - 2].offset, this._offsets.wheels[i], [this.wheelClass * (i - 2.5) * -2, (-this._params.colRadius) - this.wheelClass * 2, 0]), 1 / 16);
+				this.wheelParticles[i - 2].offset = vec3.scale(
+					this.wheelParticles[i - 2].offset,
+					vec3.add(this.wheelParticles[i - 2].offset, this._offsets.wheels[i], [
+						this.wheelClass * (i - 2.5) * -2,
+						-this._params.colRadius - this.wheelClass * 2,
+						0,
+					]),
+					1 / 16
+				);
 			}
 		}
 
-		var scale = 16;
-		var pos = vec3.clone(this._offsets.chars[this._charN]);
+		let scale = 16;
+		let pos = vec3.clone(this._offsets.chars[this._charN]);
 
 		if (this._groundAnim != -1) pos[1] *= this._charGroundAnim[this._groundAnim];
 
-		var cmat = mat4.translate(this._drawMat.character, mat, vec3.scale([0, 0, 0], pos, 16))
+		let cmat = mat4.translate(this._drawMat.character, mat, vec3.scale([0, 0, 0], pos, 16));
 		mat4.scale(cmat, cmat, [scale, scale, scale]);
 
 		if (this.animMode == "drive") this.animMat = this.anim.setFrame(0, 0, this.driveAnimF);
@@ -421,33 +410,32 @@ export class Kart {
 			gl.depthMask(false);
 
 			gl.enable(gl.STENCIL_TEST);
-			gl.stencilMask(0xFF);
-			gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+			gl.stencilMask(0xff);
+			gl.stencilFunc(gl.ALWAYS, 1, 0xff);
 			gl.stencilOp(gl.KEEP, gl.INCR, gl.KEEP);
 
 			this._kartRes.shadVol.draw(this._drawMat.kart, pMatrix, simpleMatStack);
 
-			gl.colorMask(true, true, true, true)
+			gl.colorMask(true, true, true, true);
 			//gl.cullFace(gl.BACK);
-			gl.stencilFunc(gl.LESS, 0, 0xFF);
+			gl.stencilFunc(gl.LESS, 0, 0xff);
 			gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
 
 			this._kartRes.shadVol.draw(this._drawMat.kart, pMatrix, simpleMatStack);
 			gl.disable(gl.STENCIL_TEST);
 			//gl.disable(gl.CULL_FACE);
 			gl.depthMask(true);
-
 		}
 
-		for (var i = 0; i < this._kartPolys.length; i++) {
+		for (let i = 0; i < this._kartPolys.length; i++) {
 			this._kartRes.drawPoly(this._drawMat.kart, pMatrix, 0, this._kartPolys[i], simpleMatStack);
 		}
 	}
 
 	drawWheels(view: mat4, pMatrix: mat4) {
 		if (this._updateMat) this._recalcMat(view);
-		var wheelMod = this._tireRes[this._offsets.name];
-		for (var i = 0; i < 4; i++) {
+		let wheelMod = this._tireRes[this._offsets.name];
+		for (let i = 0; i < 4; i++) {
 			wheelMod.draw(this._drawMat.wheels[i], pMatrix, simpleMatStack);
 		}
 	}
@@ -469,17 +457,17 @@ export class Kart {
 			this.lastPlacement = this.placement;
 		}
 
-		var lastPos = vec3.clone(this.pos);
+		let lastPos = vec3.clone(this.pos);
 		this._updateMat = true;
 
 		if (this._groundAnim != -1) {
 			if (++this._groundAnim >= this._hitGroundAnim.length) this._groundAnim = -1;
 		}
 
-		this._onGround = (this.airTime < 5);
+		this._onGround = this.airTime < 5;
 
 		this._kartAnim = (this._kartAnim + 1) % 8;
-		var input = this.controller.fetchInput();
+		let input = this.controller.fetchInput();
 		this.lastInput = input;
 		this.items.update(input);
 
@@ -493,7 +481,7 @@ export class Kart {
 		}
 
 		//update sounds
-		var newSoundMode = this._soundMode;
+		let newSoundMode = this._soundMode;
 		if (input.accel) {
 			if (this._soundMode == 0 || this._soundMode == 6) newSoundMode = 2;
 			if (this._soundMode == 4) newSoundMode = 3;
@@ -508,8 +496,9 @@ export class Kart {
 			if (this.boostNorm == this._BOOSTTIME || this.boostMT == this._params.miniTurbo) {
 				if (this._sounds.boostSoundTrig) {
 					if (this._sounds.boost != null) nitroAudio.instaKill(this._sounds.boost);
-					this._sounds.boost = nitroAudio.playSound(160, {}, 0, this);
-					this._sounds.boost.gainN.gain.value = parseFloat("2");
+					const boostSound = nitroAudio.playSound(160, {}, 0, this);
+					this._sounds.boost = boostSound;
+					if (boostSound != null) boostSound.gainN.gain.value = parseFloat("2");
 					this._sounds.boostSoundTrig = false;
 				}
 			} else {
@@ -520,13 +509,14 @@ export class Kart {
 			this._sounds.boost = null;
 		}
 
-		var isMoving = this._onGround && this.speed > 0.5;
+		let isMoving = this._onGround && this.speed > 0.5;
 		if (isMoving) {
 			if (this._lastCollided != this._sounds.lastTerrain || this._lastBE != this._sounds.lastBE || this._sounds.drive == null) {
 				if (this._sounds.drive != null) nitroAudio.kill(this._sounds.drive);
 				if (this._lastColSounds.drive != null) {
-					this._sounds.drive = nitroAudio.playSound(this._lastColSounds.drive, {}, 0, this);
-					this._sounds.drive.gainN.gain.value = parseFloat("2");
+					const driveSound = nitroAudio.playSound(this._lastColSounds.drive, {}, 0, this);
+					this._sounds.drive = driveSound;
+					if (driveSound != null) driveSound.gainN.gain.value = parseFloat("2");
 				}
 			}
 
@@ -537,14 +527,22 @@ export class Kart {
 						this._sounds.drift = nitroAudio.playSound(this._lastColSounds.drift, {}, 0, this);
 					}
 				}
-			} else if (this._sounds.drift != null) { nitroAudio.kill(this._sounds.drift); this._sounds.drift = null; }
+			} else if (this._sounds.drift != null) {
+				nitroAudio.kill(this._sounds.drift);
+				this._sounds.drift = null;
+			}
 
 			this._sounds.lastTerrain = this._lastCollided;
 			this._sounds.lastBE = this._lastBE;
 		} else {
-			if (this._sounds.drift != null) { nitroAudio.kill(this._sounds.drift); this._sounds.drift = null; }
-			if (this._sounds.drive != null) { nitroAudio.kill(this._sounds.drive); this._sounds.drive = null; }
-
+			if (this._sounds.drift != null) {
+				nitroAudio.kill(this._sounds.drift);
+				this._sounds.drift = null;
+			}
+			if (this._sounds.drive != null) {
+				nitroAudio.kill(this._sounds.drive);
+				this._sounds.drive = null;
+			}
 		}
 		this.wheelParticles[0].pause = !isMoving;
 		this.wheelParticles[1].pause = !isMoving;
@@ -552,15 +550,15 @@ export class Kart {
 		//end sound update
 
 		if (this.preboost) {
-
-		} else if (this.cannon != null) { //when cannon is active, we fly forward at max move speed until we get to the cannon point.
-			var c = scene.nkm.sections["KTPC"].entries[this.cannon];
+		} else if (this.cannon != null) {
+			//when cannon is active, we fly forward at max move speed until we get to the cannon point.
+			let c = scene.nkm.sections["KTPC"].entries[this.cannon];
 
 			if (c.id1 != -1 && c.id2 != -1) {
-				var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
+				let c2 = scene.nkm.sections["KTPC"].entries[c.id2];
 				c = c2;
 
-				var mat = mat4.create();
+				let mat = mat4.create();
 				mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
 				mat4.rotateX(mat, mat, c.angle[0] * (-Math.PI / 180));
 
@@ -572,21 +570,21 @@ export class Kart {
 				this.angle = this.physicalDir;
 				this.cannon = null;
 			} else {
-				var mat = mat4.create();
+				let mat = mat4.create();
 				mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
 				if (true) {
 					//vertical angle from position? airship fortress is impossible otherwise
 					//var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
-					var diff = vec3.sub([0, 0, 0], c.pos, this.pos);
-					var dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
-					var dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-					mat4.rotateX(mat, mat, ((diff[1] > 0) ? -1 : 1) * Math.acos(dAdj / dHyp));
+					let diff = vec3.sub([0, 0, 0], c.pos, this.pos);
+					let dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
+					let dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+					mat4.rotateX(mat, mat, (diff[1] > 0 ? -1 : 1) * Math.acos(dAdj / dHyp));
 				} else {
 					mat4.rotateX(mat, mat, c.angle[0] * (-Math.PI / 180));
 				}
 
-				var forward: vec3 = [0, 0, 1];
-				var up: vec3 = [0, 1, 0];
+				let forward: vec3 = [0, 0, 1];
+				let up: vec3 = [0, 1, 0];
 
 				this.vel = vec3.scale([0, 0, 0], vec3.transformMat4(forward, forward, mat), this._MAXSPEED);
 				this.speed = Math.min(this.speed + 1, this._MAXSPEED);
@@ -596,23 +594,23 @@ export class Kart {
 				this.kartTargetNormal = vec3.transformMat4(up, up, mat);
 				this.airTime = 0;
 
-				var planeConst = -vec3.dot(c.pos, forward);
-				var cannonDist = vec3.dot(this.pos, forward) + planeConst;
+				let planeConst = -vec3.dot(c.pos, forward);
+				let cannonDist = vec3.dot(this.pos, forward) + planeConst;
 				if (cannonDist > 0) {
 					this.cannon = null; //leaving cannon state
 					this.speed = this._params.topSpeed;
 					this.vel = vec3.scale([0, 0, 0], vec3.transformMat4(forward, forward, mat), this.speed);
 				}
 			}
-		} else { //default kart mode
+		} else {
+			//default kart mode
 			if (this.OOB > 0) {
 				this.playCharacterSound(0);
-				var current = this._checkpoints[this.checkPointNumber];
-				var respawn;
+				let current = this._checkpoints[this.checkPointNumber];
+				let respawn;
 				if (current == null)
 					respawn = this._respawns[(Math.random() * this._respawns.length) | 0]; //todo: deterministic
-				else
-					respawn = this._respawns[current.respawn];
+				else respawn = this._respawns[current.respawn];
 				this.physicalDir = (180 - respawn.angle[1]) * (Math.PI / 180);
 				this.angle = this.physicalDir;
 				this.speed = 0;
@@ -622,26 +620,26 @@ export class Kart {
 				if (this.controller.setRouteID != null) this.controller.setRouteID(respawn.id1);
 				this.OOB = 0;
 			}
-			var groundEffect = 0;
+			let groundEffect = 0;
 			if (this._lastCollided != -1) {
 				groundEffect = MKDS_COLTYPE.PHYS_MAP[this._lastCollided];
 				if (groundEffect == null) groundEffect = 0;
 			}
 
-			var effect = this._params.colParam[groundEffect];
-			var top = this._params.topSpeed * effect.topSpeedMul; //if you let go of accel, drift ends anyway, so always accel in drift.
+			let effect = this._params.colParam[groundEffect];
+			let top = this._params.topSpeed * effect.topSpeedMul; //if you let go of accel, drift ends anyway, so always accel in drift.
 
-			var boosting = (this.boostNorm + this.boostMT) > 0;
+			let boosting = this.boostNorm + this.boostMT > 0;
 			if (this.specialControlHandler) {
 				this._damagedControls();
 			} else {
 				if (boosting) {
-					var top2
+					let top2;
 					if (this.boostNorm > 0) {
 						top2 = this._params.topSpeed * 1.3;
 						this.boostNorm--;
 					} else {
-						top2 = this._params.topSpeed * ((effect.topSpeedMul >= 1) ? 1.3 : effect.topSpeedMul);
+						top2 = this._params.topSpeed * (effect.topSpeedMul >= 1 ? 1.3 : effect.topSpeedMul);
 					}
 
 					if (this.boostMT > 0) {
@@ -658,7 +656,7 @@ export class Kart {
 
 				//kart controls
 				if (this.drifting) {
-					if ((this._onGround) && !(input.accel && input.drift && (this.speed > 2 || !this.driftLanded))) {
+					if (this._onGround && !(input.accel && input.drift && (this.speed > 2 || !this.driftLanded))) {
 						//end drift, execute miniturbo
 						this._endDrift();
 						if (this.driftPSMode == 3) {
@@ -669,21 +667,21 @@ export class Kart {
 					}
 
 					if (this.driftMode == 0) {
-						if (input.turn > 0.30) {
+						if (input.turn > 0.3) {
 							this.driftMode = 2;
-						} else if (input.turn < -0.30) {
+						} else if (input.turn < -0.3) {
 							this.driftMode = 1;
 						}
 					} else {
 						if (this.driftLanded) {
-							var change = (((this.driftMode - 1.5) * Math.PI / 1.5) - this.driftOff) * 0.05;
+							let change = (((this.driftMode - 1.5) * Math.PI) / 1.5 - this.driftOff) * 0.05;
 							this.driftOff += change;
 							this.physicalDir -= change;
 						}
 
 						//if we're above the initial y position, add a constant turn with a period of 180 frames.
 						if (!this.driftLanded && this.ylock >= 0) {
-							this.physicalDir += (Math.PI * 2 / 180) * (this.driftMode * 2 - 3);
+							this.physicalDir += ((Math.PI * 2) / 180) * (this.driftMode * 2 - 3);
 						}
 					}
 
@@ -691,8 +689,7 @@ export class Kart {
 						if (!this.driftLanded) {
 							if (this.driftMode == 0) {
 								this._endDrift();
-							}
-							else {
+							} else {
 								this.driftPSMode = 0;
 								this.driftPSTick = 0;
 								this.driftLanded = true;
@@ -700,28 +697,28 @@ export class Kart {
 							}
 						}
 						if (this.drifting) {
-
 							if (!boosting) {
 								if (this.speed <= top) {
-									this.speed += (this.speed / top > this._params.driftAccelSwitch) ? this._params.driftAccel2 : this._params.driftAccel1;
+									this.speed +=
+										this.speed / top > this._params.driftAccelSwitch
+											? this._params.driftAccel2
+											: this._params.driftAccel1;
 									if (this.speed > top) this.speed = top;
 								} else {
 									this.speed *= 0.95;
 								}
 							}
 
-							var turn = ((this.driftMode == 1) ? (input.turn - 1) : (input.turn + 1)) / 2;
+							let turn = (this.driftMode == 1 ? input.turn - 1 : input.turn + 1) / 2;
 
-							this.physicalDir += this._params.driftTurnRate * turn + ((this.driftMode == 1) ? -1 : 1) * (50 / 32768) * Math.PI; //what is this mystery number i hear you ask? well my friend, this is the turn rate for outward drift.
+							this.physicalDir += this._params.driftTurnRate * turn + (this.driftMode == 1 ? -1 : 1) * (50 / 32768) * Math.PI; //what is this mystery number i hear you ask? well my friend, this is the turn rate for outward drift.
 
 							//miniturbo code
 							if (input.turn != 0) {
-								var inward = (
-									(input.turn > 0) == (this.driftMode - 1 > 0)
-								); //if we're turning 
+								let inward = input.turn > 0 == this.driftMode - 1 > 0; //if we're turning
 
 								switch (this.driftPSMode) {
-									case 0: //dpad away from direction for 10 frames 
+									case 0: //dpad away from direction for 10 frames
 										if (!inward) this.driftPSTick++;
 										else if (this.driftPSTick > 9) {
 											this.driftPSMode++;
@@ -729,20 +726,18 @@ export class Kart {
 
 											//play blue spark sound, flare
 											this._setWheelParticles(126, 2); //126 = blue flare, 2 = flare priority
-											var blue = nitroAudio.playSound(210, {}, 0, this);
+											let blue = nitroAudio.playSound(210, {}, 0, this)!;
 											blue.gainN.gain.value = parseFloat("2");
-
 										} else this.driftPSTick = 0;
 										break;
-									case 1: //dpad toward direction for 10 frames 
+									case 1: //dpad toward direction for 10 frames
 										if (inward) this.driftPSTick++;
 										else if (this.driftPSTick > 9) {
 											this.driftPSMode++;
 											this.driftPSTick = 1;
-
 										} else this.driftPSTick = 0;
 										break;
-									case 2: //dpad away from direction for 10 frames 
+									case 2: //dpad away from direction for 10 frames
 										if (!inward) this.driftPSTick++;
 										else if (this.driftPSTick > 9) {
 											this.driftPSMode++;
@@ -750,8 +745,9 @@ export class Kart {
 											//play red sparks sound, full MT!
 											this._setWheelParticles(22, 2); //22 = red flare, 2 = flare priority
 											this._setWheelParticles(17, 1); //17 = red mt, 1 = drift priority ... 18 is sparks that come out - but their mode is not working yet (spark mode)
-											this._sounds.powerslide = nitroAudio.playSound(209, {}, 0, this);
-											this._sounds.powerslide.gainN.gain.value = parseFloat("2");
+											const powerslideSound = nitroAudio.playSound(209, {}, 0, this);
+											this._sounds.powerslide = powerslideSound;
+											if (powerslideSound != null) powerslideSound.gainN.gain.value = parseFloat("2");
 										} else this.driftPSTick = 0;
 										break;
 									case 3: //turbo charged
@@ -764,11 +760,11 @@ export class Kart {
 
 				if (!this.drifting) {
 					if (this._onGround) {
-						var effect = this._params.colParam[groundEffect];
+						let effect = this._params.colParam[groundEffect];
 						if (!boosting) {
 							if (input.accel) {
 								if (this.speed <= top) {
-									this.speed += (this.speed / top > this._params.accelSwitch) ? this._params.accel2 : this._params.accel1;
+									this.speed += this.speed / top > this._params.accelSwitch ? this._params.accel2 : this._params.accel1;
 									if (this.speed > top) this.speed = top;
 								} else {
 									this.speed *= 0.95;
@@ -778,7 +774,7 @@ export class Kart {
 							}
 						}
 
-						if ((input.accel && this.speed >= 0) || (this.speed > 0.1)) {
+						if ((input.accel && this.speed >= 0) || this.speed > 0.1) {
 							this.physicalDir += this._params.turnRate * input.turn;
 						} else if (this.speed < -0.1) {
 							this.physicalDir -= this._params.turnRate * input.turn;
@@ -794,7 +790,7 @@ export class Kart {
 							this.ylock = 0;
 							this._onGround = false;
 
-							var boing = nitroAudio.playSound(207, { transpose: -4 }, 0, this);
+							let boing = nitroAudio.playSound(207, { transpose: -4 }, 0, this)!;
 							boing.gainN.gain.value = parseFloat("2");
 						}
 					} else {
@@ -828,7 +824,7 @@ export class Kart {
 			if (!this._onGround) {
 				this.kartTargetNormal = [0, 1, 0];
 				if (this.physBasis != null) vec3.transformMat4(this.kartTargetNormal, this.kartTargetNormal, this.physBasis.mat);
-				vec3.add(this.vel, this.vel, this.gravity)
+				vec3.add(this.vel, this.vel, this.gravity);
 				if (this.ylock >= 0) {
 					this._ylvel += this.gravity[1];
 					this.ylock += this._ylvel;
@@ -845,12 +841,12 @@ export class Kart {
 				this.angle = this._fixDir(this.angle);
 
 				//reduce our forward speed by how much of our velocity is not going forwards
-				var factor = Math.sin(this.physicalDir) * Math.sin(this.angle) + Math.cos(this.physicalDir) * Math.cos(this.angle);
-				this.speed *= 1 - ((1 - factor) * (1 - this.params.decel));
+				let factor = Math.sin(this.physicalDir) * Math.sin(this.angle) + Math.cos(this.physicalDir) * Math.cos(this.angle);
+				this.speed *= 1 - (1 - factor) * (1 - this.params.decel);
 				//var reducedSpeed = k.vel[0]*Math.sin(k.angle) + k.vel[2]*(-Math.cos(k.angle));
 				//reducedSpeed = ((reducedSpeed < 0) ? -1 : 1) * Math.sqrt(Math.abs(reducedSpeed));
 				this.vel[1] += this.gravity[1];
-				this.vel = [Math.sin(this.angle) * this.speed, this.vel[1], -Math.cos(this.angle) * this.speed]
+				this.vel = [Math.sin(this.angle) * this.speed, this.vel[1], -Math.cos(this.angle) * this.speed];
 				//k.speed = reducedSpeed;
 
 				/*
@@ -877,11 +873,11 @@ export class Kart {
 				this._stuckTo = null;
 			}
 
-			//move kart. 
+			//move kart.
 
-			var steps = 0;
-			var remainingT = 1;
-			var baseVel = this.vel;
+			let steps = 0;
+			let remainingT = 1;
+			let baseVel = this.vel;
 			if (this.physBasis != null) {
 				if (this.physBasis.time-- < 0) this.exitBasis();
 				else {
@@ -889,16 +885,22 @@ export class Kart {
 					this.vel[1] = -1;
 				}
 			}
-			var velSeg = vec3.clone(baseVel);
+			let velSeg = vec3.clone(baseVel);
 			if (this.kartColTimer > 0) {
 				vec3.add(velSeg, velSeg, vec3.scale([0, 0, 0], this.kartColVel, this.kartColTimer / this._COLBOUNCE_TIME));
 			}
-			var posSeg = vec3.clone(this.pos);
-			var ignoreList: kcl_plane[] = [];
+			let posSeg = vec3.clone(this.pos);
+			let ignoreList: lsc_collision_triangle[] = [];
 			while (steps++ < 10 && remainingT > 0.01) {
-				var result = lsc.sweepEllipse(posSeg, velSeg, scene, [this._params.colRadius, this._params.colRadius, this._params.colRadius], ignoreList);
+				let result = lsc.sweepEllipse(
+					posSeg,
+					velSeg,
+					scene,
+					[this._params.colRadius, this._params.colRadius, this._params.colRadius],
+					ignoreList
+				);
 				if (result != null) {
-					this._colResponse(posSeg, velSeg, result, ignoreList)
+					this._colResponse(posSeg, velSeg, result, ignoreList);
 					remainingT -= result.t;
 					if (remainingT > 0.01) {
 						if (this.physBasis != null) {
@@ -915,7 +917,7 @@ export class Kart {
 		}
 
 		//interpolate visual normal roughly to target
-		var rate = this._onGround ? 0.15 : 0.025;
+		let rate = this._onGround ? 0.15 : 0.025;
 		this.kartNormal[0] += (this.kartTargetNormal[0] - this.kartNormal[0]) * rate;
 		this.kartNormal[1] += (this.kartTargetNormal[1] - this.kartNormal[1]) * rate;
 		this.kartNormal[2] += (this.kartTargetNormal[2] - this.kartNormal[2]) * rate;
@@ -923,7 +925,7 @@ export class Kart {
 
 		this.basis = this._buildBasis();
 
-		var mat = mat4.create();
+		let mat = mat4.create();
 		mat4.translate(mat, mat, this.pos);
 		this.mat = mat4.mul(mat, mat, this.basis);
 		if (this.damageMat != null) mat4.mul(mat, mat, this.damageMat);
@@ -932,7 +934,7 @@ export class Kart {
 		this._positionChanged(lastPos, this.pos);
 	}
 
-	_endDrift() {
+	private _endDrift() {
 		this.drifting = false;
 		this._clearWheelParticles();
 		if (this._sounds.powerslide != null) {
@@ -947,7 +949,7 @@ export class Kart {
 		}
 		//TODO: check invuln state
 		this.specialControlHandler = true;
-		this.playCharacterSound((damageType == 0) ? 1 : 0);
+		this.playCharacterSound(damageType == 0 ? 1 : 0);
 		this.damageType = damageType;
 		this.ylock = 0;
 
@@ -979,7 +981,7 @@ export class Kart {
 		}
 	}
 
-	_damagedControls() {
+	private _damagedControls() {
 		if (--this.damageTime == 0) {
 			this.anim.setAnim(this.charRes.driveA);
 			this.animMode = "drive";
@@ -990,7 +992,7 @@ export class Kart {
 		vec3.scale(this.vel, this.vel, 0.98);
 		this.speed *= 0.98;
 
-		var total = 40;
+		let total = 40;
 		switch (this.damageType) {
 			case 1:
 				total = 80;
@@ -999,20 +1001,20 @@ export class Kart {
 				total = 105;
 				break;
 		}
-		var anim = 1 - (this.damageTime / total);
+		let anim = 1 - this.damageTime / total;
 
 		this.damageMat = mat4.create();
-		var flip = ((this.damageType % 2) == 1) ? 1 : -1;
-		var animOff = Math.min(1, anim * 1.75);
+		let flip = this.damageType % 2 == 1 ? 1 : -1;
+		let animOff = Math.min(1, anim * 1.75);
 		mat4.rotateX(this.damageMat, this.damageMat, Math.PI * 2 * animOff * this.damageType * flip);
 		if (this.damageType == 0) mat4.rotateY(this.damageMat, this.damageMat, Math.PI * -2 * anim);
-		else mat4.rotateY(this.damageMat, this.damageMat, Math.PI / 12 * Math.sin(animOff * Math.PI));
+		else mat4.rotateY(this.damageMat, this.damageMat, (Math.PI / 12) * Math.sin(animOff * Math.PI));
 	}
 
-	_triggerCannon(id: number) {
+	private _triggerCannon(id: number) {
 		if (this.cannon != null) return;
 		this.cannon = id;
-		var c = this._scene.nkm.sections["KTPC"].entries[this.cannon];
+		let c = this._scene.nkm.sections["KTPC"].entries[this.cannon];
 		if (c.id1 != -1 && c.id2 != -1) {
 			nitroAudio.playSound(345, { volume: 2.5 }, 0, this);
 		} else {
@@ -1048,8 +1050,8 @@ export class Kart {
 		nitroAudio.playSound(sound + this._charRes.sndOff, { volume: 2 * volume }, 2, this);
 	}
 
-	_clearWheelParticles(prio?: number) {
-		for (var i = 0; i < 2; i++) {
+	private _clearWheelParticles(prio?: number) {
+		for (let i = 0; i < 2; i++) {
 			if (prio == null) {
 				//clear all specials
 				this.wheelParticles[i].clearEmitter(1); //drift mode
@@ -1060,44 +1062,43 @@ export class Kart {
 		}
 	}
 
-	_setWheelParticles(id: number, prio: number) {
-		for (var i = 0; i < 2; i++) {
+	private _setWheelParticles(id: number, prio: number) {
+		for (let i = 0; i < 2; i++) {
 			this.wheelParticles[i].setEmitter(id, prio);
 		}
 	}
 
-	_genFutureChecks() {
-		//all future points that 
-		var chosen: number[] = []
-		var current = this._checkpoints[this.checkPointNumber] as nkm_section_CPOI;
-		var expectedSection = current.nextSection;
+	private _genFutureChecks() {
+		//all future points that
+		let chosen: number[] = [];
+		let current = this._checkpoints[this.checkPointNumber] as nkm_section_CPOI;
+		let expectedSection = current.nextSection;
 		this._futureChecks = [];
-		for (var i = this.checkPointNumber + 1; i < this._checkpoints.length; i++) {
-			var check = this._checkpoints[i] as nkm_section_CPOI;
+		for (let i = this.checkPointNumber + 1; i < this._checkpoints.length; i++) {
+			let check = this._checkpoints[i] as nkm_section_CPOI;
 			if (expectedSection != -1 && check.currentSection != expectedSection) {
 				continue;
 			}
 
-
 			if (!chosen.includes(check.currentSection)) {
 				this._futureChecks.push(i);
-				chosen.push(check.currentSection)
+				chosen.push(check.currentSection);
 			}
 		}
 	}
 
-	_positionChanged(oldPos: vec3, pos: vec3) {
+	private _positionChanged(oldPos: vec3, pos: vec3) {
 		//crossed into new checkpoint?
 		if (this._checkpoints.length == 0) return;
-		for (var i = 0; i < this._futureChecks.length; i++) {
-			var check = this._checkpoints[this._futureChecks[i]] as nkm_section_CPOI;
-			var distOld = vec2.sub([0, 0], [check.x1, check.z1], [oldPos[0], oldPos[2]]);
-			var dist = vec2.sub([0, 0], [check.x1, check.z1], [pos[0], pos[2]]);
-			var dot = vec2.dot(dist, [check.sinus, check.cosinus]);
-			var dotOld = vec2.dot(distOld, [check.sinus, check.cosinus]);
+		for (let i = 0; i < this._futureChecks.length; i++) {
+			let check = this._checkpoints[this._futureChecks[i]] as nkm_section_CPOI;
+			let distOld = vec2.sub([0, 0], [check.x1, check.z1], [oldPos[0], oldPos[2]]);
+			let dist = vec2.sub([0, 0], [check.x1, check.z1], [pos[0], pos[2]]);
+			let dot = vec2.dot(dist, [check.sinus, check.cosinus]);
+			let dotOld = vec2.dot(distOld, [check.sinus, check.cosinus]);
 
-			var lineCheck = vec2.sub([0, 0], [check.x1, check.z1], [check.x2, check.z2]);
-			var lineDot = vec2.dot(dist, lineCheck);
+			let lineCheck = vec2.sub([0, 0], [check.x1, check.z1], [check.x2, check.z2]);
+			let lineDot = vec2.dot(dist, lineCheck);
 
 			if (lineDot > 0 && lineDot < vec2.sqrLen(lineCheck) && dot < 0 && dotOld >= 0) {
 				this.checkPointNumber = this._futureChecks[i];
@@ -1123,52 +1124,57 @@ export class Kart {
 
 	getPosition() {
 		if (this._checkpoints.length == 0 || this._futureChecks.length == 0) return 0;
-		var check = this._checkpoints[this._futureChecks[0]] as nkm_section_CPOI;
-		var dist = vec2.sub([0, 0], [check.x1, check.z1], [this.pos[0], this.pos[2]]);
-		var dot = vec2.dot(dist, [check.sinus, check.cosinus]);
+		let check = this._checkpoints[this._futureChecks[0]] as nkm_section_CPOI;
+		let dist = vec2.sub([0, 0], [check.x1, check.z1], [this.pos[0], this.pos[2]]);
+		let dot = vec2.dot(dist, [check.sinus, check.cosinus]);
 
-		return this.checkPointNumber + (1 - (Math.abs(dot) / (0xFFFF))) + this.lapNumber * this._checkpoints.length;
+		return this.checkPointNumber + (1 - Math.abs(dot) / 0xffff) + this.lapNumber * this._checkpoints.length;
 	}
 
-	_forwardCrossedKTP(ktp: nkm_section_KTPS, oldPos: vec3, pos: vec3) {
-		var distOld = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [oldPos[0], oldPos[2]]);
-		var dist = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [pos[0], pos[2]]);
+	private _forwardCrossedKTP(ktp: nkm_section_KTPS, oldPos: vec3, pos: vec3) {
+		let distOld = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [oldPos[0], oldPos[2]]);
+		let dist = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [pos[0], pos[2]]);
 
-		var ang = (ktp.angle[1] / 180) * Math.PI;
+		let ang = (ktp.angle[1] / 180) * Math.PI;
 
-		var sinus = Math.sin(ang);
-		var cosinus = Math.cos(ang);
+		let sinus = Math.sin(ang);
+		let cosinus = Math.cos(ang);
 
-		var dot = vec2.dot(dist, [sinus, cosinus]);
-		var dotOld = vec2.dot(distOld, [sinus, cosinus]);
+		let dot = vec2.dot(dist, [sinus, cosinus]);
+		let dotOld = vec2.dot(distOld, [sinus, cosinus]);
 
-		return (dot < 0 && dotOld >= 0);
+		return dot < 0 && dotOld >= 0;
 	}
 
-	_checkKartCollision(scene: Scene) { //check collision with other karts. Really simple.
-		for (var i = 0; i < scene.karts.length; i++) {
-			var ok = scene.karts[i];
+	private _checkKartCollision(scene: Scene) {
+		//check collision with other karts. Really simple.
+		for (let i = 0; i < scene.karts.length; i++) {
+			let ok = scene.karts[i];
 			if (!ok.active) continue;
 			if (this != ok) {
-				var dist = vec3.dist(this.pos, ok.pos);
+				let dist = vec3.dist(this.pos, ok.pos);
 				if (dist < 16) {
 					this.kartBounce(ok);
 					ok.kartBounce(this);
 				}
 			}
 		}
-
 	}
 
-	kartBounce(ok: Kart) {
+	private kartBounce(ok: Kart) {
 		//play this kart's horn
-		if (this.kartColTimer == 0) { //not if we're still being bounced
+		if (this.kartColTimer == 0) {
+			//not if we're still being bounced
 			nitroAudio.playSound(208, { volume: 2 }, 0, this);
 			nitroAudio.playSound(193 + this._charRes.sndOff / 14, { volume: 1.5 }, 0, this);
 		}
 
 		this.kartColTimer = this._COLBOUNCE_TIME;
-		var weightMul = this._COLBOUNCE_STRENGTH * (1.5 + (ok.weight - this.weight)) * ((ok.boostNorm > 0 || ok.boostMT > 0) ? 2 : 1) * ((this.boostNorm > 0 || this.boostMT > 0) ? 0.5 : 1);
+		let weightMul =
+			this._COLBOUNCE_STRENGTH *
+			(1.5 + (ok.weight - this.weight)) *
+			(ok.boostNorm > 0 || ok.boostMT > 0 ? 2 : 1) *
+			(this.boostNorm > 0 || this.boostMT > 0 ? 0.5 : 1);
 
 		//as well as side bounce also add velocity difference if other vel > mine.
 
@@ -1181,90 +1187,116 @@ export class Kart {
 		this.kartColVel[1] = 0;
 	}
 
-	_fixDir(dir: number) {
+	private _fixDir(dir: number) {
 		return this._posMod(dir, Math.PI * 2);
 	}
 
-	_dirDiff(dir1: number, dir2: number) {
-		var d = this._fixDir(dir1 - dir2);
-		return (d > Math.PI) ? (-2 * Math.PI + d) : d;
+	private _dirDiff(dir1: number, dir2: number) {
+		let d = this._fixDir(dir1 - dir2);
+		return d > Math.PI ? -2 * Math.PI + d : d;
 	}
 
-	_posMod(i: number, n: number) {
-		return (i % n + n) % n;
+	private _posMod(i: number, n: number) {
+		return ((i % n) + n) % n;
 	}
 
-	_updateKartSound(mode: number, input: InputData) {
+	private _updateKartSound(mode: number, input: InputData) {
 		if (!this.local) return; //for now, don't play kart sounds from other racers.
-		var turn = (this._onGround && !this.drifting) ? (1 - Math.abs(input.turn) / 11) : 1;
-		var transpose = (mode == 0) ? 0 : (22 * turn * Math.min(1.3, this.speed / this._params.topSpeed));
+		let turn = this._onGround && !this.drifting ? 1 - Math.abs(input.turn) / 11 : 1;
+		let transpose = mode == 0 ? 0 : 22 * turn * Math.min(1.3, this.speed / this._params.topSpeed);
 
-		this._sounds.transpose += (transpose - this._sounds.transpose) / 15;
+		if (this._sounds.transpose) {
+			this._sounds.transpose += (transpose - this._sounds.transpose) / 15;
+		}
+
 		if (mode != this._soundMode) {
 			this._soundMode = mode;
 			if (this._sounds.kart != null) nitroAudio.instaKill(this._sounds.kart);
-			this._sounds.kart = nitroAudio.playSound(this._kartSoundBase + this._soundMode, { transpose: this._sounds.transpose, volume: 1 }, 0, this);
+			this._sounds.kart = nitroAudio.playSound(
+				this._kartSoundBase + this._soundMode,
+				{ transpose: this._sounds.transpose, volume: 1 },
+				0,
+				this
+			)!;
 			//if (mode == 3) sounds.kart.gainN.gain.value = 0.5;
 		} else {
 			//sounds.kart.seq.setTranspose(sounds.transpose);
 		}
 	}
 
-	_buildBasis(): mat4 {
+	private _buildBasis(): mat4 {
 		//order y, x, z
-		var dir = this.physicalDir + this.driftOff + (Math.sin((this._COLBOUNCE_TIME - this.kartColTimer) / 3) * (Math.PI / 6) * (this.kartColTimer / this._COLBOUNCE_TIME));
-		var forward: vec3 = [
-			Math.sin(dir),
-			0,
-			-Math.cos(dir)
-		];
-		var side: vec3 = [
-			-Math.cos(dir),
-			0,
-			-Math.sin(dir)
-		];
+		let dir =
+			this.physicalDir +
+			this.driftOff +
+			Math.sin((this._COLBOUNCE_TIME - this.kartColTimer) / 3) * (Math.PI / 6) * (this.kartColTimer / this._COLBOUNCE_TIME);
+		let forward: vec3 = [Math.sin(dir), 0, -Math.cos(dir)];
+		let side: vec3 = [-Math.cos(dir), 0, -Math.sin(dir)];
 		if (this.physBasis != null) {
 			vec3.transformMat4(forward, forward, this.physBasis.mat);
 			vec3.transformMat4(side, side, this.physBasis.mat);
 		}
-		var basis = this._gramShmidt(this.kartNormal, side, forward);
-		var temp = basis[0];
+		let basis = this._gramShmidt(this.kartNormal, side, forward);
+		let temp = basis[0];
 		basis[0] = basis[1];
 		basis[1] = temp; //todo: cleanup
 		return [
-			basis[0][0], basis[0][1], basis[0][2], 0,
-			basis[1][0], basis[1][1], basis[1][2], 0,
-			basis[2][0], basis[2][1], basis[2][2], 0,
-			0, 0, 0, 1
-		]
-
+			basis[0][0],
+			basis[0][1],
+			basis[0][2],
+			0,
+			basis[1][0],
+			basis[1][1],
+			basis[1][2],
+			0,
+			basis[2][0],
+			basis[2][1],
+			basis[2][2],
+			0,
+			0,
+			0,
+			0,
+			1,
+		];
 	}
 
-	_enterBasis(normal: vec3) {
+	private _enterBasis(normal: vec3): KartPhysicsBasis {
 		//establish a new basis for the kart velocity based on this normal.
 		//used by looping and sticky track surface types.
 
 		//first let's get the forward direction in our current basis
 
-		var dir = this.angle;
-		var forward: vec3, side: vec3;
+		let dir = this.angle;
+		let forward: vec3, side: vec3;
 		if (this.physBasis != null) {
-			forward = vec3.transformMat4([0, 0, 0], [-	Math.sin(dir), 0, Math.cos(dir)], this.physBasis.mat);
+			forward = vec3.transformMat4([0, 0, 0], [-Math.sin(dir), 0, Math.cos(dir)], this.physBasis.mat);
 			side = vec3.transformMat4([0, 0, 0], [Math.cos(dir), 0, Math.sin(dir)], this.physBasis.mat);
 		} else {
 			forward = [-Math.sin(dir), 0, Math.cos(dir)];
 			side = [Math.cos(dir), 0, Math.sin(dir)];
 		}
 
-		var basis = this._gramShmidt(normal, side, forward);
-		var temp = basis[0];
+		let basis = this._gramShmidt(normal, side, forward);
+		let temp = basis[0];
 		basis[0] = basis[1];
 		basis[1] = temp; //todo: cleanup
-		var m4 = mat4.clone([
-			basis[0][0], basis[0][1], basis[0][2], 0,
-			basis[1][0], basis[1][1], basis[1][2], 0,
-			basis[2][0], basis[2][1], basis[2][2], 0,
-			0, 0, 0, 1
+		let m4 = mat4.clone([
+			basis[0][0],
+			basis[0][1],
+			basis[0][2],
+			0,
+			basis[1][0],
+			basis[1][1],
+			basis[1][2],
+			0,
+			basis[2][0],
+			basis[2][1],
+			basis[2][2],
+			0,
+			0,
+			0,
+			0,
+			1,
 		]);
 
 		this.physicalDir = this._dirDiff(this.physicalDir, this.angle);
@@ -1276,14 +1308,17 @@ export class Kart {
 			inv: mat4.invert(mat4.create(), m4),
 			normal: normal,
 			time: 15,
-			loop: false
+			loop: false,
 		};
+		return this.physBasis;
 	}
 
-	exitBasis() {
+	private exitBasis() {
 		//return to a normal y up, z forward basis.
 
-		var v = vec3.transformMat4([0, 0, 0], this.vel, this.physBasis.mat);
+		const physBasis = this.physBasis;
+		if (physBasis == null) return;
+		let v = vec3.transformMat4([0, 0, 0], this.vel, physBasis.mat);
 		this.physicalDir = this._dirDiff(this.physicalDir, this.angle);
 		this.angle = Math.atan2(v[0], -v[2]);
 		this.physicalDir += this.angle;
@@ -1303,70 +1338,72 @@ export class Kart {
 		this.soundProps.refDistance = 192;
 		this.soundProps.rolloffFactor = 1;
 
-		var calcVol = (this.soundProps.refDistance / (this.soundProps.refDistance + this.soundProps.rolloffFactor * (Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance)));
+		let calcVol =
+			this.soundProps.refDistance /
+			(this.soundProps.refDistance +
+				this.soundProps.rolloffFactor *
+					(Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance));
 	}
 
-	_gramShmidt(v1: vec3, v2: vec3, v3: vec3) {
-		var u1 = v1;
-		var u2 = vec3.sub([0, 0, 0], v2, this._project(u1, v2));
-		var u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this._project(u1, v3)), this._project(u2, v3));
-		return [vec3.normalize(u1, u1), vec3.normalize(u2, u2), vec3.normalize(u3, u3)]
+	private _gramShmidt(v1: vec3, v2: vec3, v3: vec3) {
+		let u1 = v1;
+		let u2 = vec3.sub([0, 0, 0], v2, this._project(u1, v2));
+		let u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this._project(u1, v3)), this._project(u2, v3));
+		return [vec3.normalize(u1, u1), vec3.normalize(u2, u2), vec3.normalize(u3, u3)];
 	}
 
-	_colSound(collision: number, effect: number) {
+	private _colSound(collision: number, effect: number): KartCollisionSounds {
 		const coll = collision as keyof typeof MKDS_COLTYPE.SOUNDMAP;
 		if (MKDS_COLTYPE.SOUNDMAP[coll] == null) return {};
-		return MKDS_COLTYPE.SOUNDMAP[coll][effect] || {};
+		return (MKDS_COLTYPE.SOUNDMAP[coll][effect] as KartCollisionSounds | undefined) || {};
 	}
 
-	_colParticle(collision: number, effect: number) {
-		const coll = collision as keyof typeof MKDS_COLTYPE.SOUNDMAP;
-		if (MKDS_COLTYPE.SOUNDMAP[coll] == null) return null
-		if (MKDS_COLTYPE.SOUNDMAP[coll][effect] == null) return null
-		return (MKDS_COLTYPE.SOUNDMAP[coll][effect] as any).particle || null;
+	private _colParticle(collision: number, effect: number): number | null {
+		return this._colSound(collision, effect).particle || null;
 	}
 
-	_project(u: vec3, v: vec3) {
-		return vec3.scale([0, 0, 0], u, (vec3.dot(u, v) / vec3.dot(u, u)))
+	private _project(u: vec3, v: vec3) {
+		return vec3.scale([0, 0, 0], u, vec3.dot(u, v) / vec3.dot(u, u));
 	}
 
-	_colResponse(pos: vec3, pvel: vec3, dat: lscsweepellipse, ignoreList: kcl_plane[]) {
+	private _colResponse(pos: vec3, pvel: vec3, dat: lscsweepellipse, ignoreList: lsc_collision_triangle[]) {
+		let plane = dat.plane;
+		const collisionType = plane.CollisionType ?? 0;
+		let colType = (collisionType >> 8) & 31;
+		let colBE = (collisionType >> 5) & 7;
 
-		var plane = dat.plane;
-		var colType = (plane.CollisionType >> 8) & 31;
-		var colBE = (plane.CollisionType >> 5) & 7;
-
-		var change = (colType != this._lastCollided);
+		let change = colType != this._lastCollided;
 		this._lastCollided = colType;
 		this._lastBE = colBE;
 		this._lastColSounds = this._colSound(this._lastCollided, colBE);
 
-		var n = vec3.normalize([0, 0, 0], dat.normal);
-		var an = n;
+		let n = vec3.normalize([0, 0, 0], dat.normal);
+		let an = n;
 		if (this.physBasis != null) {
 			an = vec3.transformMat4([0, 0, 0], n, this.physBasis.inv);
 		}
-		var gravS = Math.sqrt(vec3.dot(this.gravity, this.gravity));
-		var angle = Math.acos(vec3.dot(vec3.scale(vec3.create(), this.gravity, -1 / gravS), n));
-		var adjustPos = true;
+		let gravS = Math.sqrt(vec3.dot(this.gravity, this.gravity));
+		let angle = Math.acos(vec3.dot(vec3.scale(vec3.create(), this.gravity, -1 / gravS), n));
+		let adjustPos = true;
 
 		if (MKDS_COLTYPE.GROUP_OOB.indexOf(colType) != -1) {
 			this.OOB = 1;
 		}
 
-		if (MKDS_COLTYPE.GROUP_WALL.indexOf(colType) != -1) { //wall
+		if (MKDS_COLTYPE.GROUP_WALL.indexOf(colType) != -1) {
+			//wall
 			//sliding plane, except normal is transformed to be entirely on the xz plane (cannot ride on top of wall, treated as vertical)
-			var xz = Math.sqrt(an[0] * an[0] + an[2] * an[2])
-			var adjN: vec3 = [an[0] / xz, 0, an[2] / xz]
-			var proj = vec3.dot(this.vel, adjN);
+			let xz = Math.sqrt(an[0] * an[0] + an[2] * an[2]);
+			let adjN: vec3 = [an[0] / xz, 0, an[2] / xz];
+			let proj = vec3.dot(this.vel, adjN);
 
 			if (proj < -1) {
 				if (this.kartWallTimer == 0) {
-					if (this._lastColSounds.hit != null) nitroAudio.playSound(this._lastColSounds.hit, { volume: 1 }, 0, this)
-					var colObj = {
+					if (this._lastColSounds.hit != null) nitroAudio.playSound(this._lastColSounds.hit, { volume: 1 }, 0, this);
+					let colObj = {
 						pos: pos,
 						vel: vec3.clone([0, 0, 0]),
-						mat: mat4.fromTranslation(mat4.create(), pos)
+						mat: mat4.fromTranslation(mat4.create(), pos),
 					};
 					this._scene.particles.push(new NitroEmitter(this._scene, colObj, 13));
 					this._scene.particles.push(new NitroEmitter(this._scene, colObj, 14));
@@ -1376,7 +1413,7 @@ export class Kart {
 			vec3.sub(this.vel, this.vel, vec3.scale(vec3.create(), adjN, proj));
 
 			if (colType == MKDS_COLTYPE.KNOCKBACK_DAMAGE && this.damageType == -1) {
-				if (dat.object.vel) {
+				if (dat.object?.vel) {
 					vec3.add(this.vel, this.vel, dat.object.vel);
 				}
 				vec3.add(this.vel, this.vel, vec3.scale(vec3.create(), adjN, 1.25));
@@ -1385,7 +1422,7 @@ export class Kart {
 
 			//convert back to angle + speed to keep change to kart vel
 
-			var v = this.vel;
+			let v = this.vel;
 			this.speed = Math.sqrt(v[0] * v[0] + v[2] * v[2]);
 			this.angle = Math.atan2(v[0], -v[2]);
 			this._stuckTo = dat.object;
@@ -1395,34 +1432,33 @@ export class Kart {
 				this.boostNorm = this._BOOSTTIME;
 			}
 
-			var stick = (colType == MKDS_COLTYPE.STICKY || colType == MKDS_COLTYPE.LOOP);
+			let stick = colType == MKDS_COLTYPE.STICKY || colType == MKDS_COLTYPE.LOOP;
 
 			if (this.vel[1] > 0) this.vel[1] = 0;
-			var proj = vec3.dot(this.vel, an);
+			let proj = vec3.dot(this.vel, an);
 			if (this.damageType > 0) proj *= 1.7;
-			else if (!stick && proj < -4 && this.vel[1] < -2) { proj -= 1.5; }
+			else if (!stick && proj < -4 && this.vel[1] < -2) {
+				proj -= 1.5;
+			}
 			vec3.sub(this.vel, this.vel, vec3.scale(vec3.create(), an, proj));
 
 			if (stick) {
-				this._enterBasis(dat.pNormal);
-				this.physBasis.loop = colType == MKDS_COLTYPE.LOOP;
+				const physBasis = this._enterBasis(dat.pNormal);
+				physBasis.loop = colType == MKDS_COLTYPE.LOOP;
 			} else {
-				if (this.physBasis != null)
-					this.exitBasis();
+				if (this.physBasis != null) this.exitBasis();
 			}
 
 			this.kartTargetNormal = dat.pNormal;
 
 			if (change) {
-				var particle = this._colParticle(this._lastCollided, colBE);
-				if (particle == null)
-					this._clearWheelParticles(0);
-				else
-					this._setWheelParticles(particle, 0);
+				let particle = this._colParticle(this._lastCollided, colBE);
+				if (particle == null) this._clearWheelParticles(0);
+				else this._setWheelParticles(particle, 0);
 			}
 			if (!this._onGround && !stick) {
 				this._groundAnim = 0;
-				if (this._lastColSounds.land != null) nitroAudio.playSound(this._lastColSounds.land, { volume: 1 }, 0, this)
+				if (this._lastColSounds.land != null) nitroAudio.playSound(this._lastColSounds.land, { volume: 1 }, 0, this);
 			}
 			this.airTime = 0;
 			this._stuckTo = dat.object;
@@ -1436,7 +1472,8 @@ export class Kart {
 
 		//vec3.add(pos, pos, vec3.scale(vec3.create(), n, minimumMove)); //move away from plane slightly
 
-		if (adjustPos) { //move back from plane slightly
+		if (adjustPos) {
+			//move back from plane slightly
 			//vec3.add(pos, pos, vec3.scale(vec3.create(), n, minimumMove));
 			vec3.add(pos, pos, vec3.scale(vec3.create(), pvel, dat.t));
 			vec3.add(pos, vec3.scale([0, 0, 0], n, this._params.colRadius + this._minimumMove), dat.colPoint);
@@ -1453,6 +1490,5 @@ export class Kart {
 		} else {
 			vec3.add(pos, pos, vec3.scale(vec3.create(), pvel, dat.t));
 		}
-
 	}
 }

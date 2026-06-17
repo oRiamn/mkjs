@@ -1,12 +1,12 @@
 {
-  "compilerOptions": {
-    "outDir": "./dist/",
-    "noImplicitAny": true,
-    "module": "es6",
-    "target": "es5",
-    "jsx": "react",
-    "allowJs": true,
-    "moduleResolution": "node"
-  }
+	"compilerOptions": {
+		"strict": true,
+		"strictPropertyInitialization": true,
+		"noImplicitAny": true,
+		"module": "es6",
+		"target": "esnext",
+		"moduleResolution": "bundler"
+	},
+	"include": ["src/**/*.ts", "global.d.ts", "gl-matrix.d.ts"],
+	"exclude": ["node_modules", "dist", "bundle.js", "webpack.config.js", "devserver.js"]
 }
-

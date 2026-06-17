@@ -11,15 +11,15 @@ import { nkm_section_OBJI } from "../formats/nkm";
 //0008
 
 export class ObjSoundMaker implements SceneEntityObject {
-	collidable: boolean;
+	collidable!: boolean;
 	obji: nkm_section_OBJI;
 	pos: vec3;
 	soundProps: {
-		pos: vec3,
-		refDistance: number,
-		rolloffFactor: number,
+		pos: vec3;
+		refDistance: number;
+		rolloffFactor: number;
 	};
-	sound: nitroAudioSound;
+	sound: nitroAudioSound | null;
 	sN: number;
 	threshold: number;
 	gain: number;
@@ -29,8 +29,7 @@ export class ObjSoundMaker implements SceneEntityObject {
 		this.soundProps = {
 			pos: this.pos,
 			refDistance: 1024,
-			rolloffFactor: 1
-
+			rolloffFactor: 1,
 		};
 		this.sound = null;
 		this.sN = 0;
@@ -45,12 +44,9 @@ export class ObjSoundMaker implements SceneEntityObject {
 		}
 	}
 
-	draw() {
+	draw() {}
 
-	}
-
-	update() {
-	}
+	update() {}
 
 	sndUpdate(view: mat4) {
 		//t.soundProps.pos = vec3.transformMat4([], t.pos, view);
@@ -64,9 +60,11 @@ export class ObjSoundMaker implements SceneEntityObject {
 		this.soundProps.refDistance = 1024;
 		//t.soundProps.rolloffFactor = 1;
 
-		var relPos = vec3.transformMat4([0, 0, 0], this.pos, view);
+		let relPos = vec3.transformMat4([0, 0, 0], this.pos, view);
 
-		var calcVol = (this.soundProps.refDistance / (this.soundProps.refDistance + this.soundProps.rolloffFactor * (relPos[2] - this.soundProps.refDistance)));
+		let calcVol =
+			this.soundProps.refDistance /
+			(this.soundProps.refDistance + this.soundProps.rolloffFactor * (relPos[2] - this.soundProps.refDistance));
 
 		if (calcVol < this.threshold) {
 			if (this.sound != null) {
@@ -76,7 +74,7 @@ export class ObjSoundMaker implements SceneEntityObject {
 		} else {
 			if (this.sound == null) {
 				this.sound = nitroAudio.playSound(this.sN, {}, 0, this);
-				this.sound.gainN.gain.value = parseFloat(`${this.gain}`);
+				this.sound!.gainN.gain.value = parseFloat(`${this.gain}`);
 			}
 		}
 	}
@@ -85,6 +83,5 @@ export class ObjSoundMaker implements SceneEntityObject {
 		return { mdl: [] };
 	}
 
-	provideRes(r: ProvidedRes) { }
-
+	provideRes(r: ProvidedRes) {}
 }

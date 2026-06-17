@@ -6,7 +6,7 @@
 //
 
 export class shadowRender {
-	static _shadFrag = `
+	private static _shadFrag = `
 	precision highp float;
 	
 	varying vec2 vTextureCoord;
@@ -61,7 +61,7 @@ export class shadowRender {
 	}
 	`;
 
-	static _shadVert = `
+	private static _shadVert = `
 	attribute vec3 aVertexPosition;
 	attribute vec2 aTextureCoord;
 	
@@ -71,13 +71,13 @@ export class shadowRender {
 		gl_Position = vec4(aVertexPosition, 1.0);
 		vTextureCoord = vec3(aTextureCoord, 1.0).xy;
 	}
-	`
+	`;
 
-	static _shadowShader: WebGLProgram = null;
-	static _vecPosBuffer: WebGLBuffer = null;
-	static _vecTxBuffer: WebGLBuffer = null;
-	static _vertexPositionAttribute: number = null;
-	static textureCoordAttribute: number = null;
+	private static _shadowShader: WebGLProgram;
+	private static _vecPosBuffer: WebGLBuffer;
+	private static _vecTxBuffer: WebGLBuffer;
+	private static _vertexPositionAttribute: number;
+	static textureCoordAttribute: number;
 	static colTexUniform: WebGLUniformLocation;
 	static depTexUniform: WebGLUniformLocation;
 	static lightTexUniform: WebGLUniformLocation;
@@ -87,10 +87,10 @@ export class shadowRender {
 	static camViewUniform: WebGLUniformLocation;
 
 	static init(ctx: CustomWebGLRenderingContext) {
-		const frag = shadowRender._getShader(shadowRender._shadFrag, "frag");
-		const vert = shadowRender._getShader(shadowRender._shadVert, "vert");
+		const frag = shadowRender._getShader(shadowRender._shadFrag, "frag")!;
+		const vert = shadowRender._getShader(shadowRender._shadVert, "vert")!;
 
-		shadowRender._shadowShader = ctx.createProgram();
+		shadowRender._shadowShader = ctx.createProgram()!;
 		ctx.attachShader(shadowRender._shadowShader, vert);
 		ctx.attachShader(shadowRender._shadowShader, frag);
 		ctx.linkProgram(shadowRender._shadowShader);
@@ -105,48 +105,44 @@ export class shadowRender {
 		shadowRender.textureCoordAttribute = ctx.getAttribLocation(shadowRender._shadowShader, "aTextureCoord");
 		ctx.enableVertexAttribArray(shadowRender.textureCoordAttribute);
 
-		shadowRender.colTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "cSampler");
-		shadowRender.depTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "depSampler");
-		shadowRender.lightTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "lightDSampler");
-		shadowRender.lightFarTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "farLightDSampler");
-		shadowRender.lightViewUniform = ctx.getUniformLocation(shadowRender._shadowShader, "shadowMat");
-		shadowRender.lightFarViewUniform = ctx.getUniformLocation(shadowRender._shadowShader, "farShadowMat");
-		shadowRender.camViewUniform = ctx.getUniformLocation(shadowRender._shadowShader, "invViewProj");
+		shadowRender.colTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "cSampler")!;
+		shadowRender.depTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "depSampler")!;
+		shadowRender.lightTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "lightDSampler")!;
+		shadowRender.lightFarTexUniform = ctx.getUniformLocation(shadowRender._shadowShader, "farLightDSampler")!;
+		shadowRender.lightViewUniform = ctx.getUniformLocation(shadowRender._shadowShader, "shadowMat")!;
+		shadowRender.lightFarViewUniform = ctx.getUniformLocation(shadowRender._shadowShader, "farShadowMat")!;
+		shadowRender.camViewUniform = ctx.getUniformLocation(shadowRender._shadowShader, "invViewProj")!;
 
 		this._shadowShader = shadowRender._shadowShader;
 
-		shadowRender._vecPosBuffer = ctx.createBuffer();
-		shadowRender._vecTxBuffer = ctx.createBuffer();
+		shadowRender._vecPosBuffer = ctx.createBuffer()!;
+		shadowRender._vecTxBuffer = ctx.createBuffer()!;
 
 		ctx.bindBuffer(ctx.ARRAY_BUFFER, shadowRender._vecPosBuffer);
-		ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array(
-			[-1, -1, 0,
-				1, -1, 0,
-				1, 1, 0,
+		ctx.bufferData(
+			ctx.ARRAY_BUFFER,
+			new Float32Array([
+				-1, -1, 0, 1, -1, 0, 1, 1, 0,
 
-				1, 1, 0,
-			-1, 1, 0,
-			-1, -1, 0,
-			]
-		), ctx.STATIC_DRAW);
+				1, 1, 0, -1, 1, 0, -1, -1, 0,
+			]),
+			ctx.STATIC_DRAW
+		);
 
 		ctx.bindBuffer(ctx.ARRAY_BUFFER, shadowRender._vecTxBuffer);
-		ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array(
-			[
-				0, 0,
-				1, 0,
-				1, 1,
+		ctx.bufferData(
+			ctx.ARRAY_BUFFER,
+			new Float32Array([
+				0, 0, 1, 0, 1, 1,
 
-				1, 1,
-				0, 1,
-				0, 0,
-			]
-		), ctx.STATIC_DRAW);
-
+				1, 1, 0, 1, 0, 0,
+			]),
+			ctx.STATIC_DRAW
+		);
 	}
 
-	static _getShader(str: string, type: string) {
-		var shader;
+	private static _getShader(str: string, type: string) {
+		let shader;
 		if (type == "frag") {
 			shader = gl.createShader(gl.FRAGMENT_SHADER);
 		} else if (type == "vert") {
@@ -155,18 +151,26 @@ export class shadowRender {
 			return null;
 		}
 
-		gl.shaderSource(shader, str);
-		gl.compileShader(shader);
+		gl.shaderSource(shader!, str);
+		gl.compileShader(shader!);
 
-		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-			alert(gl.getShaderInfoLog(shader));
+		if (!gl.getShaderParameter(shader!, gl.COMPILE_STATUS)) {
+			alert(gl.getShaderInfoLog(shader!));
 			return null;
 		}
 
 		return shader;
 	}
 
-	static drawShadowed(colTex: WebGLTexture, depTex: WebGLTexture, lightTex: WebGLTexture, lightFarTex: WebGLTexture, camView: mat4, lightView: Float32List, lightFarView: Float32List) {
+	static drawShadowed(
+		colTex: WebGLTexture,
+		depTex: WebGLTexture,
+		lightTex: WebGLTexture,
+		lightFarTex: WebGLTexture,
+		camView: mat4,
+		lightView: Float32List,
+		lightFarView: Float32List
+	) {
 		gl.useProgram(shadowRender._shadowShader);
 
 		gl.uniformMatrix4fv(shadowRender.lightViewUniform, false, lightView);
@@ -188,7 +192,6 @@ export class shadowRender {
 		gl.activeTexture(gl.TEXTURE3);
 		gl.bindTexture(gl.TEXTURE_2D, lightFarTex); //load up material texture
 		gl.uniform1i(shadowRender.lightFarTexUniform, 3);
-
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, shadowRender._vecPosBuffer);
 		gl.vertexAttribPointer(shadowRender._vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);

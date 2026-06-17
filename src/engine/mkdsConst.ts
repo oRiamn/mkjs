@@ -9,14 +9,13 @@ import { controlRaceCPU } from "./controls/controlRaceCPU";
 import { getPlayerControls } from "./controls/getPlayerControls";
 
 export type MKCONST_course_obj = {
-    name: string;
-    music: number;
-    lightHeight?: number;
-    lightAngle?: number;
-    skyboxShadows?: boolean;
-    battle?: boolean;
-}
-
+	name: string;
+	music: number;
+	lightHeight?: number;
+	lightAngle?: number;
+	skyboxShadows?: boolean;
+	battle?: boolean;
+};
 
 const DAMAGE_SPIN = 0;
 const DAMAGE_FLIP = 1;
@@ -24,7 +23,8 @@ const DAMAGE_EXPLODE = 2;
 
 const COURSEDIR = "/data/Course/";
 
-const COURSES: MKCONST_course_obj[] = [ //in order of course id, nitro through retro
+const COURSES: MKCONST_course_obj[] = [
+	//in order of course id, nitro through retro
 	{ name: "cross_course", music: 74 },
 	{ name: "bank_course", music: 16 },
 	{ name: "beach_course", music: 15 },
@@ -44,7 +44,6 @@ const COURSES: MKCONST_course_obj[] = [ //in order of course id, nitro through r
 	{ name: "garden_course", music: 20 },
 	{ name: "koopa_course", music: 40 },
 	{ name: "rainbow_course", music: 41 },
-
 
 	{ name: "old_mario_sfc", music: 22 },
 	{ name: "old_momo_64", music: 30 },
@@ -71,34 +70,32 @@ const COURSES: MKCONST_course_obj[] = [ //in order of course id, nitro through r
 	{ name: "mini_stage3", music: 43, battle: true },
 	{ name: "mini_stage4", music: 43, battle: true },
 	{ name: "mini_block_64", music: 43, battle: true },
-	{ name: "mini_dokan_gc", music: 43, battle: true }
+	{ name: "mini_dokan_gc", music: 43, battle: true },
+];
 
-]
-
-let CURRENTCOURSE = parseInt(localStorage.getItem("CURRENTCOURSE"))
+let CURRENTCOURSE = parseInt(localStorage.getItem("CURRENTCOURSE") || "");
 if (Number.isInteger(CURRENTCOURSE) && CURRENTCOURSE >= 0 && CURRENTCOURSE <= COURSES.length) {
 	CURRENTCOURSE = CURRENTCOURSE;
 } else {
 	CURRENTCOURSE = Math.floor(Math.random() * COURSES.length);
 }
 
-const CURRENTLANG = localStorage.getItem("CURRENTLANG") || 'us';
+const CURRENTLANG = localStorage.getItem("CURRENTLANG") || "us";
 
-let MAX_LAP = parseInt(localStorage.getItem("CURRENTLAPTYPE"))
+let MAX_LAP = parseInt(localStorage.getItem("CURRENTLAPTYPE") || "");
 MAX_LAP = [3, 5].includes(MAX_LAP) ? MAX_LAP : 3;
 
-const CONTROLTYPE = (localStorage.getItem("CONTROLTYPE") || 'cpu').toUpperCase();
+const CONTROLTYPE = (localStorage.getItem("CONTROLTYPE") || "cpu").toUpperCase();
 let USER_CONTROLLER;
 switch (CONTROLTYPE) {
-	case 'MAN':
-		USER_CONTROLLER=getPlayerControls();
+	case "MAN":
+		USER_CONTROLLER = getPlayerControls();
 		break;
-	case 'CPU':
+	case "CPU":
 	default:
-		USER_CONTROLLER=controlRaceCPU
+		USER_CONTROLLER = controlRaceCPU;
 		break;
 }
-
 
 export const MKDSCONST = {
 	DAMAGE_SPIN,
@@ -110,5 +107,5 @@ export const MKDSCONST = {
 	CURRENTLANG,
 	MAX_LAP,
 	CONTROLTYPE,
-	USER_CONTROLLER
-}
+	USER_CONTROLLER,
+};

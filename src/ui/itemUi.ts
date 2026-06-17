@@ -30,13 +30,13 @@ export class ItemUi implements SceneEntity {
 	scene: Scene;
 	kart: Kart;
 	zoom: number;
-	pos: { x: number; y: number; };
+	pos: { x: number; y: number };
 	lastWidth: number;
 	flattenerBorder: TileFlattener;
 	flattenerBackground: TileFlattener;
 	place: number;
 	animFrame: number;
-	currentItem: string;
+	currentItem: string | null;
 	flattenerItem: TileFlattener;
 	constructor(scene: Scene, kart: Kart) {
 		this.scene = scene;
@@ -46,21 +46,20 @@ export class ItemUi implements SceneEntity {
 		this.zoom = 1;
 		this.pos = {
 			x: 10,
-			y: 0
-		}
+			y: 0,
+		};
 		this.animFrame = 0;
 
 		this.buildOrtho(nitroRender.getViewWidth());
 		this.lastWidth = 0;
 
-		const ncgrFile = this.scene.gameRes.RaceLoc.getFile("race_m_o.NCGR");
-		const nclrFile = this.scene.gameRes.Race.getFile("race_m_o.NCLR");
-		const ncerFile = this.scene.gameRes.Race.getFile('race_m.NCER');
+		const ncgrFile = this.scene.gameRes.RaceLoc.getFile("race_m_o.NCGR")!;
+		const nclrFile = this.scene.gameRes.Race.getFile("race_m_o.NCLR")!;
+		const ncerFile = this.scene.gameRes.Race.getFile("race_m.NCER")!;
 
 		const ncgrObj = new ncgr(ncgrFile);
 		const nclrObj = new nclr(nclrFile);
 		const ncerObj = new ncer(ncerFile);
-
 
 		this.flattenerBorder = new TileFlattener(nclrObj, ncgrObj, ncerObj);
 		this.flattenerBorder.pos[2] = 0.2;
@@ -75,11 +74,10 @@ export class ItemUi implements SceneEntity {
 		this.flattenerItem.loadTextue(blank);
 
 		this.place = this.kart.placement;
-		this.currentItem = '';
+		this.currentItem = "";
 	}
 
-
-	buildOrtho(width: number) {
+	private buildOrtho(width: number) {
 		this.lastWidth = width;
 		this.pos.y = 10;
 		this.pos.x = 10;
@@ -87,16 +85,16 @@ export class ItemUi implements SceneEntity {
 
 	draw() {
 		if (nitroRender.flagShadow || this.animFrame < 0) return;
-		var width = nitroRender.getViewWidth();
+		let width = nitroRender.getViewWidth();
 		if (width != this.lastWidth) {
 			this.buildOrtho(width);
 		}
 		nitroRender.pauseShadowMode();
 
-		this.flattenerBackground.draw(this.pos.x + 2, this.pos.y + 2, this.zoom)
-		this.flattenerItem.draw(this.pos.x + 2, this.pos.y + 2, this.zoom)
+		this.flattenerBackground.draw(this.pos.x + 2, this.pos.y + 2, this.zoom);
+		this.flattenerItem.draw(this.pos.x + 2, this.pos.y + 2, this.zoom);
 
-		this.flattenerBorder.draw(this.pos.x, this.pos.y, this.zoom)
+		this.flattenerBorder.draw(this.pos.x, this.pos.y, this.zoom);
 
 		nitroRender.unpauseShadowMode();
 	}
@@ -104,7 +102,7 @@ export class ItemUi implements SceneEntity {
 	update() {
 		if (this.kart.items.currentItem !== this.currentItem) {
 			this.currentItem = this.kart.items.currentItem;
-			const t = itemsTex[this.currentItem] ?? blank;
+			const t = itemsTex[this.currentItem ?? ""] ?? blank;
 			this.flattenerItem.loadTextue(t);
 		}
 	}
