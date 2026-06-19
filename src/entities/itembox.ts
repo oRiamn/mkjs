@@ -14,13 +14,13 @@ import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
 import { nitroRender } from "../render/nitroRender";
 
 export class ItemBox implements SceneEntityObject {
-	collidable: boolean;
-	_obji: nkm_section_OBJI;
-	_res: ProvidedRes;
-	_anim: nitroAnimator;
-	_animFrame: number;
-	_animMat: nitroAnimator_matStack;
-	_frames: number;
+	collidable!: boolean;
+	private _obji: nkm_section_OBJI;
+	private _res: ProvidedRes;
+	private _anim: nitroAnimator;
+	private _animFrame: number;
+	private _animMat: nitroAnimator_matStack;
+	private _frames: number;
 	pos: vec3;
 	scale: vec3;
 	mode: number;
@@ -33,11 +33,11 @@ export class ItemBox implements SceneEntityObject {
 	};
 	constructor(obji: nkm_section_OBJI, _scene: Scene) {
 		this._obji = obji;
-		this._res = undefined;
+		this._res = undefined!;
 
-		this._anim = undefined;
+		this._anim = undefined!;
 		this._animFrame = 0;
-		this._animMat = undefined;
+		this._animMat = undefined!;
 		this._frames = 0;
 
 		this.pos = vec3.clone(this._obji.pos);
@@ -49,7 +49,7 @@ export class ItemBox implements SceneEntityObject {
 			pos: this.pos,
 			refDistance: 192,
 			rolloffFactor: 1,
-		};	
+		};
 
 		this.mode = 0;
 		this.time = 0;
@@ -58,13 +58,13 @@ export class ItemBox implements SceneEntityObject {
 	update(scene: Scene) {
 		switch (this.mode) {
 			case 0: //alive
-				for (var i = 0; i < scene.karts.length; i++) {
-					var ok = scene.karts[i];
-					var dist = vec3.dist(vec3.add([0, 0, 0], this.pos, [0, 1, 0]), ok.pos);
+				for (let i = 0; i < scene.karts.length; i++) {
+					let ok = scene.karts[i];
+					let dist = vec3.dist(vec3.add([0, 0, 0], this.pos, [0, 1, 0]), ok.pos);
 					if (dist < 24) {
-						var breakSound = nitroAudio.playSound(212, {}, 0, this);
+						let breakSound = nitroAudio.playSound(212, {}, 0, this)!;
 						breakSound.gainN.gain.value = parseFloat("4");
-						for (var j = 0; j < 10; j++) {
+						for (let j = 0; j < 10; j++) {
 							scene.particles.push(new ItemShard(scene, ok, this._res.mdl[2]));
 						}
 						scene.particles.push(new NitroEmitter(scene, ok, 47));
@@ -96,13 +96,13 @@ export class ItemBox implements SceneEntityObject {
 	draw(view: mat4, pMatrix: mat4, gl: CustomWebGLRenderingContext) {
 		if (this.mode == 0 || this.mode == 2) {
 			if (this.mode == 2) nitroRender.setColMult([1, 1, 1, this.time / 30]);
-			var mat = mat4.translate(mat4.create(), view, this.pos);
+			let mat = mat4.translate(mat4.create(), view, this.pos);
 
 			mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
 
 			//res.mdl[2].draw(mat, pMatrix);
 
-			mat4.translate(mat, mat, [0, 1, 0])
+			mat4.translate(mat, mat, [0, 1, 0]);
 
 			gl.enable(gl.CULL_FACE); //box part
 			//gl.depthMask(false);
@@ -132,16 +132,11 @@ export class ItemBox implements SceneEntityObject {
 		this.soundProps.rolloffFactor = 1;
 	}
 
-	requireRes() { //scene asks what resources to load
+	requireRes() {
+		//scene asks what resources to load
 		return {
-			mdl: [
-				{ nsbmd: "itembox.nsbmd" },
-				{ nsbmd: "obj_shadow.nsbmd" },
-				{ nsbmd: "itembox_hahen.nsbmd" }
-			],
-			other: [
-				"itembox.nsbca"
-			]
+			mdl: [{ nsbmd: "itembox.nsbmd" }, { nsbmd: "obj_shadow.nsbmd" }, { nsbmd: "itembox_hahen.nsbmd" }],
+			other: ["itembox.nsbca"],
 		};
 	}
 
@@ -156,5 +151,4 @@ export class ItemBox implements SceneEntityObject {
 		this._animFrame = Math.floor(Math.random() * this._frames);
 		this._animMat = this._anim.setFrame(0, 0, this._animFrame);
 	}
-
 }

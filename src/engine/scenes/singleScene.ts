@@ -20,26 +20,23 @@ import { sceneDrawer } from "./sceneDrawer";
 export class singleScene {
 	res: IngameRes;
 	mode: {
-		id: number,
+		id: number;
 		mode: number;
 		time: number;
-		frameDiv: number
+		frameDiv: number;
 	};
-	activeScene: courseScene;
-	myKart: Kart;
+	activeScene!: courseScene;
+	myKart!: Kart;
 	mchar: number;
 	mkart: number;
 	advanceTimes: number[];
 	constructor(course: string, wsInstance: WebSocket, res: IngameRes) {
 		this.res = res; //gameRes
 
-		this.mode = undefined;
-		this.activeScene = null;
-		this.myKart = null;
-
+		this.mode = undefined!;
 		this.mchar = Math.floor(Math.random() * 12);
 		this.mkart = Math.floor(Math.random() * 0x24);
-		this.advanceTimes = [3, 4, -1, -1]
+		this.advanceTimes = [3, 4, -1, -1];
 		this.begin(course);
 	}
 
@@ -51,13 +48,13 @@ export class singleScene {
 		}
 	}
 
-	updateServer() {
-		var m = this.mode;
+	private updateServer() {
+		let m = this.mode;
 		m.frameDiv++;
 		if (m.frameDiv == 60) {
 			m.frameDiv -= 60;
 			m.time++;
-			var timeAd = this.advanceTimes[m.id];
+			let timeAd = this.advanceTimes[m.id];
 			if (timeAd != -1 && m.time >= timeAd) {
 				m.id++;
 				m.time = 0;
@@ -70,24 +67,23 @@ export class singleScene {
 
 	render() {
 		if (this.activeScene != null) {
-			sceneDrawer.getInstance().drawTest(gl, this.activeScene, 0, 0, gl.viewportWidth, gl.viewportHeight)
+			sceneDrawer.getInstance().drawTest(gl, this.activeScene, 0, 0, gl.viewportWidth, gl.viewportHeight);
 		}
 	}
 
-	begin(courseId: string) {
+	private begin(courseId: string) {
 		if (courseId.substr(0, 5) == "mkds/") {
-			var cnum = Number(courseId.substr(5));
-			var course = MKDSCONST.COURSES[cnum];
-			var cDir = MKDSCONST.COURSEDIR + course.name;
-			var mainNarc = new narc(lz77.decompress(gameROM.getFile(cDir + ".carc")));
-			var texNarc = new narc(lz77.decompress(gameROM.getFile(cDir + "Tex.carc")));
-			this.setUpCourse(mainNarc, texNarc, course)
-		} else throw "custom tracks are not implemented yet!"
+			let cnum = Number(courseId.substr(5));
+			let course = MKDSCONST.COURSES[cnum];
+			let cDir = MKDSCONST.COURSEDIR + course.name;
+			let mainNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}.carc`)!));
+			let texNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}Tex.carc`)!));
+			this.setUpCourse(mainNarc, texNarc, course);
+		} else throw "custom tracks are not implemented yet!";
 	}
 
-
-	setUpCourse(mainNarc: narc, texNarc: narc, course: MKCONST_course_obj) {
-		var chars = [];
+	private setUpCourse(mainNarc: narc, texNarc: narc, course: MKCONST_course_obj) {
+		let chars = [];
 		chars.push({
 			charN: this.mchar,
 			kartN: this.mkart,
@@ -95,28 +91,37 @@ export class singleScene {
 			raceCam: true,
 			extraParams: [
 				{ k: "name", v: "single" },
-				{ k: "active", v: true }
-			]
+				{ k: "active", v: true },
+			],
 		});
 
-		for (var i = 0; i < 7; i++) {
-			var tchar = Math.floor(Math.random() * 12);
-			var tkart = Math.floor(Math.random() * 0x24);
+		for (let i = 0; i < 7; i++) {
+			let tchar = Math.floor(Math.random() * 12);
+			let tkart = Math.floor(Math.random() * 0x24);
 
-			chars.push({ charN: tchar, kartN: tkart, controller: controlRaceCPU, raceCam: false, extraParams: [{ k: "name", v: "no" }, { k: "active", v: true }] });
+			chars.push({
+				charN: tchar,
+				kartN: tkart,
+				controller: controlRaceCPU,
+				raceCam: false,
+				extraParams: [
+					{ k: "name", v: "no" },
+					{ k: "active", v: true },
+				],
+			});
 		}
 
 		this.activeScene = new courseScene(mainNarc, texNarc, course, chars, {}, this.res);
 
 		this.myKart = this.activeScene.karts[0];
-		this.myKart.local = true
+		this.myKart.local = true;
 
 		this.mode = {
 			id: 0,
 			time: 0,
 			frameDiv: 0,
-			mode: 0
-		}
+			mode: 0,
+		};
 
 		this.activeScene.updateMode({
 			...this.mode,
@@ -126,6 +131,5 @@ export class singleScene {
 			new LapCountUI(this.activeScene, this.myKart),
 			new ItemUi(this.activeScene, this.myKart)
 		);
-
 	}
 }

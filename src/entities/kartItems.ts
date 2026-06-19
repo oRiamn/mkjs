@@ -5,32 +5,30 @@ import { Item } from "./item";
 import { Kart } from "./kart";
 
 export class KartItems {
-
 	//koura_g, banana, f_box, koura_group, koura_group-bomb-7
 	static items = [
-		'koura_g', // greenshell
-		'koura_r', // redshell
-		'banana', // banana
-		'f_box', // fake_box
-		'bomb',
-		'koura_group',
+		"koura_g", // greenshell
+		"koura_r", // redshell
+		"banana", // banana
+		"f_box", // fake_box
+		"bomb",
+		"koura_group",
 		// 'koura_group-bomb-7' bug (too many bomb)
-	]
+	];
 	kart: Kart;
 	scene: Scene;
-	heldItem: Item;
-	currentItem: string;
+	heldItem: Item | null;
+	currentItem: string | null;
 	empty: boolean;
 	cycleTime: number;
 	totalTime: number;
-	_maxItemTime: number;
-	_minItemTime: number;
-	_carouselSfx: nitroAudioSound;
-	_lastItemState: boolean;
-	_specialItems: string[];
+	private _maxItemTime: number;
+	private _minItemTime: number;
+	private _carouselSfx: nitroAudioSound | null;
+	private _lastItemState: boolean;
+	private _specialItems: string[];
 
 	constructor(kart: Kart, scene: Scene) {
-
 		this.kart = kart;
 		this.scene = scene;
 
@@ -46,12 +44,10 @@ export class KartItems {
 		this._lastItemState = false;
 		this._specialItems = ["star"];
 
-
 		// var holdAppearDelay = 15;
 		// var hurtExplodeDelay = 105; //turn right slightly, huge double backflip, small bounces.
 		// var hurtFlipDelay = 80; //turn right slightly, bounce twice, forward flip
 		// var hurtSpinDelay = 40; //counter clockwise spin
-
 	}
 
 	static randomItem(): string {
@@ -59,10 +55,9 @@ export class KartItems {
 		return KartItems.items[i];
 	}
 
-
 	update(input: InputData) {
-		let pressed = (input.item && !this._lastItemState);
-		const released = (this._lastItemState && !input.item);
+		let pressed = input.item && !this._lastItemState;
+		const released = this._lastItemState && !input.item;
 		if (!this.empty) {
 			if (this.currentItem == null) {
 				//carousel
@@ -75,10 +70,10 @@ export class KartItems {
 					const item = KartItems.randomItem();
 
 					if (this.kart.local) {
-						console.log(item)
+						console.log(item);
 					}
 
-					this._sfx((this._specialItems.indexOf(item) == -1) ? 63 : 64);
+					this._sfx(this._specialItems.indexOf(item) == -1 ? 63 : 64);
 					this.currentItem = item;
 				} else {
 					//if item button is pressed, we speed up the carousel
@@ -90,10 +85,9 @@ export class KartItems {
 				if (pressed) {
 					//fire?
 					this.heldItem = this._createItem();
-					console.log(`${this.currentItem} drop`)
+					console.log(`${this.currentItem} drop`);
 					this.currentItem = null;
 					this.empty = true;
-
 
 					if (this.heldItem.canBeHeld()) {
 						//begin holding
@@ -129,7 +123,7 @@ export class KartItems {
 		this._lastItemState = input.item;
 	}
 
-	getItem(_specific: any): boolean {
+	getItem(_specific: string | null): boolean {
 		if (!this.empty) {
 			return false;
 		} else {
@@ -141,22 +135,23 @@ export class KartItems {
 			// }
 			this.empty = false;
 			this._carouselSfx = this._sfx(62);
+			return true;
 		}
 	}
 
-	_sfx(id: number): nitroAudioSound {
+	private _sfx(id: number): nitroAudioSound | null {
 		if (this.kart.local) {
 			return nitroAudio.playSound(id, { volume: 2 }, 0, null);
 		}
 		return null;
 	}
 
-	_createItem(): Item {
-		var item = this.scene.items.createItem(this.currentItem, this.kart);
+	private _createItem(): Item {
+		let item = this.scene.items.createItem(this.currentItem!, this.kart);
 		return item;
 	}
 
-	_release(input: InputData): void {
+	private _release(input: InputData): void {
 		if (this.heldItem != null) {
 			this.heldItem.release(input.airTurn);
 		}

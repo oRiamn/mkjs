@@ -5,7 +5,7 @@ import { nitroModel } from "../render/nitroModel";
 import { nitroRender } from "../render/nitroRender";
 
 export class Goal3DUI implements SceneEntity {
-	transparent: boolean;
+	transparent!: boolean;
 	scene: Scene;
 	pos: vec3;
 	mat: mat4;
@@ -27,18 +27,13 @@ export class Goal3DUI implements SceneEntity {
 		this.mat = mat4.create();
 		this.proj = mat4.create();
 
-		this.param = [
-			-128,
-			128,
-			-96,
-			96
-		].map(e => e / 1024)
+		this.param = [-128, 128, -96, 96].map((e) => e / 1024);
 
 		this.buildOrtho(nitroRender.getViewWidth(), nitroRender.getViewHeight());
 		this.lastWidth = 0;
 
-		var bmdFile = this.scene.gameRes.RaceLoc.getFile("goal.nsbmd");
-		var bcaFile = this.scene.gameRes.Race.getFile("goal.nsbca")
+		let bmdFile = this.scene.gameRes.RaceLoc.getFile("goal.nsbmd")!;
+		let bcaFile = this.scene.gameRes.Race.getFile("goal.nsbca")!;
 
 		this.bmd = new nsbmd(bmdFile);
 		this.bca = new nsbca(bcaFile);
@@ -52,16 +47,16 @@ export class Goal3DUI implements SceneEntity {
 		this.model = new nitroModel(this.bmd, null);
 	}
 
-	buildOrtho(width: number, height: number) {
+	private buildOrtho(width: number, height: number) {
 		this.lastWidth = width;
-		var ratio = width / height;
-		var w = (this.param[3] - this.param[2]) * ratio / 2;
+		let ratio = width / height;
+		let w = ((this.param[3] - this.param[2]) * ratio) / 2;
 		mat4.ortho(this.proj, -w, w, this.param[2], this.param[3], -0.001, 10);
 	}
 
 	draw(view: mat4) {
 		if (nitroRender.flagShadow || this.animFrame < 0) return;
-		var width = nitroRender.getViewWidth();
+		let width = nitroRender.getViewWidth();
 		if (width != this.lastWidth) {
 			this.buildOrtho(width, nitroRender.getViewHeight());
 		}

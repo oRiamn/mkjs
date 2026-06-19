@@ -1,16 +1,19 @@
 type MKSROMLOADEventTarget = EventTarget & {
-	result: IDBDatabase
-}
+	result: IDBDatabase;
+};
+
+type StoredGameData = FileReader["result"];
+type GameFileCallback = (data: StoredGameData) => void;
 
 export class fileStore {
 	db: IDBDatabase;
-	indexedDB: null;
-	fileCallback: any;
+	indexedDB: IDBFactory | null;
+	fileCallback: GameFileCallback | null;
 	static instance: fileStore;
-	waitForROM: boolean;
+	waitForROM!: boolean;
 
 	constructor() {
-		this.db = null;
+		this.db = null!;
 		this.indexedDB = null;
 		this.fileCallback = null;
 	}
@@ -22,39 +25,36 @@ export class fileStore {
 		return this.instance;
 	}
 
-	requestGameFiles(callback: (r: any) => any) {
-		this.indexedDB = window.indexedDB
-			|| (window as any).webkitIndexedDB
-			|| (window as any).mozIndexedDB
-			|| (window as any).shimIndexedDB;
+	requestGameFiles(callback: GameFileCallback) {
+		this.indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.shimIndexedDB || null;
 
-		var request = indexedDB.open("MKJS-DB", 1);
+		let request = this.indexedDB!.open("MKJS-DB", 1);
 		request.onerror = window.onerror;
 
 		request.onsuccess = (event) => {
 			const target = <MKSROMLOADEventTarget>event.target;
 			this.db = target.result;
 			this.loadGameFiles(callback);
-		}
+		};
 
 		request.onupgradeneeded = (event) => {
 			const target = <MKSROMLOADEventTarget>event.target;
 			this.db = target.result;
-			var objectStore = this.db.createObjectStore("files", { keyPath: "filename" });
+			let objectStore = this.db.createObjectStore("files", { keyPath: "filename" });
 			objectStore.transaction.oncomplete = (event) => {
 				this.loadGameFiles(callback);
-			}
-		}
+			};
+		};
 	}
 
-	loadGameFiles(callback: any) {
-		var transaction = this.db.transaction(["files"]);
+	private loadGameFiles(callback: GameFileCallback) {
+		let transaction = this.db.transaction(["files"]);
 		transaction.oncomplete = function () {
 			console.log("Success transaction");
 		};
-		var objectStore = transaction.objectStore("files");
+		let objectStore = transaction.objectStore("files");
 
-		var request = objectStore.get("mkds.nds");
+		let request = objectStore.get("mkds.nds");
 		request.onerror = function (event) {
 			alert("Fatal database error!");
 		};
@@ -64,13 +64,13 @@ export class fileStore {
 		};
 	}
 
-	validateFiles() {
-		var transaction = this.db.transaction(["files"]);
+	private validateFiles() {
+		let transaction = this.db.transaction(["files"]);
 		transaction.oncomplete = function () {
 			console.log("Success transaction");
 		};
-		var objectStore = transaction.objectStore("files");
-		var request = objectStore.get("mkds.nds");
+		let objectStore = transaction.objectStore("files");
+		let request = objectStore.get("mkds.nds");
 		request.onerror = () => {
 			alert("Fatal database error!");
 		};
@@ -79,40 +79,40 @@ export class fileStore {
 		};
 	}
 
-	downloadGame(url: string, callback: any) {
+	private downloadGame(url: string | null, callback: GameFileCallback) {
 		if (typeof url == "string") {
-			var xml = new XMLHttpRequest();
+			let xml = new XMLHttpRequest();
 			xml.open("GET", url, true);
 			xml.responseType = "arraybuffer";
 			xml.onload = () => {
 				this.storeGame(xml.response, callback);
-			}
+			};
 			xml.send();
 		} else {
-			alert("You need to supply MKJS with a Mario Kart DS ROM to function. Click anywhere on the page to load a file.")
+			alert("You need to supply MKJS with a Mario Kart DS ROM to function. Click anywhere on the page to load a file.");
 			this.fileCallback = callback;
-			document.getElementById("fileIn").onchange = (...args) => this.fileInChange(...args);
+			document.getElementById("fileIn")!.onchange = (...args) => this.fileInChange(...args);
 			this.waitForROM = true;
 		}
 	}
 
-	fileInChange(e: Event) {
-		var bFile = (e.target as HTMLInputElement).files[0];
-		var bReader = new FileReader();
+	private fileInChange(e: Event) {
+		let bFile = (e.target as HTMLInputElement).files![0];
+		let bReader = new FileReader();
 		bReader.onload = (e) => {
 			this.waitForROM = false; //todo: verify
-			this.storeGame(e.target.result, (...args: any) => this.fileCallback(...args));
+			this.storeGame(e.target!.result, (data) => this.fileCallback?.(data));
 		};
 		bReader.readAsArrayBuffer(bFile);
 	}
 
-	storeGame(dat: FileReader['result'], callback: any) {
-		var transaction = this.db.transaction(["files"], "readwrite");
+	private storeGame(dat: StoredGameData, callback: GameFileCallback) {
+		let transaction = this.db.transaction(["files"], "readwrite");
 		transaction.oncomplete = function () {
 			console.log("Success transaction");
 		};
-		var objectStore = transaction.objectStore("files");
-		var request = objectStore.put({ filename: "mkds.nds", data: dat });
+		let objectStore = transaction.objectStore("files");
+		let request = objectStore.put({ filename: "mkds.nds", data: dat });
 
 		request.onerror = () => {
 			alert("Failed to store game locally!");
@@ -123,4 +123,4 @@ export class fileStore {
 			callback(dat);
 		};
 	}
-};
+}

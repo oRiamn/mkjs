@@ -13,17 +13,6 @@ import { nitroAnimator, nitroAnimator_matStack } from "../../render/nitroAnimato
 import { ObjDecor } from "../objDecor";
 
 export class BeachTree extends ObjDecor {
-	collidable: boolean;
-	_res: ProvidedRes;
-	_forceBill: boolean;
-	_obji: nkm_section_OBJI;
-	_mat: mat4;
-	_anim: nitroAnimator;
-	_animFrame: number;
-	_animMat: nitroAnimator_matStack;
-	pos: vec3;
-	angle: vec3;
-	scale: vec3;
 	constructor(obji: nkm_section_OBJI, _scene: Scene) {
 		super(obji, _scene);
 		this._forceBill = false;
@@ -32,5 +21,4 @@ export class BeachTree extends ObjDecor {
 	requireRes() {
 		return { mdl: [{ nsbmd: "BeachTree1.nsbmd" }] };
 	}
-
 }

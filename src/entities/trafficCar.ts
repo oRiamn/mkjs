@@ -1,7 +1,7 @@
 //
 // trafficCar.js
 //--------------------
-// Provides multiple types of traffic. 
+// Provides multiple types of traffic.
 // by RHY3756547
 //
 // includes:
@@ -46,11 +46,10 @@ class NPCVehicle implements lsc_taget {
 	curMat: mat4;
 	colMat: mat4;
 	constructor(obji: nkm_section_OBJI, scene: Scene) {
-
 		this.obji = obji;
 		this.scene = scene;
 
-		this.res = undefined;
+		this.res = undefined!;
 
 		this.pos = vec3.clone(this.obji.pos);
 		//this.angle = vec3.clone(obji.angle);
@@ -59,13 +58,12 @@ class NPCVehicle implements lsc_taget {
 
 		this.route = this.scene.paths[this.obji.routeID];
 		this.routeSpeed = 0.01;
-		this.unknown = (this.obji.setting1 & 0xFFFF);
-		this.routePos = (this.obji.setting1 >> 16); //(obji.setting1&0xFFFF)%t.route.length;
-		this.variant = (this.obji.setting2 & 0xFFFF); //sets design for this car (from nsbtp)
-		this.variant2 = (this.obji.setting2 >> 16); //0 or 1. unknown purpose
+		this.unknown = this.obji.setting1 & 0xffff;
+		this.routePos = this.obji.setting1 >> 16; //(obji.setting1&0xFFFF)%t.route.length;
+		this.variant = this.obji.setting2 & 0xffff; //sets design for this car (from nsbtp)
+		this.variant2 = this.obji.setting2 >> 16; //0 or 1. unknown purpose
 
 		this.routePos = (this.routePos + 1) % this.route.length;
-
 
 		const t = this.routePos + this.route.length;
 
@@ -73,7 +71,7 @@ class NPCVehicle implements lsc_taget {
 			this.route[(t - 2) % this.route.length].pos,
 			this.route[(t - 1) % this.route.length].pos,
 			this.route[this.routePos].pos,
-			this.route[(this.routePos + 1) % this.route.length].pos
+			this.route[(this.routePos + 1) % this.route.length].pos,
 		];
 
 		this.nextNode = this.route[this.routePos];
@@ -89,27 +87,29 @@ class NPCVehicle implements lsc_taget {
 		this.colMode = 0;
 		this.colRad = 512;
 		this.colFrame = 0;
-		this.colRes = undefined;
+		this.colRes = undefined!;
 		this.dirVel = 0;
-		this.prevMat = undefined;
-		this.curMat = undefined;
+		this.prevMat = undefined!;
+		this.curMat = undefined!;
 		this.colMat = mat4.create();
 		this.prevMat = this.curMat;
 	}
 
-	moveWith(obj: Item){ //used for collidable objects that move.
+	moveWith(obj: Item) {
+		//used for collidable objects that move.
 		//the most general way to move something with an object is to multiply its position by the inverse mv matrix of that object, and then the new mv matrix.
-		vec3.transformMat4(obj.pos, obj.pos, mat4.invert(mat4.create(), this.prevMat))
+		vec3.transformMat4(obj.pos, obj.pos, mat4.invert(mat4.create(), this.prevMat));
 		vec3.transformMat4(obj.pos, obj.pos, this.curMat);
 	}
 
-	requireRes() { //scene asks what resources to load
+	requireRes() {
+		//scene asks what resources to load
 		throw new Error("Not implemented");
 	}
 
-	setMat() {
+	private setMat() {
 		this.prevMat = this.curMat;
-		var mat = mat4.create();
+		let mat = mat4.create();
 		mat4.translate(mat, mat, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
@@ -133,7 +133,7 @@ class NPCVehicle implements lsc_taget {
 			}
 		}
 		this.colRes = this.res.mdl[0].getBoundingCollisionModel(0, 0);
-		for (var i = 0; i < this.colRes.dat.length; i++) {
+		for (let i = 0; i < this.colRes.dat.length; i++) {
 			this.colRes.dat[i].CollisionType = MKDS_COLTYPE.KNOCKBACK_DAMAGE << 8;
 		}
 	}
@@ -142,12 +142,12 @@ class NPCVehicle implements lsc_taget {
 		//simple behaviour, just follow the path! piece of cake.
 
 		//recalculate our route speed using a target real world speed.
-		var nextTime = this.elapsedTime + this.routeSpeed;
-		for (var i = 0; i < ((this.elapsedTime == 0) ? 3 : 1); i++) {
+		let nextTime = this.elapsedTime + this.routeSpeed;
+		for (let i = 0; i < (this.elapsedTime == 0 ? 3 : 1); i++) {
 			if (nextTime < 1) {
-				var targSpeed = 2;
-				var estimate = this._cubic3D(this.nodes, nextTime);
-				var estDistance = vec3.dist(estimate, this.pos);
+				let targSpeed = 2;
+				let estimate = this._cubic3D(this.nodes, nextTime);
+				let estDistance = vec3.dist(estimate, this.pos);
 				this.routeSpeed *= targSpeed / estDistance; //correct
 				if (this.routeSpeed > 0.2) this.routeSpeed = 0.2;
 			}
@@ -155,9 +155,9 @@ class NPCVehicle implements lsc_taget {
 		if (this.routeSpeed <= 0) this.routeSpeed = 0.01;
 
 		this.elapsedTime += this.routeSpeed;
-		var i = this.elapsedTime;
+		let i = this.elapsedTime;
 
-		var newPos = this._cubic3D(this.nodes, i); //vec3.lerp([], t.prevPos, t.nextNode.pos, i);
+		let newPos = this._cubic3D(this.nodes, i); //vec3.lerp([], t.prevPos, t.nextNode.pos, i);
 		vec3.sub(this.vel, newPos, this.pos);
 		this.pos = newPos;
 
@@ -171,21 +171,21 @@ class NPCVehicle implements lsc_taget {
 			this.routeSpeed = 0.25;
 		}
 
-		this.curNormal = vec3.sub([0, 0, 0], this.prevPos, this.pos)
+		this.curNormal = vec3.sub([0, 0, 0], this.prevPos, this.pos);
 		this.prevPos = vec3.clone(this.pos);
 		vec3.normalize(this.curNormal, this.curNormal);
 		if (isNaN(this.curNormal[0])) this.curNormal = [0, 0, 1];
 
-		var spos = vec3.clone(this.pos);
+		let spos = vec3.clone(this.pos);
 		spos[1] += 32;
-		var result = lsc.raycast(spos, [0, -100, 0], scene, 0.05, []);
+		let result = lsc.raycast(spos, [0, -100, 0], scene, 0.05, []);
 		if (result != null) {
 			this.floorNormal = result.normal;
 		} else {
 			this.floorNormal = [0, 1, 0];
 		}
 
-		var rate = 0.025;
+		let rate = 0.025;
 		this.curFloorNormal[0] += (this.floorNormal[0] - this.curFloorNormal[0]) * rate;
 		this.curFloorNormal[1] += (this.floorNormal[1] - this.curFloorNormal[1]) * rate;
 		this.curFloorNormal[2] += (this.floorNormal[2] - this.curFloorNormal[2]) * rate;
@@ -194,7 +194,7 @@ class NPCVehicle implements lsc_taget {
 	}
 
 	draw(view: mat4, pMatrix: mat4) {
-		var mat = mat4.translate(mat4.create(), view, this.pos);
+		let mat = mat4.translate(mat4.create(), view, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
 
@@ -205,8 +205,8 @@ class NPCVehicle implements lsc_taget {
 
 	//end collision stuff
 
-	_cubic1D(y0: number, y1: number, y2: number, y3: number, i: number) {
-		var a0, a1, a2, a3, i2;
+	private _cubic1D(y0: number, y1: number, y2: number, y3: number, i: number) {
+		let a0, a1, a2, a3, i2;
 
 		i2 = i * i;
 		a0 = -0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3;
@@ -214,36 +214,40 @@ class NPCVehicle implements lsc_taget {
 		a2 = -0.5 * y0 + 0.5 * y2;
 		a3 = y1;
 
-		return (a0 * i * i2 + a1 * i2 + a2 * i + a3);
+		return a0 * i * i2 + a1 * i2 + a2 * i + a3;
 	}
 
-	_cubic3D(points: vec3[], i: number): vec3 { //note: i is 0-1 between point 1 and 2. (0 and 3 are used to better define the curve)
-		var p0 = points[0];
-		var p1 = points[1];
-		var p2 = points[2];
-		var p3 = points[3];
+	private _cubic3D(points: vec3[], i: number): vec3 {
+		//note: i is 0-1 between point 1 and 2. (0 and 3 are used to better define the curve)
+		let p0 = points[0];
+		let p1 = points[1];
+		let p2 = points[2];
+		let p3 = points[3];
 		return [
 			this._cubic1D(p0[0], p1[0], p2[0], p3[0], i),
 			this._cubic1D(p0[1], p1[1], p2[1], p3[1], i),
-			this._cubic1D(p0[2], p1[2], p2[2], p3[2], i)
+			this._cubic1D(p0[2], p1[2], p2[2], p3[2], i),
 		];
 	}
 }
 
 export class ObjTruck extends NPCVehicle implements SceneEntityObject {
-	requireRes() { //scene asks what resources to load
+	requireRes() {
+		//scene asks what resources to load
 		return { mdl: [{ nsbmd: "car_a.nsbmd" }], other: ["car_a.nsbtp"] }; //one model, car
 	}
-};
+}
 
 export class ObjCar extends NPCVehicle implements SceneEntityObject {
-	requireRes() { //scene asks what resources to load
+	requireRes() {
+		//scene asks what resources to load
 		return { mdl: [{ nsbmd: "truck_a.nsbmd" }], other: ["truck_a.nsbtp"] }; //one model, truck
 	}
-};
+}
 
 export class ObjBus extends NPCVehicle implements SceneEntityObject {
-	requireRes() { //scene asks what resources to load
+	requireRes() {
+		//scene asks what resources to load
 		return { mdl: [{ nsbmd: "bus_a.nsbmd" }] }; //one model, bus
 	}
-};
+}

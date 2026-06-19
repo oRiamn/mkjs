@@ -7,10 +7,10 @@
 interface compiled_shader<T extends shader_config> {
 	program: WebGLProgram;
 	attributes: {
-		[a in keyof T['attributes']]: number;
-	}
+		[a in keyof T["attributes"]]: number;
+	};
 	uniforms: {
-		[u in keyof T['uniforms']]: WebGLUniformLocation;
+		[u in keyof T["uniforms"]]: WebGLUniformLocation;
 	};
 }
 
@@ -18,65 +18,63 @@ type shader_config = {
 	frag: string;
 	vert: string;
 	attributes: {
-		[x: string]: string
+		[x: string]: string;
 	};
 	uniforms: {
-		[x: string]: string
+		[x: string]: string;
 	};
-}
-
+};
 
 export type nitroShaders_defaultShader = {
-	program: WebGLProgram,
+	program: WebGLProgram;
 	attributes: {
-		vertexPositionAttribute: number,
-		textureCoordAttribute: number,
-		colorAttribute: number,
-		matAttribute: number,
-		normAttribute: number,
-	},
+		vertexPositionAttribute: number;
+		textureCoordAttribute: number;
+		colorAttribute: number;
+		matAttribute: number;
+		normAttribute: number;
+	};
 	uniforms: {
-		pMatrixUniform: WebGLUniformLocation,
-		matStackUniform: WebGLUniformLocation,
-		mvMatrixUniform: WebGLUniformLocation,
-		texMatrixUniform: WebGLUniformLocation,
-		samplerUniform: WebGLUniformLocation,
-		colMultUniform: WebGLUniformLocation,
-	}
-}
+		pMatrixUniform: WebGLUniformLocation;
+		matStackUniform: WebGLUniformLocation;
+		mvMatrixUniform: WebGLUniformLocation;
+		texMatrixUniform: WebGLUniformLocation;
+		samplerUniform: WebGLUniformLocation;
+		colMultUniform: WebGLUniformLocation;
+	};
+};
 
 export type nitroShaders_shadowShader = {
-	program: WebGLProgram,
+	program: WebGLProgram;
 	attributes: {
-		vertexPositionAttribute: number,
-		textureCoordAttribute: number,
-		colorAttribute: number,
-		matAttribute: number,
-		normAttribute: number,
-	},
+		vertexPositionAttribute: number;
+		textureCoordAttribute: number;
+		colorAttribute: number;
+		matAttribute: number;
+		normAttribute: number;
+	};
 	uniforms: {
-		pMatrixUniform: WebGLUniformLocation,
-		matStackUniform: WebGLUniformLocation,
-		mvMatrixUniform: WebGLUniformLocation,
-		texMatrixUniform: WebGLUniformLocation,
-		samplerUniform: WebGLUniformLocation,
-		colMultUniform: WebGLUniformLocation,
-		shadowMatUniform: WebGLUniformLocation,
-		farShadowMatUniform: WebGLUniformLocation,
-		lightIntensityUniform: WebGLUniformLocation,
-		shadLightenUniform: WebGLUniformLocation,
-		lightDirUniform: WebGLUniformLocation,
-		normalFlipUniform: WebGLUniformLocation,
-		shadOffUniform: WebGLUniformLocation,
-		farShadOffUniform: WebGLUniformLocation,
-		lightSamplerUniform: WebGLUniformLocation,
-		farLightSamplerUniform: WebGLUniformLocation,
-	}
-}
+		pMatrixUniform: WebGLUniformLocation;
+		matStackUniform: WebGLUniformLocation;
+		mvMatrixUniform: WebGLUniformLocation;
+		texMatrixUniform: WebGLUniformLocation;
+		samplerUniform: WebGLUniformLocation;
+		colMultUniform: WebGLUniformLocation;
+		shadowMatUniform: WebGLUniformLocation;
+		farShadowMatUniform: WebGLUniformLocation;
+		lightIntensityUniform: WebGLUniformLocation;
+		shadLightenUniform: WebGLUniformLocation;
+		lightDirUniform: WebGLUniformLocation;
+		normalFlipUniform: WebGLUniformLocation;
+		shadOffUniform: WebGLUniformLocation;
+		farShadOffUniform: WebGLUniformLocation;
+		lightSamplerUniform: WebGLUniformLocation;
+		farLightSamplerUniform: WebGLUniformLocation;
+	};
+};
 
 export class nitroShaders {
-
-	static _defaultFrag = `
+	private static _defaultFrag = `
 	precision highp float;
 	
 	varying vec2 vTextureCoord;
@@ -118,9 +116,9 @@ export class nitroShaders {
 		gl_FragColor = texture2D(uSampler, vTextureCoord)*color;
 		if (gl_FragColor.a < 1.0 && (gl_FragColor.a == 0.0 || dither(gl_FragColor.a) == 0.0)) discard;
 	}
-	`
+	`;
 
-	static _defaultVert = `
+	private static _defaultVert = `
 	attribute vec3 aVertexPosition;
 	attribute vec2 aTextureCoord;
 	attribute vec4 aColor;
@@ -147,9 +145,9 @@ export class nitroShaders {
 		color = aColor*colMult;
 		color = vec4(color.x*diffuse, color.y*diffuse, color.z*diffuse, color.w);
 	}
-	`
+	`;
 
-	static _shadFrag = `
+	private static _shadFrag = `
 	precision highp float;
 	
 	varying vec2 vTextureCoord;
@@ -210,9 +208,9 @@ export class nitroShaders {
 		
 		if (gl_FragColor.a == 0.0) discard;
 	}
-	`
+	`;
 
-	static _shadVert = `
+	private static _shadVert = `
 	attribute vec3 aVertexPosition;
 	attribute vec2 aTextureCoord;
 	attribute vec4 aColor;
@@ -252,10 +250,10 @@ export class nitroShaders {
 		color = aColor*colMult;
 		color = vec4(color.x*diffuse, color.y*diffuse, color.z*diffuse, color.w);
 	}
-	`
+	`;
 
 	static compileDefaultShader(): nitroShaders_defaultShader {
-		var conf = {
+		let conf = {
 			frag: nitroShaders._defaultFrag,
 			vert: nitroShaders._defaultVert,
 			attributes: {
@@ -263,7 +261,7 @@ export class nitroShaders {
 				textureCoordAttribute: "aTextureCoord",
 				colorAttribute: "aColor",
 				matAttribute: "matrixID",
-				normAttribute: "aNormal"
+				normAttribute: "aNormal",
 			},
 			uniforms: {
 				pMatrixUniform: "uPMatrix",
@@ -273,7 +271,6 @@ export class nitroShaders {
 				samplerUniform: "uSampler",
 				colMultUniform: "colMult",
 			},
-
 		};
 
 		const shader: compiled_shader<typeof conf> = nitroShaders._compileShader(conf);
@@ -281,7 +278,7 @@ export class nitroShaders {
 	}
 
 	static compileShadowShader(): nitroShaders_shadowShader {
-		var conf = {
+		let conf = {
 			frag: nitroShaders._shadFrag,
 			vert: nitroShaders._shadVert,
 			attributes: {
@@ -289,7 +286,7 @@ export class nitroShaders {
 				textureCoordAttribute: "aTextureCoord",
 				colorAttribute: "aColor",
 				matAttribute: "matrixID",
-				normAttribute: "aNormal"
+				normAttribute: "aNormal",
 			},
 			uniforms: {
 				pMatrixUniform: "uPMatrix",
@@ -311,15 +308,15 @@ export class nitroShaders {
 			},
 		};
 
-		const shader: compiled_shader<typeof conf> = nitroShaders._compileShader(conf);		
+		const shader: compiled_shader<typeof conf> = nitroShaders._compileShader(conf);
 		return shader;
 	}
 
-	static _compileShader(conf: shader_config | any): compiled_shader<typeof conf> {
-		const frag = nitroShaders._getShader(gl, conf.frag, gl.FRAGMENT_SHADER);
-		const vert = nitroShaders._getShader(gl, conf.vert, gl.VERTEX_SHADER);
+	private static _compileShader<Type extends shader_config>(conf: Type): compiled_shader<Type> {
+		const frag = nitroShaders._getShader(gl, conf.frag, gl.FRAGMENT_SHADER)!;
+		const vert = nitroShaders._getShader(gl, conf.vert, gl.VERTEX_SHADER)!;
 
-		const program = gl.createProgram();
+		const program = gl.createProgram()!;
 		gl.attachShader(program, vert);
 		gl.attachShader(program, frag);
 		gl.linkProgram(program);
@@ -328,35 +325,36 @@ export class nitroShaders {
 			alert("Could not initialise shaders");
 		}
 
-
-		const ret: compiled_shader<shader_config> = {
+		const ret: compiled_shader<Type> = {
 			program,
-			attributes: {},
-			uniforms: {}
-		}
+			attributes: {} as compiled_shader<Type>["attributes"],
+			uniforms: {} as compiled_shader<Type>["uniforms"],
+		};
 
-		for (const attr in conf.attributes) {
-			if (Object.hasOwnProperty.call(conf.attributes, attr)) {
-				const value = conf.attributes[attr];
+		for (const attrName in conf.attributes) {
+			if (Object.hasOwnProperty.call(conf.attributes, attrName)) {
+				const attr = attrName as keyof Type["attributes"];
+				const value = conf.attributes[attrName];
 				const attributeLocation = gl.getAttribLocation(program, value);
 				ret.attributes[attr] = attributeLocation;
 				gl.enableVertexAttribArray(attributeLocation);
 			}
 		}
 
-		for (const attr in conf.uniforms) {
-			if (Object.hasOwnProperty.call(conf.uniforms, attr)) {
-				const name = conf.uniforms[attr];
-				const uniformLocation = gl.getUniformLocation(program, name);
-				ret.uniforms[attr] = uniformLocation;
+		for (const uniformName in conf.uniforms) {
+			if (Object.hasOwnProperty.call(conf.uniforms, uniformName)) {
+				const uniform = uniformName as keyof Type["uniforms"];
+				const name = conf.uniforms[uniformName];
+				const uniformLocation = gl.getUniformLocation(program, name)!;
+				ret.uniforms[uniform] = uniformLocation;
 			}
 		}
 
 		return ret;
 	}
 
-	static _getShader(gl: CustomWebGLRenderingContext, str: string, type: GLint) {
-		const shader = gl.createShader(type);
+	private static _getShader(gl: CustomWebGLRenderingContext, str: string, type: GLint) {
+		const shader = gl.createShader(type)!;
 
 		gl.shaderSource(shader, str);
 		gl.compileShader(shader);

@@ -1,1416 +1,1580 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-	<link rel="icon" href="data:;base64,iVBORw0KGgo=">
-	<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-	<script
-		src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
-		integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ=="
-		crossorigin="anonymous"
-		defer
-	></script>
-	<script
-		src="https://cdnjs.cloudflare.com/ajax/libs/IndexedDBShim/12.0.0/indexeddbshim.min.js"
-		integrity="sha512-SRJ8jDBbdbHT4SDAJ2xdgs57dFd9GZgIjQy/ScMdy2+3qY95HcLfoHMSzOrxZolZ7pDA60ZoqgRAjc5b6U+KAA=="
-		crossorigin="anonymous"
-		referrerpolicy="no-referrer"
-		defer
-	></script>
-	<script src="bundle.js"></script>
-	<script>
-		var mobile = false;
-		var viewer = null;      // state of the currently displayed model
-		var archiveCache = {};  // already-opened narcs, indexed by archive path
-		var view2d = null;      // state of the currently displayed 2D image (NCGR / NCLR)
+	<head>
+		<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
+			integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ=="
+			crossorigin="anonymous"
+			defer
+		></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/IndexedDBShim/12.0.0/indexeddbshim.min.js"
+			integrity="sha512-SRJ8jDBbdbHT4SDAJ2xdgs57dFd9GZgIjQy/ScMdy2+3qY95HcLfoHMSzOrxZolZ7pDA60ZoqgRAjc5b6U+KAA=="
+			crossorigin="anonymous"
+			referrerpolicy="no-referrer"
+			defer
+		></script>
+		<script src="bundle.js"></script>
+		<script>
+			var mobile = false;
+			var viewer = null; // state of the currently displayed model
+			var archiveCache = {}; // already-opened narcs, indexed by archive path
+			var view2d = null; // state of the currently displayed 2D image (NCGR / NCLR)
 
-		window.onload = function () {
-			init();
-		}
+			window.onload = function () {
+				init();
+			};
 
-		window.onerror = function (...args) {
-			const [msg, url, line, col, e] = args;
-			if (e) {
-				var stack = e.stack.replace(/^[^\(]+?[\n$]/gm, '')
-					.replace(/^\s+at\s+/gm, '')
-					.replace(/^Object.<anonymous>\s*\(/gm, '{anonymous}()@')
-					.split('\n');
-				console.error(stack);
+			window.onerror = function (...args) {
+				const [msg, url, line, col, e] = args;
+				if (e) {
+					var stack = e.stack
+						.replace(/^[^\(]+?[\n$]/gm, "")
+						.replace(/^\s+at\s+/gm, "")
+						.replace(/^Object.<anonymous>\s*\(/gm, "{anonymous}()@")
+						.split("\n");
+					console.error(stack);
+				}
+			};
+
+			function init() {
+				document.body.addEventListener("click", lockPtr);
+				fileStore.getInstance().requestGameFiles(initNitro);
 			}
-		}
 
-		function init() {
-			document.body.addEventListener("click", lockPtr);
-			fileStore.getInstance().requestGameFiles(initNitro);
-		}
-
-		function lockPtr() {
-			if (fileStore.getInstance().waitForROM) {
-				document.getElementById("fileIn").click();
-			}
-		}
-
-		function initNitro(rom) {
-			gameROM = new ndsFS(rom);
-
-			gl = initGL(document.getElementById("canvas3d"));
-			nitroRender.init(gl);
-
-			listROMFiles(gameROM);
-			setupViewerControls();
-			renderLoop();
-		}
-
-		// ---------------------------------------------------------------------
-		// ROM file reading / listing
-		// ---------------------------------------------------------------------
-
-		function isArchiveName(name) {
-			var l = name.toLowerCase();
-			return l.endsWith(".narc") || l.endsWith(".carc");
-		}
-
-		// Reads a file by its full path, descending through any internal
-		// archives (.narc / .carc) encountered along the way.
-		function readROMFile(fullPath) {
-			var parts = fullPath.split("/").filter(function (p) { return p.length > 0; });
-			var fs = gameROM;
-			var rel = "";
-			var archiveKey = "";
-			for (var i = 0; i < parts.length; i++) {
-				rel += "/" + parts[i];
-				archiveKey += "/" + parts[i];
-				if (isArchiveName(parts[i]) && i < parts.length - 1) {
-					var sub = archiveCache[archiveKey];
-					if (!sub) {
-						var buf = fs.getFile(rel);
-						if (parts[i].toLowerCase().endsWith(".carc")) buf = lz77.decompress(buf);
-						sub = new narc(buf);
-						archiveCache[archiveKey] = sub;
-					}
-					fs = sub;
-					rel = "";
+			function lockPtr() {
+				if (fileStore.getInstance().waitForROM) {
+					document.getElementById("fileIn").click();
 				}
 			}
-			return fs.getFile(rel);
-		}
 
-		// Recursively walks the ROM, expanding archives to collect ALL files.
-		function collectROMFiles(fs, basePath, out) {
-			var files = fs.list([], null, "/");
-			for (var i = 0; i < files.length; i++) {
-				var rel = files[i];
-				var full = (basePath === "/" ? "" : basePath) + rel;
-				out.push(full);
+			function initNitro(rom) {
+				gameROM = new ndsFS(rom);
 
-				if (isArchiveName(rel)) {
-					try {
-						var buf = fs.getFile(rel);
-						if (rel.toLowerCase().endsWith(".carc")) buf = lz77.decompress(buf);
-						collectROMFiles(new narc(buf), full, out);
-					} catch (e) {
-						// Unreadable archive: keep just the file itself.
+				gl = initGL(document.getElementById("canvas3d"));
+				nitroRender.init(gl);
+
+				listROMFiles(gameROM);
+				setupViewerControls();
+				renderLoop();
+			}
+
+			// ---------------------------------------------------------------------
+			// ROM file reading / listing
+			// ---------------------------------------------------------------------
+
+			function isArchiveName(name) {
+				var l = name.toLowerCase();
+				return l.endsWith(".narc") || l.endsWith(".carc");
+			}
+
+			// Reads a file by its full path, descending through any internal
+			// archives (.narc / .carc) encountered along the way.
+			function readROMFile(fullPath) {
+				var parts = fullPath.split("/").filter(function (p) {
+					return p.length > 0;
+				});
+				var fs = gameROM;
+				var rel = "";
+				var archiveKey = "";
+				for (var i = 0; i < parts.length; i++) {
+					rel += "/" + parts[i];
+					archiveKey += "/" + parts[i];
+					if (isArchiveName(parts[i]) && i < parts.length - 1) {
+						var sub = archiveCache[archiveKey];
+						if (!sub) {
+							var buf = fs.getFile(rel);
+							if (parts[i].toLowerCase().endsWith(".carc")) buf = lz77.decompress(buf);
+							sub = new narc(buf);
+							archiveCache[archiveKey] = sub;
+						}
+						fs = sub;
+						rel = "";
 					}
 				}
+				return fs.getFile(rel);
 			}
-			return out;
-		}
 
-		function getFileExt(path) {
-			var name = path.substring(path.lastIndexOf("/") + 1);
-			var dot = name.lastIndexOf(".");
-			if (dot <= 0 || dot === name.length - 1) return "";
-			return name.substring(dot + 1).toLowerCase();
-		}
-
-		function fileClassFromPath(path) {
-			var l = path.toLowerCase();
-			return l.endsWith(".nsbmd") ? " mdl"
-				: l.endsWith(".nsbca") ? " anim"
-				: l.endsWith(".nsbma") ? " mat"
-				: l.endsWith(".nsbta") ? " tanim"
-				: l.endsWith(".nsbtp") ? " tanim"
-				: l.endsWith(".ncgr") ? " tex"
-				: l.endsWith(".nclr") ? " pal"
-				: l.endsWith(".nscr") ? " scr"
-				: l.endsWith(".ncer") ? " cell"
-				: l.endsWith(".nsbtx") ? " btx" : "";
-		}
-
-		function listROMFiles(rom) {
-			var files = collectROMFiles(rom, "/", []);
-			files.sort();
-			window.romFiles = files;
-			window.filteredRomFiles = files.slice();
-
-			var extSelect = document.getElementById("extFilter");
-			var extMap = Object.create(null);
-			for (var i = 0; i < files.length; i++) {
-				var ext = getFileExt(files[i]);
-				if (ext) extMap[ext] = true;
-			}
-			var exts = Object.keys(extMap).sort();
-			var opts = ['<option value="">All extensions</option>'];
-			for (var j = 0; j < exts.length; j++) {
-				opts.push('<option value="' + exts[j] + '">.' + exts[j] + "</option>");
-			}
-			extSelect.innerHTML = opts.join("");
-
-			function renderFilteredList() {
-				var query = document.getElementById("nameFilter").value.trim().toLowerCase();
-				var selectedExt = extSelect.value;
-				var html = [];
-				var filtered = [];
+			// Recursively walks the ROM, expanding archives to collect ALL files.
+			function collectROMFiles(fs, basePath, out) {
+				var files = fs.list([], null, "/");
 				for (var i = 0; i < files.length; i++) {
-					var path = files[i];
-					var lowerPath = path.toLowerCase();
-					if (query && lowerPath.indexOf(query) === -1) continue;
-					if (selectedExt && getFileExt(path) !== selectedExt) continue;
-					if(path.endsWith(".carc")) continue;
-					filtered.push(path);
-					html.push('<div class="f' + fileClassFromPath(path) + '" data-path="' + path + '">' + path + "</div>");
+					var rel = files[i];
+					var full = (basePath === "/" ? "" : basePath) + rel;
+					out.push(full);
+
+					if (isArchiveName(rel)) {
+						try {
+							var buf = fs.getFile(rel);
+							if (rel.toLowerCase().endsWith(".carc")) buf = lz77.decompress(buf);
+							collectROMFiles(new narc(buf), full, out);
+						} catch (e) {
+							// Unreadable archive: keep just the file itself.
+						}
+					}
 				}
-				window.filteredRomFiles = filtered;
-				list.innerHTML = html.join("");
+				return out;
 			}
 
-			var list = document.getElementById("list");
-			renderFilteredList();
-
-			document.getElementById("nameFilter").addEventListener("input", renderFilteredList);
-			extSelect.addEventListener("change", renderFilteredList);
-			list.addEventListener("click", function (e) {
-				var t = e.target;
-				while (t && t !== list && t.getAttribute("data-path") == null) t = t.parentNode;
-				if (!t || t === list) return;
-				var path = t.getAttribute("data-path");
-				var lp = path.toLowerCase();
-				if (lp.endsWith(".nsbmd") || lp.endsWith(".nsbca") || lp.endsWith(".nsbma") || lp.endsWith(".nsbta") || lp.endsWith(".nsbtp")) loadView(path, t);
-				else if (lp.endsWith(".ncgr")) loadNCGR(path, t);
-				else if (lp.endsWith(".nclr")) loadNCLR(path, t);
-				else if (lp.endsWith(".nscr")) loadNSCR(path, t);
-				else if (lp.endsWith(".ncer")) loadNCER(path, t);
-				else if (lp.endsWith(".nsbtx")) loadNSBTX(path, t);
-			});
-
-			return files;
-		}
-
-		// ---------------------------------------------------------------------
-		// Loading a nsbca + its model into the canvas
-		// ---------------------------------------------------------------------
-
-		function findSibling(animPath, ext) {
-			var slash = animPath.lastIndexOf("/");
-			var dir = animPath.substring(0, slash + 1);
-			var base = animPath.substring(slash + 1).replace(/\.[^.]+$/, "");
-			var exact = dir + base + ext;
-			if (window.romFiles.indexOf(exact) !== -1) return exact;
-			// fallback: first file with the desired extension in the same directory
-			var re = new RegExp("\\" + ext + "$", "i");
-			for (var i = 0; i < window.romFiles.length; i++) {
-				var p = window.romFiles[i];
-				if (p.indexOf(dir) === 0 && p.substring(dir.length).indexOf("/") === -1 && re.test(p)) return p;
-			}
-			return null;
-		}
-
-		// Returns all files with the given extension whose filename starts with
-		// the base name of the .nsbmd. Falls back to findSibling if no results.
-		function findFilesForBMD(bmdPath, ext) {
-			var slash = bmdPath.lastIndexOf("/");
-			var baseName = bmdPath.substring(slash + 1).replace(/\.nsbmd$/i, "").toLowerCase();
-			var results = [];
-			for (var i = 0; i < window.romFiles.length; i++) {
-				var p = window.romFiles[i];
-				if (!p.toLowerCase().endsWith(ext)) continue;
-				var fname = p.substring(p.lastIndexOf("/") + 1).toLowerCase();
-				if (fname.indexOf(baseName) === 0) results.push(p);
-			}
-			if (results.length === 0) {
-				var sib = findSibling(bmdPath, ext);
-				if (sib) results.push(sib);
-			}
-			return results;
-		}
-
-		// Populates a <select> with "(none)" + the candidates.
-		// preferredPath: pre-selects this path if it is in the list.
-		// autoFirst: selects the first candidate if no preferredPath matches.
-		// Returns the selected path (null if "(none)").
-		function populateBMDSelect(id, candidates, preferredPath, autoFirst) {
-			var sel = document.getElementById(id);
-			sel.innerHTML = "";
-			var noneOpt = document.createElement("option");
-			noneOpt.value = "";
-			noneOpt.textContent = "(none)";
-			sel.appendChild(noneOpt);
-			var selectedIdx = 0;
-			for (var i = 0; i < candidates.length; i++) {
-				var opt = document.createElement("option");
-				opt.value = candidates[i];
-				opt.textContent = candidates[i].substring(candidates[i].lastIndexOf("/") + 1);
-				sel.appendChild(opt);
-				if (preferredPath && candidates[i] === preferredPath) selectedIdx = i + 1;
-			}
-			if (selectedIdx === 0 && autoFirst && candidates.length > 0) selectedIdx = 1;
-			sel.selectedIndex = selectedIdx;
-			sel.style.display = candidates.length > 0 ? "" : "none";
-			return sel.options[selectedIdx].value || null;
-		}
-
-		// Loads a model into the canvas from the clicked file.
-		// - .nsbmd: the model itself + companions auto-detected
-		// - .nsbca / .nsbtp / .nsbta / .nsbtx: pre-selects the clicked file
-		// - .nsbma: neighbouring .nsbmd model, static (animations hidden)
-		function loadView(clickedPath, el) {
-			show3D();
-			var lower = clickedPath.toLowerCase();
-			var isMat = lower.endsWith(".nsbma");
-
-			var bmdPath = lower.endsWith(".nsbmd") ? clickedPath : findSibling(clickedPath, ".nsbmd");
-			if (!bmdPath) {
-				setStatus("No .nsbmd found for " + clickedPath);
-				return;
+			function getFileExt(path) {
+				var name = path.substring(path.lastIndexOf("/") + 1);
+				var dot = name.lastIndexOf(".");
+				if (dot <= 0 || dot === name.length - 1) return "";
+				return name.substring(dot + 1).toLowerCase();
 			}
 
-			var btxPath = populateBMDSelect("btxSelect", findFilesForBMD(bmdPath, ".nsbtx"),
-				lower.endsWith(".nsbtx") ? clickedPath : null, true);
+			function fileClassFromPath(path) {
+				var l = path.toLowerCase();
+				return l.endsWith(".nsbmd")
+					? " mdl"
+					: l.endsWith(".nsbca")
+						? " anim"
+						: l.endsWith(".nsbma")
+							? " mat"
+							: l.endsWith(".nsbta")
+								? " tanim"
+								: l.endsWith(".nsbtp")
+									? " tanim"
+									: l.endsWith(".ncgr")
+										? " tex"
+										: l.endsWith(".nclr")
+											? " pal"
+											: l.endsWith(".nscr")
+												? " scr"
+												: l.endsWith(".ncer")
+													? " cell"
+													: l.endsWith(".nsbtx")
+														? " btx"
+														: "";
+			}
 
-			if (isMat) {
+			function listROMFiles(rom) {
+				var files = collectROMFiles(rom, "/", []);
+				files.sort();
+				window.romFiles = files;
+				window.filteredRomFiles = files.slice();
+
+				var extSelect = document.getElementById("extFilter");
+				var extMap = Object.create(null);
+				for (var i = 0; i < files.length; i++) {
+					var ext = getFileExt(files[i]);
+					if (ext) extMap[ext] = true;
+				}
+				var exts = Object.keys(extMap).sort();
+				var opts = ['<option value="">All extensions</option>'];
+				for (var j = 0; j < exts.length; j++) {
+					opts.push('<option value="' + exts[j] + '">.' + exts[j] + "</option>");
+				}
+				extSelect.innerHTML = opts.join("");
+
+				function renderFilteredList() {
+					var query = document.getElementById("nameFilter").value.trim().toLowerCase();
+					var selectedExt = extSelect.value;
+					var html = [];
+					var filtered = [];
+					for (var i = 0; i < files.length; i++) {
+						var path = files[i];
+						var lowerPath = path.toLowerCase();
+						if (query && lowerPath.indexOf(query) === -1) continue;
+						if (selectedExt && getFileExt(path) !== selectedExt) continue;
+						if (path.endsWith(".carc")) continue;
+						filtered.push(path);
+						html.push('<div class="f' + fileClassFromPath(path) + '" data-path="' + path + '">' + path + "</div>");
+					}
+					window.filteredRomFiles = filtered;
+					list.innerHTML = html.join("");
+				}
+
+				var list = document.getElementById("list");
+				renderFilteredList();
+
+				document.getElementById("nameFilter").addEventListener("input", renderFilteredList);
+				extSelect.addEventListener("change", renderFilteredList);
+				list.addEventListener("click", function (e) {
+					var t = e.target;
+					while (t && t !== list && t.getAttribute("data-path") == null) t = t.parentNode;
+					if (!t || t === list) return;
+					var path = t.getAttribute("data-path");
+					var lp = path.toLowerCase();
+					if (
+						lp.endsWith(".nsbmd") ||
+						lp.endsWith(".nsbca") ||
+						lp.endsWith(".nsbma") ||
+						lp.endsWith(".nsbta") ||
+						lp.endsWith(".nsbtp")
+					)
+						loadView(path, t);
+					else if (lp.endsWith(".ncgr")) loadNCGR(path, t);
+					else if (lp.endsWith(".nclr")) loadNCLR(path, t);
+					else if (lp.endsWith(".nscr")) loadNSCR(path, t);
+					else if (lp.endsWith(".ncer")) loadNCER(path, t);
+					else if (lp.endsWith(".nsbtx")) loadNSBTX(path, t);
+				});
+
+				return files;
+			}
+
+			// ---------------------------------------------------------------------
+			// Loading a nsbca + its model into the canvas
+			// ---------------------------------------------------------------------
+
+			function findSibling(animPath, ext) {
+				var slash = animPath.lastIndexOf("/");
+				var dir = animPath.substring(0, slash + 1);
+				var base = animPath.substring(slash + 1).replace(/\.[^.]+$/, "");
+				var exact = dir + base + ext;
+				if (window.romFiles.indexOf(exact) !== -1) return exact;
+				// fallback: first file with the desired extension in the same directory
+				var re = new RegExp("\\" + ext + "$", "i");
+				for (var i = 0; i < window.romFiles.length; i++) {
+					var p = window.romFiles[i];
+					if (p.indexOf(dir) === 0 && p.substring(dir.length).indexOf("/") === -1 && re.test(p)) return p;
+				}
+				return null;
+			}
+
+			// Returns all files with the given extension whose filename starts with
+			// the base name of the .nsbmd. Falls back to findSibling if no results.
+			function findFilesForBMD(bmdPath, ext) {
+				var slash = bmdPath.lastIndexOf("/");
+				var baseName = bmdPath
+					.substring(slash + 1)
+					.replace(/\.nsbmd$/i, "")
+					.toLowerCase();
+				var results = [];
+				for (var i = 0; i < window.romFiles.length; i++) {
+					var p = window.romFiles[i];
+					if (!p.toLowerCase().endsWith(ext)) continue;
+					var fname = p.substring(p.lastIndexOf("/") + 1).toLowerCase();
+					if (fname.indexOf(baseName) === 0) results.push(p);
+				}
+				if (results.length === 0) {
+					var sib = findSibling(bmdPath, ext);
+					if (sib) results.push(sib);
+				}
+				return results;
+			}
+
+			// Populates a <select> with "(none)" + the candidates.
+			// preferredPath: pre-selects this path if it is in the list.
+			// autoFirst: selects the first candidate if no preferredPath matches.
+			// Returns the selected path (null if "(none)").
+			function populateBMDSelect(id, candidates, preferredPath, autoFirst) {
+				var sel = document.getElementById(id);
+				sel.innerHTML = "";
+				var noneOpt = document.createElement("option");
+				noneOpt.value = "";
+				noneOpt.textContent = "(none)";
+				sel.appendChild(noneOpt);
+				var selectedIdx = 0;
+				for (var i = 0; i < candidates.length; i++) {
+					var opt = document.createElement("option");
+					opt.value = candidates[i];
+					opt.textContent = candidates[i].substring(candidates[i].lastIndexOf("/") + 1);
+					sel.appendChild(opt);
+					if (preferredPath && candidates[i] === preferredPath) selectedIdx = i + 1;
+				}
+				if (selectedIdx === 0 && autoFirst && candidates.length > 0) selectedIdx = 1;
+				sel.selectedIndex = selectedIdx;
+				sel.style.display = candidates.length > 0 ? "" : "none";
+				return sel.options[selectedIdx].value || null;
+			}
+
+			// Loads a model into the canvas from the clicked file.
+			// - .nsbmd: the model itself + companions auto-detected
+			// - .nsbca / .nsbtp / .nsbta / .nsbtx: pre-selects the clicked file
+			// - .nsbma: neighbouring .nsbmd model, static (animations hidden)
+			function loadView(clickedPath, el) {
+				show3D();
+				var lower = clickedPath.toLowerCase();
+				var isMat = lower.endsWith(".nsbma");
+
+				var bmdPath = lower.endsWith(".nsbmd") ? clickedPath : findSibling(clickedPath, ".nsbmd");
+				if (!bmdPath) {
+					setStatus("No .nsbmd found for " + clickedPath);
+					return;
+				}
+
+				var btxPath = populateBMDSelect(
+					"btxSelect",
+					findFilesForBMD(bmdPath, ".nsbtx"),
+					lower.endsWith(".nsbtx") ? clickedPath : null,
+					true
+				);
+
+				if (isMat) {
+					document.getElementById("bcaSelect").style.display = "none";
+					document.getElementById("btpSelect").style.display = "none";
+					document.getElementById("btaSelect").style.display = "none";
+					applyViewLoad(bmdPath, btxPath, null, null, null, true, el);
+				} else {
+					var bcaPath = populateBMDSelect(
+						"bcaSelect",
+						findFilesForBMD(bmdPath, ".nsbca"),
+						lower.endsWith(".nsbca") ? clickedPath : null,
+						true
+					);
+					var btpPath = populateBMDSelect(
+						"btpSelect",
+						findFilesForBMD(bmdPath, ".nsbtp"),
+						lower.endsWith(".nsbtp") ? clickedPath : null,
+						true
+					);
+					var btaPath = populateBMDSelect(
+						"btaSelect",
+						findFilesForBMD(bmdPath, ".nsbta"),
+						lower.endsWith(".nsbta") ? clickedPath : null,
+						true
+					);
+					applyViewLoad(bmdPath, btxPath, bcaPath, btpPath, btaPath, false, el);
+				}
+			}
+
+			// Performs the actual model loading with the provided paths.
+			function applyViewLoad(bmdPath, btxPath, bcaPath, btpPath, btaPath, isMat, el) {
+				try {
+					var bmd = new nsbmd(readROMFile(bmdPath));
+					var loaded = [bmdPath];
+
+					var btx = null;
+					if (btxPath) {
+						try {
+							btx = new nsbtx(readROMFile(btxPath));
+							loaded.push(btxPath);
+						} catch (e) {
+							btx = null;
+						}
+					}
+
+					var model = new nitroModel(bmd, btx);
+
+					var anim = null,
+						bca = null,
+						length = 1,
+						hasTexAnim = false;
+					if (!isMat) {
+						if (bcaPath) {
+							try {
+								bca = new nsbca(readROMFile(bcaPath));
+								anim = new nitroAnimator(bmd, bca);
+								length = Math.max(1, anim.getLength(0));
+								loaded.push(bcaPath);
+							} catch (e) {
+								bca = null;
+								anim = null;
+							}
+						}
+						if (btpPath) {
+							try {
+								model.loadTexPAnim(new nsbtp(readROMFile(btpPath)));
+								hasTexAnim = true;
+								loaded.push(btpPath);
+							} catch (e) {}
+						}
+						if (btaPath) {
+							try {
+								model.loadTexAnim(new nsbta(readROMFile(btaPath)));
+								hasTexAnim = true;
+								loaded.push(btaPath);
+							} catch (e) {}
+						}
+					}
+
+					viewer = {
+						bmdPath: bmdPath,
+						model: model,
+						anim: anim,
+						animMat: null,
+						animIndex: 0,
+						length: length,
+						hasTexAnim: hasTexAnim,
+						frame: 0,
+						center: [0, 0, 0],
+						radius: 0,
+						dist: 1,
+						yaw: 0,
+						pitch: -0.3,
+						fitted: false,
+					};
+
+					if (bca) {
+						populateAnimSelect(bca);
+					} else {
+						var sel = document.getElementById("animSelect");
+						sel.innerHTML = "";
+						sel.style.display = "none";
+					}
+
+					if (el) setSel(el);
+					var note = isMat ? "  (.nsbma not applied: static model)" : "";
+					setStatus(loaded.join("  +  ") + note);
+				} catch (err) {
+					console.error(err);
+					setStatus("Load error: " + (err && err.message ? err.message : err));
+				}
+			}
+
+			// Reloads the current model from the selector values, preserving the camera.
+			function reloadFromSelects() {
+				if (!viewer || !viewer.bmdPath) return;
+				var camera = {
+					center: viewer.center.slice(),
+					radius: viewer.radius,
+					dist: viewer.dist,
+					yaw: viewer.yaw,
+					pitch: viewer.pitch,
+					fitted: viewer.fitted,
+				};
+				var bmdPath = viewer.bmdPath;
+				var btxPath = document.getElementById("btxSelect").value || null;
+				var bcaPath = document.getElementById("bcaSelect").value || null;
+				var btpPath = document.getElementById("btpSelect").value || null;
+				var btaPath = document.getElementById("btaSelect").value || null;
+				applyViewLoad(bmdPath, btxPath, bcaPath, btpPath, btaPath, false, null);
+				if (viewer) {
+					viewer.center = camera.center;
+					viewer.radius = camera.radius;
+					viewer.dist = camera.dist;
+					viewer.yaw = camera.yaw;
+					viewer.pitch = camera.pitch;
+					viewer.fitted = camera.fitted;
+				}
+			}
+
+			function setStatus(txt) {
+				document.getElementById("status").textContent = txt;
+			}
+
+			// Populates the selector with the animations contained in the nsbca.
+			function populateAnimSelect(bca) {
+				var sel = document.getElementById("animSelect");
+				var names = bca.animData.names || [];
+				var count = bca.animData.objectData.length;
+				sel.innerHTML = "";
+				for (var i = 0; i < count; i++) {
+					var opt = document.createElement("option");
+					opt.value = i;
+					opt.textContent = (names[i] != null ? names[i] : "anim " + i) + " (" + viewer.anim.getLength(i) + "f)";
+					sel.appendChild(opt);
+				}
+				sel.selectedIndex = 0;
+				sel.style.display = count > 1 ? "" : "none";
+			}
+
+			// ---------------------------------------------------------------------
+			// Highlight the selection in the list
+			// ---------------------------------------------------------------------
+
+			function setSel(el) {
+				document.querySelectorAll("#list .sel").forEach(function (n) {
+					n.classList.remove("sel");
+				});
+				if (el) el.classList.add("sel");
+			}
+
+			// ---------------------------------------------------------------------
+			// 2D display (NCGR / NCLR) in an overlay canvas
+			// ---------------------------------------------------------------------
+
+			// Switches to 3D rendering (models): hides the 2D canvas and 2D selectors.
+			function show3D() {
+				view2d = null;
+				document.getElementById("view2d").style.display = "none";
+				document.getElementById("canvas3d").style.display = "";
+				document.getElementById("texSelect").style.display = "none";
+				document.getElementById("ncgrSelect").style.display = "none";
+				document.getElementById("nclrSelect").style.display = "none";
+				document.getElementById("palSelect").style.display = "none";
+			}
+
+			// Switches to 2D rendering (images): stops 3D rendering.
+			function show2D() {
+				viewer = null;
+				document.getElementById("canvas3d").style.display = "none";
+				document.getElementById("animSelect").style.display = "none";
+				document.getElementById("palSelect").style.display = "none";
+				document.getElementById("texSelect").style.display = "none";
+				document.getElementById("ncgrSelect").style.display = "none";
+				document.getElementById("nclrSelect").style.display = "none";
+				document.getElementById("btxSelect").style.display = "none";
 				document.getElementById("bcaSelect").style.display = "none";
 				document.getElementById("btpSelect").style.display = "none";
 				document.getElementById("btaSelect").style.display = "none";
-				applyViewLoad(bmdPath, btxPath, null, null, null, true, el);
-			} else {
-				var bcaPath = populateBMDSelect("bcaSelect", findFilesForBMD(bmdPath, ".nsbca"),
-					lower.endsWith(".nsbca") ? clickedPath : null, true);
-				var btpPath = populateBMDSelect("btpSelect", findFilesForBMD(bmdPath, ".nsbtp"),
-					lower.endsWith(".nsbtp") ? clickedPath : null, true);
-				var btaPath = populateBMDSelect("btaSelect", findFilesForBMD(bmdPath, ".nsbta"),
-					lower.endsWith(".nsbta") ? clickedPath : null, true);
-				applyViewLoad(bmdPath, btxPath, bcaPath, btpPath, btaPath, false, el);
+				document.getElementById("view2d").style.display = "block";
 			}
-		}
 
-		// Performs the actual model loading with the provided paths.
-		function applyViewLoad(bmdPath, btxPath, bcaPath, btpPath, btaPath, isMat, el) {
-			try {
-				var bmd = new nsbmd(readROMFile(bmdPath));
-				var loaded = [bmdPath];
-
-				var btx = null;
-				if (btxPath) {
-					try { btx = new nsbtx(readROMFile(btxPath)); loaded.push(btxPath); } catch (e) { btx = null; }
-				}
-
-				var model = new nitroModel(bmd, btx);
-
-				var anim = null, bca = null, length = 1, hasTexAnim = false;
-				if (!isMat) {
-					if (bcaPath) {
-						try {
-							bca = new nsbca(readROMFile(bcaPath));
-							anim = new nitroAnimator(bmd, bca);
-							length = Math.max(1, anim.getLength(0));
-							loaded.push(bcaPath);
-						} catch (e) { bca = null; anim = null; }
-					}
-					if (btpPath) {
-						try {
-							model.loadTexPAnim(new nsbtp(readROMFile(btpPath)));
-							hasTexAnim = true;
-							loaded.push(btpPath);
-						} catch (e) { }
-					}
-					if (btaPath) {
-						try {
-							model.loadTexAnim(new nsbta(readROMFile(btaPath)));
-							hasTexAnim = true;
-							loaded.push(btaPath);
-						} catch (e) { }
-					}
-				}
-
-				viewer = {
-					bmdPath: bmdPath,
-					model: model,
-					anim: anim,
-					animMat: null,
-					animIndex: 0,
-					length: length,
-					hasTexAnim: hasTexAnim,
-					frame: 0,
-					center: [0, 0, 0],
-					radius: 0,
-					dist: 1,
-					yaw: 0,
-					pitch: -0.3,
-					fitted: false
-				};
-
-				if (bca) {
-					populateAnimSelect(bca);
-				} else {
-					var sel = document.getElementById("animSelect");
-					sel.innerHTML = "";
-					sel.style.display = "none";
-				}
-
-				if (el) setSel(el);
-			var note = isMat ? "  (.nsbma not applied: static model)" : "";
-			setStatus(loaded.join("  +  ") + note);
-		} catch (err) {
-			console.error(err);
-			setStatus("Load error: " + (err && err.message ? err.message : err));
-		}
-	}
-
-		// Reloads the current model from the selector values, preserving the camera.
-		function reloadFromSelects() {
-			if (!viewer || !viewer.bmdPath) return;
-			var camera = {
-				center: viewer.center.slice(),
-				radius: viewer.radius,
-				dist: viewer.dist,
-				yaw: viewer.yaw,
-				pitch: viewer.pitch,
-				fitted: viewer.fitted
-			};
-			var bmdPath = viewer.bmdPath;
-			var btxPath = document.getElementById("btxSelect").value || null;
-			var bcaPath = document.getElementById("bcaSelect").value || null;
-			var btpPath = document.getElementById("btpSelect").value || null;
-			var btaPath = document.getElementById("btaSelect").value || null;
-			applyViewLoad(bmdPath, btxPath, bcaPath, btpPath, btaPath, false, null);
-			if (viewer) {
-				viewer.center = camera.center;
-				viewer.radius = camera.radius;
-				viewer.dist = camera.dist;
-				viewer.yaw = camera.yaw;
-				viewer.pitch = camera.pitch;
-				viewer.fitted = camera.fitted;
-			}
-		}
-
-		function setStatus(txt) {
-			document.getElementById("status").textContent = txt;
-		}
-
-		// Populates the selector with the animations contained in the nsbca.
-		function populateAnimSelect(bca) {
-			var sel = document.getElementById("animSelect");
-			var names = bca.animData.names || [];
-			var count = bca.animData.objectData.length;
-			sel.innerHTML = "";
-			for (var i = 0; i < count; i++) {
-				var opt = document.createElement("option");
-				opt.value = i;
-				opt.textContent = (names[i] != null ? names[i] : "anim " + i) + " (" + viewer.anim.getLength(i) + "f)";
-				sel.appendChild(opt);
-			}
-			sel.selectedIndex = 0;
-			sel.style.display = (count > 1) ? "" : "none";
-		}
-
-		// ---------------------------------------------------------------------
-		// Highlight the selection in the list
-		// ---------------------------------------------------------------------
-
-		function setSel(el) {
-			document.querySelectorAll("#list .sel").forEach(function (n) { n.classList.remove("sel"); });
-			if (el) el.classList.add("sel");
-		}
-
-		// ---------------------------------------------------------------------
-		// 2D display (NCGR / NCLR) in an overlay canvas
-		// ---------------------------------------------------------------------
-
-		// Switches to 3D rendering (models): hides the 2D canvas and 2D selectors.
-		function show3D() {
-			view2d = null;
-			document.getElementById("view2d").style.display = "none";
-			document.getElementById("canvas3d").style.display = "";
-			document.getElementById("texSelect").style.display = "none";
-			document.getElementById("ncgrSelect").style.display = "none";
-			document.getElementById("nclrSelect").style.display = "none";
-			document.getElementById("palSelect").style.display = "none";
-		}
-
-		// Switches to 2D rendering (images): stops 3D rendering.
-		function show2D() {
-			viewer = null;
-			document.getElementById("canvas3d").style.display = "none";
-			document.getElementById("animSelect").style.display = "none";
-			document.getElementById("palSelect").style.display = "none";
-			document.getElementById("texSelect").style.display = "none";
-			document.getElementById("ncgrSelect").style.display = "none";
-			document.getElementById("nclrSelect").style.display = "none";
-			document.getElementById("btxSelect").style.display = "none";
-			document.getElementById("bcaSelect").style.display = "none";
-			document.getElementById("btpSelect").style.display = "none";
-			document.getElementById("btaSelect").style.display = "none";
-			document.getElementById("view2d").style.display = "block";
-		}
-
-		// Updates the display size of the 2D canvas based on the current zoom level.
-		function applyZoom2d() {
-			var canvas = document.getElementById("canvas2d");
-			var z = view2d ? view2d.zoom : 1;
-			canvas.style.width = (canvas.width * z) + "px";
-			canvas.style.height = (canvas.height * z) + "px";
-		}
-
-		// Loads a NCGR (graphic tiles) and displays it, colored with a
-		// neighbouring NCLR palette if one is found, otherwise in greyscale.
-		function loadNCGR(path, el) {
-			try {
-				var g = new ncgr(readROMFile(path));
-				var palettes = null, palPath = null;
-				var nclrPath = findSibling(path, ".nclr");
-				if (nclrPath) {
-					try { palettes = new nclr(readROMFile(nclrPath)).pltt.palettes; palPath = nclrPath; }
-					catch (e) { palettes = null; }
-				}
-
-				view2d = { type: "ncgr", ncgr: g, palettes: palettes, palIndex: 0, zoom: 3 };
-				show2D();
-				populatePalSelect(palettes);
-				drawNCGR();
-
-				setSel(el);
-			var note = palPath ? ("  +  " + palPath) : "  (no neighbouring NCLR → greyscale)";
-			setStatus(path + note);
-		} catch (err) {
-			console.error(err);
-			setStatus("Load error: " + (err && err.message ? err.message : err));
-		}
-	}
-
-		// Draws all tiles of the current NCGR into the 2D canvas.
-		function drawNCGR() {
-			var g = view2d.ncgr;
-			var tiles = g.char.tiles;
-			var count = tiles.length;
-			var is8bit = g.char.bitDepth == 4; // 4 -> 8 bits, 3 -> 4 bits
-
-			// Tile width: from the header if valid, otherwise defaults to 32.
-			var tx = g.char.tilesX;
-			var cols = (tx && tx > 0 && tx < 65535) ? tx : Math.min(32, count) || 1;
-			var rows = Math.ceil(count / cols);
-
-			var canvas = document.getElementById("canvas2d");
-			canvas.width = cols * 8;
-			canvas.height = rows * 8;
-			var ctx = canvas.getContext("2d");
-			var img = ctx.createImageData(canvas.width, canvas.height);
-			var data = img.data;
-
-			var pal = view2d.palettes ? view2d.palettes[view2d.palIndex] : null;
-			for (var t = 0; t < count; t++) {
-				var ox = (t % cols) * 8;
-				var oy = Math.floor(t / cols) * 8;
-				var tile = tiles[t];
-				for (var i = 0; i < 64; i++) {
-					var colID = tile[i];
-					var r, gg, b, a;
-					if (pal) {
-						var c = pal[colID];
-						if (c) { r = c[0]; gg = c[1]; b = c[2]; a = c[3]; }
-						else { r = gg = b = 0; a = colID ? 255 : 0; }
-					} else {
-						var v = is8bit ? colID : colID * 17; // spread to 0-255
-						r = gg = b = v; a = 255;
-					}
-					var di = ((oy + (i >> 3)) * canvas.width + (ox + (i & 7))) * 4;
-					data[di] = r; data[di + 1] = gg; data[di + 2] = b; data[di + 3] = a;
-				}
-			}
-			ctx.putImageData(img, 0, 0);
-			applyZoom2d();
-		}
-
-		// Loads a NCLR and displays its palettes as a colour swatch.
-		function loadNCLR(path, el) {
-			try {
-				var p = new nclr(readROMFile(path));
-				var pals = p.pltt.palettes;
-
-				view2d = { type: "nclr", nclr: p, zoom: 1 };
-				show2D();
-				document.getElementById("palSelect").style.display = "none";
-
-				var per = 0;
-				for (var i = 0; i < pals.length; i++) per = Math.max(per, pals[i].length);
-				per = per || 1;
-
-				var sw = 16;
+			// Updates the display size of the 2D canvas based on the current zoom level.
+			function applyZoom2d() {
 				var canvas = document.getElementById("canvas2d");
-				canvas.width = per * sw;
-				canvas.height = pals.length * sw;
+				var z = view2d ? view2d.zoom : 1;
+				canvas.style.width = canvas.width * z + "px";
+				canvas.style.height = canvas.height * z + "px";
+			}
+
+			// Loads a NCGR (graphic tiles) and displays it, colored with a
+			// neighbouring NCLR palette if one is found, otherwise in greyscale.
+			function loadNCGR(path, el) {
+				try {
+					var g = new ncgr(readROMFile(path));
+					var palettes = null,
+						palPath = null;
+					var nclrPath = findSibling(path, ".nclr");
+					if (nclrPath) {
+						try {
+							palettes = new nclr(readROMFile(nclrPath)).pltt.palettes;
+							palPath = nclrPath;
+						} catch (e) {
+							palettes = null;
+						}
+					}
+
+					view2d = { type: "ncgr", ncgr: g, palettes: palettes, palIndex: 0, zoom: 3 };
+					show2D();
+					populatePalSelect(palettes);
+					drawNCGR();
+
+					setSel(el);
+					var note = palPath ? "  +  " + palPath : "  (no neighbouring NCLR → greyscale)";
+					setStatus(path + note);
+				} catch (err) {
+					console.error(err);
+					setStatus("Load error: " + (err && err.message ? err.message : err));
+				}
+			}
+
+			// Draws all tiles of the current NCGR into the 2D canvas.
+			function drawNCGR() {
+				var g = view2d.ncgr;
+				var tiles = g.char.tiles;
+				var count = tiles.length;
+				var is8bit = g.char.bitDepth == 4; // 4 -> 8 bits, 3 -> 4 bits
+
+				// Tile width: from the header if valid, otherwise defaults to 32.
+				var tx = g.char.tilesX;
+				var cols = tx && tx > 0 && tx < 65535 ? tx : Math.min(32, count) || 1;
+				var rows = Math.ceil(count / cols);
+
+				var canvas = document.getElementById("canvas2d");
+				canvas.width = cols * 8;
+				canvas.height = rows * 8;
+				var ctx = canvas.getContext("2d");
+				var img = ctx.createImageData(canvas.width, canvas.height);
+				var data = img.data;
+
+				var pal = view2d.palettes ? view2d.palettes[view2d.palIndex] : null;
+				for (var t = 0; t < count; t++) {
+					var ox = (t % cols) * 8;
+					var oy = Math.floor(t / cols) * 8;
+					var tile = tiles[t];
+					for (var i = 0; i < 64; i++) {
+						var colID = tile[i];
+						var r, gg, b, a;
+						if (pal) {
+							var c = pal[colID];
+							if (c) {
+								r = c[0];
+								gg = c[1];
+								b = c[2];
+								a = c[3];
+							} else {
+								r = gg = b = 0;
+								a = colID ? 255 : 0;
+							}
+						} else {
+							var v = is8bit ? colID : colID * 17; // spread to 0-255
+							r = gg = b = v;
+							a = 255;
+						}
+						var di = ((oy + (i >> 3)) * canvas.width + (ox + (i & 7))) * 4;
+						data[di] = r;
+						data[di + 1] = gg;
+						data[di + 2] = b;
+						data[di + 3] = a;
+					}
+				}
+				ctx.putImageData(img, 0, 0);
+				applyZoom2d();
+			}
+
+			// Loads a NCLR and displays its palettes as a colour swatch.
+			function loadNCLR(path, el) {
+				try {
+					var p = new nclr(readROMFile(path));
+					var pals = p.pltt.palettes;
+
+					view2d = { type: "nclr", nclr: p, zoom: 1 };
+					show2D();
+					document.getElementById("palSelect").style.display = "none";
+
+					var per = 0;
+					for (var i = 0; i < pals.length; i++) per = Math.max(per, pals[i].length);
+					per = per || 1;
+
+					var sw = 16;
+					var canvas = document.getElementById("canvas2d");
+					canvas.width = per * sw;
+					canvas.height = pals.length * sw;
+					var ctx = canvas.getContext("2d");
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					for (var r = 0; r < pals.length; r++) {
+						for (var c = 0; c < pals[r].length; c++) {
+							var col = pals[r][c];
+							ctx.fillStyle = "rgb(" + col[0] + "," + col[1] + "," + col[2] + ")";
+							ctx.fillRect(c * sw, r * sw, sw, sw);
+						}
+					}
+					applyZoom2d();
+
+					setSel(el);
+					setStatus(path + "  (" + pals.length + " palette(s) × " + per + " colours)");
+				} catch (err) {
+					console.error(err);
+					setStatus("Load error: " + (err && err.message ? err.message : err));
+				}
+			}
+
+			// Populates the palette selector used to colour a NCGR.
+			function populatePalSelect(palettes) {
+				var sel = document.getElementById("palSelect");
+				sel.innerHTML = "";
+				var count = palettes ? palettes.length : 0;
+				for (var i = 0; i < count; i++) {
+					var opt = document.createElement("option");
+					opt.value = i;
+					opt.textContent = "palette " + i;
+					sel.appendChild(opt);
+				}
+				sel.selectedIndex = 0;
+				sel.style.display = count > 1 ? "" : "none";
+			}
+
+			// Loads a NSCR (tilemap): assembles tiles from a neighbouring NCGR according
+			// to the screen layout, coloured with a neighbouring NCLR if available.
+			function loadNSCR(path, el) {
+				try {
+					var s = new nscr(readROMFile(path));
+
+					var ncgrPath = findSibling(path, ".ncgr");
+					if (!ncgrPath) {
+						setStatus("Aucun .ncgr voisin trouvé pour " + path);
+						return;
+					}
+					var g = new ncgr(readROMFile(ncgrPath));
+
+					var palettes = null,
+						nclrPath = findSibling(path, ".nclr");
+					if (nclrPath) {
+						try {
+							palettes = new nclr(readROMFile(nclrPath)).pltt.palettes;
+						} catch (e) {
+							palettes = null;
+							nclrPath = null;
+						}
+					}
+
+					view2d = { type: "nscr", nscr: s, ncgr: g, palettes: palettes, zoom: 2 };
+					show2D();
+					document.getElementById("palSelect").style.display = "none";
+					drawNSCR();
+
+					setSel(el);
+					var loaded = [path, ncgrPath];
+					if (nclrPath) loaded.push(nclrPath);
+					setStatus(loaded.join("  +  ") + (palettes ? "" : "  (no NCLR → greyscale)"));
+				} catch (err) {
+					console.error(err);
+					setStatus("Load error: " + (err && err.message ? err.message : err));
+				}
+			}
+
+			// Draws the current NSCR tilemap into the 2D canvas.
+			// Each entry: YYYY XX NNNNNNNNNN (palette / X-Y flip / tile index).
+			function drawNSCR() {
+				var s = view2d.nscr.scrn;
+				var g = view2d.ncgr;
+				var tiles = g.char.tiles;
+				var is8bit = g.char.bitDepth == 4;
+				var pals = view2d.palettes;
+
+				var cols = Math.max(1, s.screenWidth >> 3);
+				var rows = Math.max(1, s.screenHeight >> 3);
+
+				var canvas = document.getElementById("canvas2d");
+				canvas.width = cols * 8;
+				canvas.height = rows * 8;
+				var ctx = canvas.getContext("2d");
+				var img = ctx.createImageData(canvas.width, canvas.height);
+				var data = img.data;
+
+				for (var ty = 0; ty < rows; ty++) {
+					for (var tx = 0; tx < cols; tx++) {
+						var idx = ty * cols + tx;
+						if (idx >= s.data.length) continue;
+						var entry = s.data[idx];
+						var tileNum = entry & 0x3ff;
+						var xFlip = (entry >> 10) & 1;
+						var yFlip = (entry >> 11) & 1;
+						var palNum = (entry >> 12) & 0xf;
+
+						var tile = tiles[tileNum];
+						var pal = pals ? pals[palNum] : null;
+						var ox = tx * 8,
+							oy = ty * 8;
+
+						for (var py = 0; py < 8; py++) {
+							for (var px = 0; px < 8; px++) {
+								var sx = xFlip ? 7 - px : px;
+								var sy = yFlip ? 7 - py : py;
+								var colID = tile ? tile[sy * 8 + sx] : 0;
+								var r, gg, b, a;
+								if (pal) {
+									var c = pal[colID];
+									if (c) {
+										r = c[0];
+										gg = c[1];
+										b = c[2];
+										a = c[3];
+									} else {
+										r = gg = b = 0;
+										a = colID ? 255 : 0;
+									}
+								} else {
+									var v = is8bit ? colID : colID * 17;
+									r = gg = b = v;
+									a = 255;
+								}
+								var di = ((oy + py) * canvas.width + (ox + px)) * 4;
+								data[di] = r;
+								data[di + 1] = gg;
+								data[di + 2] = b;
+								data[di + 3] = a;
+							}
+						}
+					}
+				}
+				ctx.putImageData(img, 0, 0);
+				applyZoom2d();
+			}
+
+			// Returns all .nclr files whose name starts with the base name of the .ncer.
+			// Falls back to findSibling if none are found by this filter.
+			function findNCLRsForNCER(ncerPath) {
+				var slash = ncerPath.lastIndexOf("/");
+				var baseName = ncerPath
+					.substring(slash + 1)
+					.replace(/\.ncer$/i, "")
+					.toLowerCase();
+				var results = [];
+				for (var i = 0; i < window.romFiles.length; i++) {
+					var p = window.romFiles[i];
+					if (!p.toLowerCase().endsWith(".nclr")) continue;
+					var fname = p.substring(p.lastIndexOf("/") + 1).toLowerCase();
+					if (fname.indexOf(baseName) === 0) results.push(p);
+				}
+				if (results.length === 0) {
+					var sib = findSibling(ncerPath, ".nclr");
+					if (sib) results.push(sib);
+				}
+				return results;
+			}
+
+			// Returns all .ncgr files whose name starts with the base name of the .ncer.
+			// Falls back to findSibling if none are found by this filter.
+			function findNCGRsForNCER(ncerPath) {
+				var slash = ncerPath.lastIndexOf("/");
+				var baseName = ncerPath
+					.substring(slash + 1)
+					.replace(/\.ncer$/i, "")
+					.toLowerCase();
+				var results = [];
+				for (var i = 0; i < window.romFiles.length; i++) {
+					var p = window.romFiles[i];
+					if (!p.toLowerCase().endsWith(".ncgr")) continue;
+					var fname = p.substring(p.lastIndexOf("/") + 1).toLowerCase();
+					if (fname.indexOf(baseName) === 0) results.push(p);
+				}
+				if (results.length === 0) {
+					var sib = findSibling(ncerPath, ".ncgr");
+					if (sib) results.push(sib);
+				}
+				return results;
+			}
+
+			// Loads a NCER (cell bank / OAM sprites) and assembles one of its
+			// images from a neighbouring NCGR, coloured with a neighbouring NCLR
+			// if available. A selector allows choosing which image to display.
+			function loadNCER(path, el) {
+				try {
+					var c = new ncer(readROMFile(path));
+
+					var ncgrCandidates = findNCGRsForNCER(path);
+					if (ncgrCandidates.length === 0) {
+						setStatus("No neighbouring .ncgr found for " + path);
+						return;
+					}
+
+					var ncgrSel = document.getElementById("ncgrSelect");
+					ncgrSel.innerHTML = "";
+					for (var i = 0; i < ncgrCandidates.length; i++) {
+						var opt = document.createElement("option");
+						opt.value = ncgrCandidates[i];
+						opt.textContent = ncgrCandidates[i].substring(ncgrCandidates[i].lastIndexOf("/") + 1);
+						ncgrSel.appendChild(opt);
+					}
+					ncgrSel.selectedIndex = 0;
+					ncgrSel.style.display = ncgrCandidates.length > 1 ? "" : "none";
+
+					var ncgrPath = ncgrCandidates[0];
+					var g = new ncgr(readROMFile(ncgrPath));
+
+					var nclrCandidates = findNCLRsForNCER(path);
+					var nclrSel = document.getElementById("nclrSelect");
+					nclrSel.innerHTML = "";
+					var noneOpt = document.createElement("option");
+					noneOpt.value = "";
+					noneOpt.textContent = "(no NCLR)";
+					nclrSel.appendChild(noneOpt);
+					for (var i = 0; i < nclrCandidates.length; i++) {
+						var opt = document.createElement("option");
+						opt.value = nclrCandidates[i];
+						opt.textContent = nclrCandidates[i].substring(nclrCandidates[i].lastIndexOf("/") + 1);
+						nclrSel.appendChild(opt);
+					}
+					nclrSel.selectedIndex = nclrCandidates.length > 0 ? 1 : 0;
+
+					var nclrPath = nclrCandidates.length > 0 ? nclrCandidates[0] : null;
+					var palettes = null;
+					if (nclrPath) {
+						try {
+							palettes = new nclr(readROMFile(nclrPath)).pltt.palettes;
+						} catch (e) {
+							palettes = null;
+							nclrPath = null;
+							nclrSel.selectedIndex = 0;
+						}
+					}
+
+					view2d = {
+						type: "ncer",
+						ncer: c,
+						ncerPath: path,
+						ncgrPath: ncgrPath,
+						nclrPath: nclrPath,
+						ncgr: g,
+						palettes: palettes,
+						imageIndex: 0,
+						zoom: 2,
+						_tileCache: {},
+					};
+					show2D();
+					document.getElementById("palSelect").style.display = "none";
+					ncgrSel.style.display = ncgrCandidates.length > 1 ? "" : "none";
+					nclrSel.style.display = nclrCandidates.length > 1 || nclrCandidates.length === 1 ? "" : "none";
+
+					var images = c.cebk.images;
+					var names = [];
+					for (var i = 0; i < images.length; i++) names.push("image " + i);
+					fillSelect("texSelect", names, 0, "image ");
+					document.getElementById("texSelect").style.display = images.length > 1 ? "" : "none";
+
+					drawNCER();
+
+					setSel(el);
+					updateNCERStatus();
+				} catch (err) {
+					console.error(err);
+					setStatus("Load error: " + (err && err.message ? err.message : err));
+				}
+			}
+
+			// Updates the status line for a displayed NCER.
+			function updateNCERStatus() {
+				var loaded = [view2d.ncerPath, view2d.ncgrPath];
+				if (view2d.nclrPath) loaded.push(view2d.nclrPath);
+				var images = view2d.ncer.cebk.images;
+				setStatus(loaded.join("  +  ") + "  (" + images.length + " image(s))" + (view2d.palettes ? "" : "  (no NCLR → greyscale)"));
+			}
+
+			// Returns an 8×8 canvas for a coloured NCGR tile (cached by tile+palette).
+			// Colour index 0 is rendered transparent (OAM sprite convention).
+			function ncerTileCanvas(tileIndex, palIndex) {
+				var cache = view2d._tileCache;
+				var key = tileIndex + ":" + palIndex;
+				if (cache[key]) return cache[key];
+
+				var g = view2d.ncgr;
+				var tile = g.char.tiles[tileIndex];
+				var is8bit = g.char.bitDepth == 4;
+				var pal = view2d.palettes ? view2d.palettes[palIndex] : null;
+
+				var cv = document.createElement("canvas");
+				cv.width = 8;
+				cv.height = 8;
+				var ctx = cv.getContext("2d");
+				var img = ctx.createImageData(8, 8);
+				var data = img.data;
+				for (var i = 0; i < 64; i++) {
+					var colID = tile ? tile[i] : 0;
+					var r, gg, b, a;
+					if (colID === 0) {
+						r = gg = b = 0;
+						a = 0;
+					} else if (pal) {
+						var col = pal[colID];
+						if (col) {
+							r = col[0];
+							gg = col[1];
+							b = col[2];
+							a = col[3];
+						} else {
+							r = gg = b = 0;
+							a = 255;
+						}
+					} else {
+						var v = is8bit ? colID : colID * 17;
+						r = gg = b = v;
+						a = 255;
+					}
+					var di = i * 4;
+					data[di] = r;
+					data[di + 1] = gg;
+					data[di + 2] = b;
+					data[di + 3] = a;
+				}
+				ctx.putImageData(img, 0, 0);
+				cache[key] = cv;
+				return cv;
+			}
+
+			// Draws the current NCER image (collection of OAM cells) into the 2D canvas.
+			function drawNCER() {
+				var image = view2d.ncer.cebk.images[view2d.imageIndex];
+				if (!image) return;
+
+				// Image bounding box derived from the extent of the cells.
+				var xMin = Infinity,
+					yMin = Infinity,
+					xMax = -Infinity,
+					yMax = -Infinity;
+				for (var i = 0; i < image.cells.length; i++) {
+					var cell = image.cells[i];
+					if (cell.x < xMin) xMin = cell.x;
+					if (cell.y < yMin) yMin = cell.y;
+					if (cell.x + cell.size[0] > xMax) xMax = cell.x + cell.size[0];
+					if (cell.y + cell.size[1] > yMax) yMax = cell.y + cell.size[1];
+				}
+				if (!isFinite(xMin)) {
+					xMin = yMin = 0;
+					xMax = yMax = 1;
+				}
+
+				var canvas = document.getElementById("canvas2d");
+				canvas.width = Math.max(1, xMax - xMin);
+				canvas.height = Math.max(1, yMax - yMin);
 				var ctx = canvas.getContext("2d");
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				for (var r = 0; r < pals.length; r++) {
-					for (var c = 0; c < pals[r].length; c++) {
-						var col = pals[r][c];
-						ctx.fillStyle = "rgb(" + col[0] + "," + col[1] + "," + col[2] + ")";
-						ctx.fillRect(c * sw, r * sw, sw, sw);
+
+				var tileWidth = view2d.ncgr.char.tilesX;
+
+				// Sort by priority: draw from lowest to highest.
+				var cells = image.cells.slice().sort(function (a, b) {
+					return b.priority - a.priority;
+				});
+				for (var ci = cells.length - 1; ci >= 0; ci--) {
+					var cell = cells[ci];
+					if (cell.disable) continue;
+					var size = cell.size;
+					var sx2 = size[0] / 2,
+						sy2 = size[1] / 2;
+					ctx.save();
+					ctx.translate(cell.x + sx2 - xMin, cell.y + sy2 - yMin);
+					ctx.scale(cell.xFlip ? -1 : 1, cell.yFlip ? -1 : 1);
+
+					var tile = cell.tileOffset;
+					var base = tile;
+					for (var y = 0; y < size[1]; y += 8) {
+						for (var x = 0; x < size[0]; x += 8) {
+							ctx.drawImage(ncerTileCanvas(tile++, cell.pal), x - sx2, y - sy2);
+						}
+						if (tileWidth != 65535) {
+							base += tileWidth;
+							tile = base;
+						}
 					}
+					ctx.restore();
 				}
 				applyZoom2d();
-
-				setSel(el);
-			setStatus(path + "  (" + pals.length + " palette(s) × " + per + " colours)");
-		} catch (err) {
-			console.error(err);
-			setStatus("Load error: " + (err && err.message ? err.message : err));
-		}
-	}
-
-		// Populates the palette selector used to colour a NCGR.
-		function populatePalSelect(palettes) {
-			var sel = document.getElementById("palSelect");
-			sel.innerHTML = "";
-			var count = palettes ? palettes.length : 0;
-			for (var i = 0; i < count; i++) {
-				var opt = document.createElement("option");
-				opt.value = i;
-				opt.textContent = "palette " + i;
-				sel.appendChild(opt);
 			}
-			sel.selectedIndex = 0;
-			sel.style.display = (count > 1) ? "" : "none";
-		}
 
-		// Loads a NSCR (tilemap): assembles tiles from a neighbouring NCGR according
-		// to the screen layout, coloured with a neighbouring NCLR if available.
-		function loadNSCR(path, el) {
-			try {
-				var s = new nscr(readROMFile(path));
+			// Loads a NSBTX (Nitro texture bank) and displays one of its decoded
+			// textures, with texture and palette selectors.
+			function loadNSBTX(path, el) {
+				try {
+					var b = new nsbtx(readROMFile(path));
+					var texNames = b.textureInfo.names || [];
+					var palNames = b.paletteInfo.names || [];
 
-				var ncgrPath = findSibling(path, ".ncgr");
-				if (!ncgrPath) {
-					setStatus("Aucun .ncgr voisin trouvé pour " + path);
+					if (texNames.length === 0) {
+						setStatus(path + "  (no textures)");
+						return;
+					}
+
+					view2d = { type: "nsbtx", nsbtx: b, texIndex: 0, palIndex: defaultPalForTex(b, 0), zoom: 2 };
+					show2D();
+
+					fillSelect("texSelect", texNames, view2d.texIndex, "texture ");
+					fillSelect("palSelect", palNames, view2d.palIndex, "palette ");
+					document.getElementById("texSelect").style.display = texNames.length > 1 ? "" : "none";
+					document.getElementById("palSelect").style.display = palNames.length > 1 ? "" : "none";
+
+					drawNSBTX();
+					setSel(el);
+					setStatus(path + "  (" + texNames.length + " texture(s), " + palNames.length + " palette(s))");
+				} catch (err) {
+					console.error(err);
+					setStatus("Load error: " + (err && err.message ? err.message : err));
+				}
+			}
+
+			// Default palette for a texture: the one with the same name if it exists.
+			function defaultPalForTex(b, texId) {
+				var name = b.textureInfo.names[texId];
+				var idx = b.paletteInfoNameToIndex["$" + name];
+				if (idx == null) idx = b.paletteInfoNameToIndex["$" + name + "_pl"];
+				return idx || 0;
+			}
+
+			// Decodes the selected texture/palette and displays it in the 2D canvas.
+			function drawNSBTX() {
+				var b = view2d.nsbtx;
+				var src = b.readTexWithPal(view2d.texIndex, view2d.palIndex);
+				var canvas = document.getElementById("canvas2d");
+				canvas.width = src.width;
+				canvas.height = src.height;
+				var ctx = canvas.getContext("2d");
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				ctx.drawImage(src, 0, 0);
+				applyZoom2d();
+			}
+
+			// Populates a <select> with names (falling back to "<prefix>i").
+			function fillSelect(id, names, selected, prefix) {
+				var sel = document.getElementById(id);
+				sel.innerHTML = "";
+				for (var i = 0; i < names.length; i++) {
+					var opt = document.createElement("option");
+					opt.value = i;
+					opt.textContent = names[i] != null && names[i] !== "" ? names[i] : prefix + i;
+					sel.appendChild(opt);
+				}
+				sel.selectedIndex = selected || 0;
+			}
+
+			// ---------------------------------------------------------------------
+			// Rendering / camera
+			// ---------------------------------------------------------------------
+
+			// Computes an approximate bounding box (centre + radius) from the model
+			// buffers once built (local coordinates × head scale).
+			function computeBounds(model) {
+				var min = [Infinity, Infinity, Infinity];
+				var max = [-Infinity, -Infinity, -Infinity];
+				var any = false;
+				var models = model.bmd.modelData.objectData;
+				for (var j = 0; j < models.length; j++) {
+					var scale = models[j].head.scale;
+					var bufs = model._modelBuffers[j];
+					if (!bufs) continue;
+					for (var p = 0; p < bufs.length; p++) {
+						var buf = bufs[p];
+						if (!buf) continue;
+						for (var s = 0; s < buf.strips.length; s++) {
+							var pa = buf.strips[s].posArray;
+							for (var k = 0; k < pa.length; k += 3) {
+								var x = pa[k] * scale,
+									y = pa[k + 1] * scale,
+									z = pa[k + 2] * scale;
+								if (x < min[0]) min[0] = x;
+								if (x > max[0]) max[0] = x;
+								if (y < min[1]) min[1] = y;
+								if (y > max[1]) max[1] = y;
+								if (z < min[2]) min[2] = z;
+								if (z > max[2]) max[2] = z;
+								any = true;
+							}
+						}
+					}
+				}
+				if (!any) return null;
+				var center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+				var r = 0;
+				for (var d = 0; d < 3; d++) r = Math.max(r, (max[d] - min[d]) / 2);
+				return { center: center, radius: r };
+			}
+
+			function renderLoop() {
+				requestAnimationFrame(renderLoop);
+				resizeCanvas();
+				gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+				if (!viewer) return;
+
+				// Advances the animation (skeleton and/or texture pattern) and updates
+				// the matrix stack. Looping is handled internally by each animation
+				// (nitroAnimator and texPAnim), so we increment freely.
+				if (viewer.anim || viewer.hasTexAnim) {
+					viewer.model.setFrame(viewer.frame);
+					if (viewer.anim) {
+						try {
+							viewer.animMat = viewer.anim.setFrame(viewer.animIndex, 0, viewer.frame);
+						} catch (e) {
+							viewer.anim = null;
+							viewer.animMat = null;
+						}
+					}
+					viewer.frame++;
+					if (viewer.frame >= 1e7) viewer.frame = 0;
+				}
+
+				var aspect = gl.viewportWidth / gl.viewportHeight;
+				var fov = (45 * Math.PI) / 180;
+				var far = viewer.dist * 10 + viewer.radius * 4 + 10;
+				var proj = mat4.create();
+				mat4.perspective(proj, fov, aspect, Math.max(0.001, viewer.dist * 0.01), far);
+
+				var mv = mat4.create();
+				mat4.translate(mv, mv, [0, 0, -viewer.dist]);
+				mat4.rotateX(mv, mv, viewer.pitch);
+				mat4.rotateY(mv, mv, viewer.yaw);
+				mat4.translate(mv, mv, [-viewer.center[0], -viewer.center[1], -viewer.center[2]]);
+
+				nitroRender.unsetShadowMode();
+				nitroRender.flagShadow = false;
+				nitroRender.updateBillboards(mv);
+
+				try {
+					viewer.model.draw(mv, proj, viewer.animMat || undefined);
+				} catch (e) {
+					console.error(e);
+					viewer = null;
 					return;
 				}
-			var g = new ncgr(readROMFile(ncgrPath));
 
-			var palettes = null, nclrPath = findSibling(path, ".nclr");
-			if (nclrPath) {
-				try { palettes = new nclr(readROMFile(nclrPath)).pltt.palettes; }
-				catch (e) { palettes = null; nclrPath = null; }
-			}
-
-			view2d = { type: "nscr", nscr: s, ncgr: g, palettes: palettes, zoom: 2 };
-			show2D();
-			document.getElementById("palSelect").style.display = "none";
-			drawNSCR();
-
-			setSel(el);
-			var loaded = [path, ncgrPath];
-			if (nclrPath) loaded.push(nclrPath);
-			setStatus(loaded.join("  +  ") + (palettes ? "" : "  (no NCLR → greyscale)"));
-		} catch (err) {
-			console.error(err);
-			setStatus("Load error: " + (err && err.message ? err.message : err));
-		}
-	}
-
-		// Draws the current NSCR tilemap into the 2D canvas.
-		// Each entry: YYYY XX NNNNNNNNNN (palette / X-Y flip / tile index).
-		function drawNSCR() {
-			var s = view2d.nscr.scrn;
-			var g = view2d.ncgr;
-			var tiles = g.char.tiles;
-			var is8bit = g.char.bitDepth == 4;
-			var pals = view2d.palettes;
-
-			var cols = Math.max(1, s.screenWidth >> 3);
-			var rows = Math.max(1, s.screenHeight >> 3);
-
-			var canvas = document.getElementById("canvas2d");
-			canvas.width = cols * 8;
-			canvas.height = rows * 8;
-			var ctx = canvas.getContext("2d");
-			var img = ctx.createImageData(canvas.width, canvas.height);
-			var data = img.data;
-
-			for (var ty = 0; ty < rows; ty++) {
-				for (var tx = 0; tx < cols; tx++) {
-					var idx = ty * cols + tx;
-					if (idx >= s.data.length) continue;
-					var entry = s.data[idx];
-					var tileNum = entry & 0x3FF;
-					var xFlip = (entry >> 10) & 1;
-					var yFlip = (entry >> 11) & 1;
-					var palNum = (entry >> 12) & 0xF;
-
-					var tile = tiles[tileNum];
-					var pal = pals ? pals[palNum] : null;
-					var ox = tx * 8, oy = ty * 8;
-
-					for (var py = 0; py < 8; py++) {
-						for (var px = 0; px < 8; px++) {
-							var sx = xFlip ? (7 - px) : px;
-							var sy = yFlip ? (7 - py) : py;
-							var colID = tile ? tile[sy * 8 + sx] : 0;
-							var r, gg, b, a;
-							if (pal) {
-								var c = pal[colID];
-								if (c) { r = c[0]; gg = c[1]; b = c[2]; a = c[3]; }
-								else { r = gg = b = 0; a = colID ? 255 : 0; }
-							} else {
-								var v = is8bit ? colID : colID * 17;
-								r = gg = b = v; a = 255;
-							}
-							var di = ((oy + py) * canvas.width + (ox + px)) * 4;
-							data[di] = r; data[di + 1] = gg; data[di + 2] = b; data[di + 3] = a;
-						}
+				// Auto-fit once the buffers are built by the first render.
+				if (!viewer.fitted) {
+					var b = computeBounds(viewer.model);
+					if (b) {
+						viewer.center = b.center;
+						viewer.radius = b.radius;
+						viewer.dist = b.radius > 0 ? (b.radius / Math.sin(fov / 2)) * 1.2 : 1;
+						viewer.fitted = true;
 					}
 				}
 			}
-			ctx.putImageData(img, 0, 0);
-			applyZoom2d();
-		}
 
-		// Returns all .nclr files whose name starts with the base name of the .ncer.
-		// Falls back to findSibling if none are found by this filter.
-		function findNCLRsForNCER(ncerPath) {
-			var slash = ncerPath.lastIndexOf("/");
-			var baseName = ncerPath.substring(slash + 1).replace(/\.ncer$/i, "").toLowerCase();
-			var results = [];
-			for (var i = 0; i < window.romFiles.length; i++) {
-				var p = window.romFiles[i];
-				if (!p.toLowerCase().endsWith(".nclr")) continue;
-				var fname = p.substring(p.lastIndexOf("/") + 1).toLowerCase();
-				if (fname.indexOf(baseName) === 0) results.push(p);
-			}
-			if (results.length === 0) {
-				var sib = findSibling(ncerPath, ".nclr");
-				if (sib) results.push(sib);
-			}
-			return results;
-		}
+			function setupViewerControls() {
+				var canvas = document.getElementById("canvas3d");
+				var dragging = false,
+					lastX = 0,
+					lastY = 0;
 
-		// Returns all .ncgr files whose name starts with the base name of the .ncer.
-		// Falls back to findSibling if none are found by this filter.
-		function findNCGRsForNCER(ncerPath) {
-			var slash = ncerPath.lastIndexOf("/");
-			var baseName = ncerPath.substring(slash + 1).replace(/\.ncer$/i, "").toLowerCase();
-			var results = [];
-			for (var i = 0; i < window.romFiles.length; i++) {
-				var p = window.romFiles[i];
-				if (!p.toLowerCase().endsWith(".ncgr")) continue;
-				var fname = p.substring(p.lastIndexOf("/") + 1).toLowerCase();
-				if (fname.indexOf(baseName) === 0) results.push(p);
-			}
-			if (results.length === 0) {
-				var sib = findSibling(ncerPath, ".ncgr");
-				if (sib) results.push(sib);
-			}
-			return results;
-		}
+				canvas.addEventListener("mousedown", function (e) {
+					dragging = true;
+					lastX = e.clientX;
+					lastY = e.clientY;
+					e.preventDefault();
+				});
+				window.addEventListener("mouseup", function () {
+					dragging = false;
+				});
+				window.addEventListener("mousemove", function (e) {
+					if (!dragging || !viewer) return;
+					viewer.yaw += (e.clientX - lastX) * 0.01;
+					viewer.pitch += (e.clientY - lastY) * 0.01;
+					lastX = e.clientX;
+					lastY = e.clientY;
+				});
+				canvas.addEventListener(
+					"wheel",
+					function (e) {
+						if (!viewer) return;
+						viewer.dist *= e.deltaY > 0 ? 1.1 : 0.9;
+						e.preventDefault();
+					},
+					{ passive: false }
+				);
 
-		// Loads a NCER (cell bank / OAM sprites) and assembles one of its
-		// images from a neighbouring NCGR, coloured with a neighbouring NCLR
-		// if available. A selector allows choosing which image to display.
-		function loadNCER(path, el) {
-			try {
-				var c = new ncer(readROMFile(path));
+				document.getElementById("animSelect").addEventListener("change", function (e) {
+					if (!viewer || !viewer.anim) return;
+					viewer.animIndex = +e.target.value;
+					viewer.length = Math.max(1, viewer.anim.getLength(viewer.animIndex));
+					viewer.frame = 0;
+				});
 
-				var ncgrCandidates = findNCGRsForNCER(path);
-				if (ncgrCandidates.length === 0) {
-			setStatus("No neighbouring .ncgr found for " + path);
-				return;
-			}
+				["btxSelect", "bcaSelect", "btpSelect", "btaSelect"].forEach(function (id) {
+					document.getElementById(id).addEventListener("change", reloadFromSelects);
+				});
 
-			var ncgrSel = document.getElementById("ncgrSelect");
-				ncgrSel.innerHTML = "";
-				for (var i = 0; i < ncgrCandidates.length; i++) {
-					var opt = document.createElement("option");
-					opt.value = ncgrCandidates[i];
-					opt.textContent = ncgrCandidates[i].substring(ncgrCandidates[i].lastIndexOf("/") + 1);
-					ncgrSel.appendChild(opt);
-				}
-				ncgrSel.selectedIndex = 0;
-				ncgrSel.style.display = (ncgrCandidates.length > 1) ? "" : "none";
+				document.getElementById("palSelect").addEventListener("change", function (e) {
+					if (!view2d) return;
+					view2d.palIndex = +e.target.value;
+					if (view2d.type === "ncgr") drawNCGR();
+					else if (view2d.type === "nsbtx") drawNSBTX();
+				});
 
-				var ncgrPath = ncgrCandidates[0];
-				var g = new ncgr(readROMFile(ncgrPath));
-
-				var nclrCandidates = findNCLRsForNCER(path);
-				var nclrSel = document.getElementById("nclrSelect");
-				nclrSel.innerHTML = "";
-				var noneOpt = document.createElement("option");
-				noneOpt.value = "";
-				noneOpt.textContent = "(no NCLR)";
-				nclrSel.appendChild(noneOpt);
-				for (var i = 0; i < nclrCandidates.length; i++) {
-					var opt = document.createElement("option");
-					opt.value = nclrCandidates[i];
-					opt.textContent = nclrCandidates[i].substring(nclrCandidates[i].lastIndexOf("/") + 1);
-					nclrSel.appendChild(opt);
-				}
-				nclrSel.selectedIndex = nclrCandidates.length > 0 ? 1 : 0;
-
-				var nclrPath = nclrCandidates.length > 0 ? nclrCandidates[0] : null;
-				var palettes = null;
-				if (nclrPath) {
-					try { palettes = new nclr(readROMFile(nclrPath)).pltt.palettes; }
-					catch (e) { palettes = null; nclrPath = null; nclrSel.selectedIndex = 0; }
-				}
-
-				view2d = { type: "ncer", ncer: c, ncerPath: path, ncgrPath: ncgrPath, nclrPath: nclrPath, ncgr: g, palettes: palettes, imageIndex: 0, zoom: 2, _tileCache: {} };
-				show2D();
-				document.getElementById("palSelect").style.display = "none";
-				ncgrSel.style.display = (ncgrCandidates.length > 1) ? "" : "none";
-				nclrSel.style.display = (nclrCandidates.length > 1 || (nclrCandidates.length === 1)) ? "" : "none";
-
-				var images = c.cebk.images;
-				var names = [];
-				for (var i = 0; i < images.length; i++) names.push("image " + i);
-				fillSelect("texSelect", names, 0, "image ");
-				document.getElementById("texSelect").style.display = (images.length > 1) ? "" : "none";
-
-				drawNCER();
-
-				setSel(el);
-				updateNCERStatus();
-			} catch (err) {
-				console.error(err);
-			setStatus("Load error: " + (err && err.message ? err.message : err));
-		}
-	}
-
-		// Updates the status line for a displayed NCER.
-		function updateNCERStatus() {
-			var loaded = [view2d.ncerPath, view2d.ncgrPath];
-			if (view2d.nclrPath) loaded.push(view2d.nclrPath);
-			var images = view2d.ncer.cebk.images;
-			setStatus(loaded.join("  +  ") + "  (" + images.length + " image(s))" + (view2d.palettes ? "" : "  (no NCLR → greyscale)"));
-		}
-
-		// Returns an 8×8 canvas for a coloured NCGR tile (cached by tile+palette).
-		// Colour index 0 is rendered transparent (OAM sprite convention).
-		function ncerTileCanvas(tileIndex, palIndex) {
-			var cache = view2d._tileCache;
-			var key = tileIndex + ":" + palIndex;
-			if (cache[key]) return cache[key];
-
-			var g = view2d.ncgr;
-			var tile = g.char.tiles[tileIndex];
-			var is8bit = g.char.bitDepth == 4;
-			var pal = view2d.palettes ? view2d.palettes[palIndex] : null;
-
-			var cv = document.createElement("canvas");
-			cv.width = 8; cv.height = 8;
-			var ctx = cv.getContext("2d");
-			var img = ctx.createImageData(8, 8);
-			var data = img.data;
-			for (var i = 0; i < 64; i++) {
-				var colID = tile ? tile[i] : 0;
-				var r, gg, b, a;
-				if (colID === 0) { r = gg = b = 0; a = 0; }
-				else if (pal) {
-					var col = pal[colID];
-					if (col) { r = col[0]; gg = col[1]; b = col[2]; a = col[3]; }
-					else { r = gg = b = 0; a = 255; }
-				} else {
-					var v = is8bit ? colID : colID * 17;
-					r = gg = b = v; a = 255;
-				}
-				var di = i * 4;
-				data[di] = r; data[di + 1] = gg; data[di + 2] = b; data[di + 3] = a;
-			}
-			ctx.putImageData(img, 0, 0);
-			cache[key] = cv;
-			return cv;
-		}
-
-		// Draws the current NCER image (collection of OAM cells) into the 2D canvas.
-		function drawNCER() {
-			var image = view2d.ncer.cebk.images[view2d.imageIndex];
-			if (!image) return;
-
-			// Image bounding box derived from the extent of the cells.
-			var xMin = Infinity, yMin = Infinity, xMax = -Infinity, yMax = -Infinity;
-			for (var i = 0; i < image.cells.length; i++) {
-				var cell = image.cells[i];
-				if (cell.x < xMin) xMin = cell.x;
-				if (cell.y < yMin) yMin = cell.y;
-				if (cell.x + cell.size[0] > xMax) xMax = cell.x + cell.size[0];
-				if (cell.y + cell.size[1] > yMax) yMax = cell.y + cell.size[1];
-			}
-			if (!isFinite(xMin)) { xMin = yMin = 0; xMax = yMax = 1; }
-
-			var canvas = document.getElementById("canvas2d");
-			canvas.width = Math.max(1, xMax - xMin);
-			canvas.height = Math.max(1, yMax - yMin);
-			var ctx = canvas.getContext("2d");
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-			var tileWidth = view2d.ncgr.char.tilesX;
-
-			// Sort by priority: draw from lowest to highest.
-			var cells = image.cells.slice().sort(function (a, b) { return b.priority - a.priority; });
-			for (var ci = cells.length - 1; ci >= 0; ci--) {
-				var cell = cells[ci];
-				if (cell.disable) continue;
-				var size = cell.size;
-				var sx2 = size[0] / 2, sy2 = size[1] / 2;
-				ctx.save();
-				ctx.translate(cell.x + sx2 - xMin, cell.y + sy2 - yMin);
-				ctx.scale(cell.xFlip ? -1 : 1, cell.yFlip ? -1 : 1);
-
-				var tile = cell.tileOffset;
-				var base = tile;
-				for (var y = 0; y < size[1]; y += 8) {
-					for (var x = 0; x < size[0]; x += 8) {
-						ctx.drawImage(ncerTileCanvas(tile++, cell.pal), x - sx2, y - sy2);
+				document.getElementById("texSelect").addEventListener("change", function (e) {
+					if (!view2d) return;
+					if (view2d.type === "nsbtx") {
+						view2d.texIndex = +e.target.value;
+						view2d.palIndex = defaultPalForTex(view2d.nsbtx, view2d.texIndex);
+						document.getElementById("palSelect").selectedIndex = view2d.palIndex;
+						drawNSBTX();
+					} else if (view2d.type === "ncer") {
+						view2d.imageIndex = +e.target.value;
+						drawNCER();
 					}
-					if (tileWidth != 65535) { base += tileWidth; tile = base; }
-				}
-				ctx.restore();
-			}
-			applyZoom2d();
-		}
+				});
 
-		// Loads a NSBTX (Nitro texture bank) and displays one of its decoded
-		// textures, with texture and palette selectors.
-		function loadNSBTX(path, el) {
-			try {
-				var b = new nsbtx(readROMFile(path));
-				var texNames = b.textureInfo.names || [];
-				var palNames = b.paletteInfo.names || [];
-
-				if (texNames.length === 0) {
-			setStatus(path + "  (no textures)");
-			return;
-		}
-
-		view2d = { type: "nsbtx", nsbtx: b, texIndex: 0, palIndex: defaultPalForTex(b, 0), zoom: 2 };
-				show2D();
-
-				fillSelect("texSelect", texNames, view2d.texIndex, "texture ");
-				fillSelect("palSelect", palNames, view2d.palIndex, "palette ");
-				document.getElementById("texSelect").style.display = (texNames.length > 1) ? "" : "none";
-				document.getElementById("palSelect").style.display = (palNames.length > 1) ? "" : "none";
-
-				drawNSBTX();
-				setSel(el);
-		setStatus(path + "  (" + texNames.length + " texture(s), " + palNames.length + " palette(s))");
-		} catch (err) {
-			console.error(err);
-			setStatus("Load error: " + (err && err.message ? err.message : err));
-		}
-	}
-
-		// Default palette for a texture: the one with the same name if it exists.
-		function defaultPalForTex(b, texId) {
-			var name = b.textureInfo.names[texId];
-			var idx = b.paletteInfoNameToIndex["$" + name];
-			if (idx == null) idx = b.paletteInfoNameToIndex["$" + name + "_pl"];
-			return idx || 0;
-		}
-
-		// Decodes the selected texture/palette and displays it in the 2D canvas.
-		function drawNSBTX() {
-			var b = view2d.nsbtx;
-			var src = b.readTexWithPal(view2d.texIndex, view2d.palIndex);
-			var canvas = document.getElementById("canvas2d");
-			canvas.width = src.width;
-			canvas.height = src.height;
-			var ctx = canvas.getContext("2d");
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
-			ctx.drawImage(src, 0, 0);
-			applyZoom2d();
-		}
-
-		// Populates a <select> with names (falling back to "<prefix>i").
-		function fillSelect(id, names, selected, prefix) {
-			var sel = document.getElementById(id);
-			sel.innerHTML = "";
-			for (var i = 0; i < names.length; i++) {
-				var opt = document.createElement("option");
-				opt.value = i;
-				opt.textContent = (names[i] != null && names[i] !== "") ? names[i] : (prefix + i);
-				sel.appendChild(opt);
-			}
-			sel.selectedIndex = selected || 0;
-		}
-
-		// ---------------------------------------------------------------------
-		// Rendering / camera
-		// ---------------------------------------------------------------------
-
-		// Computes an approximate bounding box (centre + radius) from the model
-		// buffers once built (local coordinates × head scale).
-		function computeBounds(model) {
-			var min = [Infinity, Infinity, Infinity];
-			var max = [-Infinity, -Infinity, -Infinity];
-			var any = false;
-			var models = model.bmd.modelData.objectData;
-			for (var j = 0; j < models.length; j++) {
-				var scale = models[j].head.scale;
-				var bufs = model._modelBuffers[j];
-				if (!bufs) continue;
-				for (var p = 0; p < bufs.length; p++) {
-					var buf = bufs[p];
-					if (!buf) continue;
-					for (var s = 0; s < buf.strips.length; s++) {
-						var pa = buf.strips[s].posArray;
-						for (var k = 0; k < pa.length; k += 3) {
-							var x = pa[k] * scale, y = pa[k + 1] * scale, z = pa[k + 2] * scale;
-							if (x < min[0]) min[0] = x; if (x > max[0]) max[0] = x;
-							if (y < min[1]) min[1] = y; if (y > max[1]) max[1] = y;
-							if (z < min[2]) min[2] = z; if (z > max[2]) max[2] = z;
-							any = true;
-						}
-					}
-				}
-			}
-			if (!any) return null;
-			var center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
-			var r = 0;
-			for (var d = 0; d < 3; d++) r = Math.max(r, (max[d] - min[d]) / 2);
-			return { center: center, radius: r };
-		}
-
-		function renderLoop() {
-			requestAnimationFrame(renderLoop);
-			resizeCanvas();
-			gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-
-			if (!viewer) return;
-
-			// Advances the animation (skeleton and/or texture pattern) and updates
-			// the matrix stack. Looping is handled internally by each animation
-			// (nitroAnimator and texPAnim), so we increment freely.
-			if (viewer.anim || viewer.hasTexAnim) {
-				viewer.model.setFrame(viewer.frame);
-				if (viewer.anim) {
+				document.getElementById("ncgrSelect").addEventListener("change", function (e) {
+					if (!view2d || view2d.type !== "ncer") return;
+					var newNcgrPath = e.target.value;
 					try {
-						viewer.animMat = viewer.anim.setFrame(viewer.animIndex, 0, viewer.frame);
-					} catch (e) {
-						viewer.anim = null;
-						viewer.animMat = null;
+						view2d.ncgr = new ncgr(readROMFile(newNcgrPath));
+						view2d.ncgrPath = newNcgrPath;
+						view2d._tileCache = {};
+						drawNCER();
+						updateNCERStatus();
+					} catch (err) {
+						setStatus("NCGR load error: " + (err && err.message ? err.message : err));
 					}
-				}
-				viewer.frame++;
-				if (viewer.frame >= 1e7) viewer.frame = 0;
-			}
+				});
 
-			var aspect = gl.viewportWidth / gl.viewportHeight;
-			var fov = 45 * Math.PI / 180;
-			var far = viewer.dist * 10 + viewer.radius * 4 + 10;
-			var proj = mat4.create();
-			mat4.perspective(proj, fov, aspect, Math.max(0.001, viewer.dist * 0.01), far);
-
-			var mv = mat4.create();
-			mat4.translate(mv, mv, [0, 0, -viewer.dist]);
-			mat4.rotateX(mv, mv, viewer.pitch);
-			mat4.rotateY(mv, mv, viewer.yaw);
-			mat4.translate(mv, mv, [-viewer.center[0], -viewer.center[1], -viewer.center[2]]);
-
-			nitroRender.unsetShadowMode();
-			nitroRender.flagShadow = false;
-			nitroRender.updateBillboards(mv);
-
-			try {
-				viewer.model.draw(mv, proj, viewer.animMat || undefined);
-			} catch (e) {
-				console.error(e);
-				viewer = null;
-				return;
-			}
-
-			// Auto-fit once the buffers are built by the first render.
-			if (!viewer.fitted) {
-				var b = computeBounds(viewer.model);
-				if (b) {
-					viewer.center = b.center;
-					viewer.radius = b.radius;
-					viewer.dist = b.radius > 0 ? b.radius / Math.sin(fov / 2) * 1.2 : 1;
-					viewer.fitted = true;
-				}
-			}
-		}
-
-		function setupViewerControls() {
-			var canvas = document.getElementById("canvas3d");
-			var dragging = false, lastX = 0, lastY = 0;
-
-			canvas.addEventListener("mousedown", function (e) {
-				dragging = true; lastX = e.clientX; lastY = e.clientY; e.preventDefault();
-			});
-			window.addEventListener("mouseup", function () { dragging = false; });
-			window.addEventListener("mousemove", function (e) {
-				if (!dragging || !viewer) return;
-				viewer.yaw += (e.clientX - lastX) * 0.01;
-				viewer.pitch += (e.clientY - lastY) * 0.01;
-				lastX = e.clientX; lastY = e.clientY;
-			});
-			canvas.addEventListener("wheel", function (e) {
-				if (!viewer) return;
-				viewer.dist *= (e.deltaY > 0) ? 1.1 : 0.9;
-				e.preventDefault();
-			}, { passive: false });
-
-			document.getElementById("animSelect").addEventListener("change", function (e) {
-				if (!viewer || !viewer.anim) return;
-				viewer.animIndex = +e.target.value;
-				viewer.length = Math.max(1, viewer.anim.getLength(viewer.animIndex));
-				viewer.frame = 0;
-			});
-
-			["btxSelect", "bcaSelect", "btpSelect", "btaSelect"].forEach(function (id) {
-				document.getElementById(id).addEventListener("change", reloadFromSelects);
-			});
-
-			document.getElementById("palSelect").addEventListener("change", function (e) {
-				if (!view2d) return;
-				view2d.palIndex = +e.target.value;
-				if (view2d.type === "ncgr") drawNCGR();
-				else if (view2d.type === "nsbtx") drawNSBTX();
-			});
-
-			document.getElementById("texSelect").addEventListener("change", function (e) {
-				if (!view2d) return;
-				if (view2d.type === "nsbtx") {
-					view2d.texIndex = +e.target.value;
-					view2d.palIndex = defaultPalForTex(view2d.nsbtx, view2d.texIndex);
-					document.getElementById("palSelect").selectedIndex = view2d.palIndex;
-					drawNSBTX();
-				} else if (view2d.type === "ncer") {
-					view2d.imageIndex = +e.target.value;
-					drawNCER();
-				}
-			});
-
-			document.getElementById("ncgrSelect").addEventListener("change", function (e) {
-				if (!view2d || view2d.type !== "ncer") return;
-				var newNcgrPath = e.target.value;
-				try {
-					view2d.ncgr = new ncgr(readROMFile(newNcgrPath));
-					view2d.ncgrPath = newNcgrPath;
-					view2d._tileCache = {};
-					drawNCER();
-					updateNCERStatus();
-				} catch (err) {
-					setStatus("NCGR load error: " + (err && err.message ? err.message : err));
-				}
-			});
-
-			document.getElementById("nclrSelect").addEventListener("change", function (e) {
-				if (!view2d || view2d.type !== "ncer") return;
-				var newNclrPath = e.target.value;
-				try {
-					if (newNclrPath) {
-						view2d.palettes = new nclr(readROMFile(newNclrPath)).pltt.palettes;
-						view2d.nclrPath = newNclrPath;
-					} else {
-						view2d.palettes = null;
-						view2d.nclrPath = null;
+				document.getElementById("nclrSelect").addEventListener("change", function (e) {
+					if (!view2d || view2d.type !== "ncer") return;
+					var newNclrPath = e.target.value;
+					try {
+						if (newNclrPath) {
+							view2d.palettes = new nclr(readROMFile(newNclrPath)).pltt.palettes;
+							view2d.nclrPath = newNclrPath;
+						} else {
+							view2d.palettes = null;
+							view2d.nclrPath = null;
+						}
+						view2d._tileCache = {};
+						drawNCER();
+						updateNCERStatus();
+					} catch (err) {
+						setStatus("NCLR load error: " + (err && err.message ? err.message : err));
 					}
-					view2d._tileCache = {};
-					drawNCER();
-					updateNCERStatus();
+				});
+
+				document.getElementById("view2d").addEventListener(
+					"wheel",
+					function (e) {
+						if (!view2d) return;
+						view2d.zoom = Math.max(0.25, Math.min(32, view2d.zoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+						applyZoom2d();
+						e.preventDefault();
+					},
+					{ passive: false }
+				);
+			}
+
+			function initGL(canvas) {
+				try {
+					var ctx = canvas.getContext("webgl", { premultipliedAlpha: false, stencil: true, antialias: true });
+					ctx.clearColor(0.12, 0.12, 0.14, 1);
+					ctx.clear(ctx.COLOR_BUFFER_BIT);
+					ctx.enable(ctx.DEPTH_TEST);
+					ctx.viewportWidth = canvas.width;
+					ctx.viewportHeight = canvas.height;
+					return ctx;
 				} catch (err) {
-					setStatus("NCLR load error: " + (err && err.message ? err.message : err));
+					alert("WebGL could not be initialized.");
+					return false;
 				}
-			});
-
-			document.getElementById("view2d").addEventListener("wheel", function (e) {
-				if (!view2d) return;
-				view2d.zoom = Math.max(0.25, Math.min(32, view2d.zoom * (e.deltaY > 0 ? 0.9 : 1.1)));
-				applyZoom2d();
-				e.preventDefault();
-			}, { passive: false });
-		}
-
-		function initGL(canvas) {
-			try {
-				var ctx = canvas.getContext('webgl', { premultipliedAlpha: false, stencil: true, antialias: true });
-				ctx.clearColor(0.12, 0.12, 0.14, 1);
-				ctx.clear(ctx.COLOR_BUFFER_BIT);
-				ctx.enable(ctx.DEPTH_TEST);
-				ctx.viewportWidth = canvas.width;
-				ctx.viewportHeight = canvas.height;
-				return ctx;
-			} catch (err) {
-				alert("WebGL could not be initialized.");
-				return false;
 			}
-		}
 
-		function resizeCanvas() {
-			var canvas = document.getElementById("canvas3d");
-			var w = canvas.clientWidth, h = canvas.clientHeight;
-			if (canvas.width !== w || canvas.height !== h) {
-				canvas.width = w;
-				canvas.height = h;
+			function resizeCanvas() {
+				var canvas = document.getElementById("canvas3d");
+				var w = canvas.clientWidth,
+					h = canvas.clientHeight;
+				if (canvas.width !== w || canvas.height !== h) {
+					canvas.width = w;
+					canvas.height = h;
+				}
+				gl.viewportWidth = canvas.width;
+				gl.viewportHeight = canvas.height;
 			}
-			gl.viewportWidth = canvas.width;
-			gl.viewportHeight = canvas.height;
-		}
-	</script>
-	<style>
-		* {
-			box-sizing: border-box;
-		}
-		html, body {
-			margin: 0;
-			height: 100%;
-			background-color: #000;
-			color: #ddd;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#layout {
-			display: flex;
-			height: 100vh;
-		}
-		#left {
-			width: 500px;
-			flex: 0 0 500px;
-			display: flex;
-			flex-direction: column;
-			border-right: 1px solid #333;
-		}
-		#filters {
-			display: flex;
-			gap: 6px;
-			padding: 6px;
-			border-bottom: 1px solid #333;
-		}
-		#nameFilter, #extFilter {
-			background: #121212;
-			color: #ddd;
-			border: 1px solid #333;
-			font-family: monospace;
-			font-size: 12px;
-			padding: 4px 6px;
-		}
-		#nameFilter {
-			flex: 1 1 auto;
-			min-width: 0;
-		}
-		#extFilter {
-			flex: 0 0 180px;
-		}
-		#list {
-			width: 100%;
-			flex: 1 1 auto;
-			overflow-y: auto;
-			padding: 6px;
-			white-space: nowrap;
-		}
-		#list .f {
-			padding: 1px 4px;
-			color: #888;
-		}
-		#list .f.mdl {
-			color: #d8b86a;
-			cursor: pointer;
-		}
-		#list .f.mdl:hover {
-			background: #3a341d;
-		}
-		#list .f.anim {
-			color: #6fcf6f;
-			cursor: pointer;
-		}
-		#list .f.anim:hover {
-			background: #1d3a1d;
-		}
-		#list .f.mat {
-			color: #6fb8cf;
-			cursor: pointer;
-		}
-		#list .f.mat:hover {
-			background: #1d343a;
-		}
-		#list .f.tanim {
-			color: #b89cef;
-			cursor: pointer;
-		}
-		#list .f.tanim:hover {
-			background: #2a1d3a;
-		}
-		#list .f.tex {
-			color: #cf8fcf;
-			cursor: pointer;
-		}
-		#list .f.tex:hover {
-			background: #3a1d3a;
-		}
-		#list .f.pal {
-			color: #cfb86f;
-			cursor: pointer;
-		}
-		#list .f.pal:hover {
-			background: #3a341d;
-		}
-		#list .f.scr {
-			color: #6fcfc0;
-			cursor: pointer;
-		}
-		#list .f.scr:hover {
-			background: #1d3a35;
-		}
-		#list .f.btx {
-			color: #e0905f;
-			cursor: pointer;
-		}
-		#list .f.btx:hover {
-			background: #3a261d;
-		}
-		#list .f.cell {
-			color: #6f9fcf;
-			cursor: pointer;
-		}
-		#list .f.cell:hover {
-			background: #1d2a3a;
-		}
-		#list .f.sel {
-			background: #2e5d2e;
-			color: #fff;
-		}
-		#right {
-			flex: 1 1 auto;
-			position: relative;
-		}
-		#canvas3d {
-			width: 100%;
-			height: 100%;
-			display: block;
-		}
-		#view2d {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			overflow: auto;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 40px 12px 12px;
-			background:
-				linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%),
-				linear-gradient(45deg, #1a1a1a 25%, #222 25%, #222 75%, #1a1a1a 75%);
-			background-size: 16px 16px;
-			background-position: 0 0, 8px 8px;
-		}
-		#canvas2d {
-			image-rendering: pixelated;
-			image-rendering: crisp-edges;
-			flex: 0 0 auto;
-		}
-		#palSelect {
-			background: #3a1d3a;
-			color: #fff;
-			border: 1px solid #5d2e5d;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#ncgrSelect {
-			background: #1d2a3a;
-			color: #fff;
-			border: 1px solid #2e4a6f;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#btxSelect {
-			background: #3a261d;
-			color: #fff;
-			border: 1px solid #5d4030;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#bcaSelect {
-			background: #1d3a1d;
-			color: #fff;
-			border: 1px solid #2e5d2e;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#btpSelect, #btaSelect {
-			background: #2a1d3a;
-			color: #fff;
-			border: 1px solid #4a2e6f;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#nclrSelect {
-			background: #2a1d1d;
-			color: #fff;
-			border: 1px solid #6f2e2e;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#texSelect {
-			background: #3a261d;
-			color: #fff;
-			border: 1px solid #5d4030;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#topbar {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			padding: 4px 8px;
-			background: rgba(0, 0, 0, 0.5);
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			white-space: nowrap;
-			overflow: hidden;
-		}
-		#animSelect {
-			background: #1d3a1d;
-			color: #fff;
-			border: 1px solid #2e5d2e;
-			font-family: monospace;
-			font-size: 12px;
-		}
-		#status {
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-	</style>
-</head>
+		</script>
+		<style>
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+				background-color: #000;
+				color: #ddd;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#layout {
+				display: flex;
+				height: 100vh;
+			}
+			#left {
+				width: 500px;
+				flex: 0 0 500px;
+				display: flex;
+				flex-direction: column;
+				border-right: 1px solid #333;
+			}
+			#filters {
+				display: flex;
+				gap: 6px;
+				padding: 6px;
+				border-bottom: 1px solid #333;
+			}
+			#nameFilter,
+			#extFilter {
+				background: #121212;
+				color: #ddd;
+				border: 1px solid #333;
+				font-family: monospace;
+				font-size: 12px;
+				padding: 4px 6px;
+			}
+			#nameFilter {
+				flex: 1 1 auto;
+				min-width: 0;
+			}
+			#extFilter {
+				flex: 0 0 180px;
+			}
+			#list {
+				width: 100%;
+				flex: 1 1 auto;
+				overflow-y: auto;
+				padding: 6px;
+				white-space: nowrap;
+			}
+			#list .f {
+				padding: 1px 4px;
+				color: #888;
+			}
+			#list .f.mdl {
+				color: #d8b86a;
+				cursor: pointer;
+			}
+			#list .f.mdl:hover {
+				background: #3a341d;
+			}
+			#list .f.anim {
+				color: #6fcf6f;
+				cursor: pointer;
+			}
+			#list .f.anim:hover {
+				background: #1d3a1d;
+			}
+			#list .f.mat {
+				color: #6fb8cf;
+				cursor: pointer;
+			}
+			#list .f.mat:hover {
+				background: #1d343a;
+			}
+			#list .f.tanim {
+				color: #b89cef;
+				cursor: pointer;
+			}
+			#list .f.tanim:hover {
+				background: #2a1d3a;
+			}
+			#list .f.tex {
+				color: #cf8fcf;
+				cursor: pointer;
+			}
+			#list .f.tex:hover {
+				background: #3a1d3a;
+			}
+			#list .f.pal {
+				color: #cfb86f;
+				cursor: pointer;
+			}
+			#list .f.pal:hover {
+				background: #3a341d;
+			}
+			#list .f.scr {
+				color: #6fcfc0;
+				cursor: pointer;
+			}
+			#list .f.scr:hover {
+				background: #1d3a35;
+			}
+			#list .f.btx {
+				color: #e0905f;
+				cursor: pointer;
+			}
+			#list .f.btx:hover {
+				background: #3a261d;
+			}
+			#list .f.cell {
+				color: #6f9fcf;
+				cursor: pointer;
+			}
+			#list .f.cell:hover {
+				background: #1d2a3a;
+			}
+			#list .f.sel {
+				background: #2e5d2e;
+				color: #fff;
+			}
+			#right {
+				flex: 1 1 auto;
+				position: relative;
+			}
+			#canvas3d {
+				width: 100%;
+				height: 100%;
+				display: block;
+			}
+			#view2d {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				overflow: auto;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 40px 12px 12px;
+				background:
+					linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%),
+					linear-gradient(45deg, #1a1a1a 25%, #222 25%, #222 75%, #1a1a1a 75%);
+				background-size: 16px 16px;
+				background-position:
+					0 0,
+					8px 8px;
+			}
+			#canvas2d {
+				image-rendering: pixelated;
+				image-rendering: crisp-edges;
+				flex: 0 0 auto;
+			}
+			#palSelect {
+				background: #3a1d3a;
+				color: #fff;
+				border: 1px solid #5d2e5d;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#ncgrSelect {
+				background: #1d2a3a;
+				color: #fff;
+				border: 1px solid #2e4a6f;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#btxSelect {
+				background: #3a261d;
+				color: #fff;
+				border: 1px solid #5d4030;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#bcaSelect {
+				background: #1d3a1d;
+				color: #fff;
+				border: 1px solid #2e5d2e;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#btpSelect,
+			#btaSelect {
+				background: #2a1d3a;
+				color: #fff;
+				border: 1px solid #4a2e6f;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#nclrSelect {
+				background: #2a1d1d;
+				color: #fff;
+				border: 1px solid #6f2e2e;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#texSelect {
+				background: #3a261d;
+				color: #fff;
+				border: 1px solid #5d4030;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#topbar {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				padding: 4px 8px;
+				background: rgba(0, 0, 0, 0.5);
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				white-space: nowrap;
+				overflow: hidden;
+			}
+			#animSelect {
+				background: #1d3a1d;
+				color: #fff;
+				border: 1px solid #2e5d2e;
+				font-family: monospace;
+				font-size: 12px;
+			}
+			#status {
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		</style>
+	</head>
 
-<body>
-	<div id="layout">
-		<div id="left">
-			<div id="filters">
-				<input id="nameFilter" type="text" placeholder="Filter by name">
-				<select id="extFilter"></select>
+	<body>
+		<div id="layout">
+			<div id="left">
+				<div id="filters">
+					<input id="nameFilter" type="text" placeholder="Filter by name" />
+					<select id="extFilter"></select>
+				</div>
+				<div id="list"></div>
 			</div>
-			<div id="list"></div>
-		</div>
-		<div id="right">
-			<canvas id="canvas3d"></canvas>
-			<div id="view2d" style="display:none;">
-				<canvas id="canvas2d"></canvas>
-			</div>
-			<div id="topbar">
-				<select id="animSelect" style="display:none;"></select>
-				<select id="btxSelect" style="display:none;"></select>
-				<select id="bcaSelect" style="display:none;"></select>
-				<select id="btpSelect" style="display:none;"></select>
-				<select id="btaSelect" style="display:none;"></select>
-				<select id="texSelect" style="display:none;"></select>
-				<select id="ncgrSelect" style="display:none;"></select>
-				<select id="nclrSelect" style="display:none;"></select>
-				<select id="palSelect" style="display:none;"></select>
-				<span id="status">Click a .nsbmd / .nsbca / .nsbma / .nsbtp / .nsbta / .ncgr / .nclr / .nscr / .ncer / .nsbtx file to display it</span>
+			<div id="right">
+				<canvas id="canvas3d"></canvas>
+				<div id="view2d" style="display: none">
+					<canvas id="canvas2d"></canvas>
+				</div>
+				<div id="topbar">
+					<select id="animSelect" style="display: none"></select>
+					<select id="btxSelect" style="display: none"></select>
+					<select id="bcaSelect" style="display: none"></select>
+					<select id="btpSelect" style="display: none"></select>
+					<select id="btaSelect" style="display: none"></select>
+					<select id="texSelect" style="display: none"></select>
+					<select id="ncgrSelect" style="display: none"></select>
+					<select id="nclrSelect" style="display: none"></select>
+					<select id="palSelect" style="display: none"></select>
+					<span id="status"
+						>Click a .nsbmd / .nsbca / .nsbma / .nsbtp / .nsbta / .ncgr / .nclr / .nscr / .ncer / .nsbtx file to display
+						it</span
+					>
+				</div>
 			</div>
 		</div>
-	</div>
-	<input type="file" id="fileIn" style="display:none;">
-</body>
+		<input type="file" id="fileIn" style="display: none" />
+	</body>
 </html>

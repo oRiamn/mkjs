@@ -7,30 +7,30 @@
 
 export class lz77 {
 	static decompress(buffer: MKJSDataInput): ArrayBuffer {
-		var view = new DataView(buffer);
-		var compType = view.getUint8(0);
-		var size = view.getUint32(0, true) >> 8;
+		let view = new DataView(buffer);
+		let compType = view.getUint8(0);
+		let size = view.getUint32(0, true) >> 8;
 
-		var targ = new ArrayBuffer(size);
-		var targA = new Uint8Array(targ);
+		let targ = new ArrayBuffer(size);
+		let targA = new Uint8Array(targ);
 
-		var off = 4;
-		var dOff = 0;
-		var eof = buffer.byteLength;
+		let off = 4;
+		let dOff = 0;
+		let eof = buffer.byteLength;
 		while (off < eof) {
-			var flag = view.getUint8(off++);
-			for (var j = 7; j >= 0; j--) {
+			let flag = view.getUint8(off++);
+			for (let j = 7; j >= 0; j--) {
 				if (off >= eof) break;
-				if ((flag >> j) & 1) { //1=compressed, 2=raw byte
-					var dat = view.getUint16(off);
+				if ((flag >> j) & 1) {
+					//1=compressed, 2=raw byte
+					let dat = view.getUint16(off);
 					off += 2;
-					var cOff = (dOff - (dat & 4095)) - 1;
-					var len = (dat >> 12) + 3;
+					let cOff = dOff - (dat & 4095) - 1;
+					let len = (dat >> 12) + 3;
 
-					for (var k = 0; k < len; k++) {
+					for (let k = 0; k < len; k++) {
 						targA[dOff++] = targA[cOff++];
 					}
-
 				} else {
 					targA[dOff++] = view.getUint8(off++);
 				}

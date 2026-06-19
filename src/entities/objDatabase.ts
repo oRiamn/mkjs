@@ -20,29 +20,27 @@ import { ObjTruck, ObjCar, ObjBus } from "./trafficCar";
 import { ObjWater } from "./water";
 
 export class objDatabase {
-
-	static idToType: typeof SceneEntityObject[] =  new Array<typeof SceneEntityObject>();
+	static idToType: SceneEntityObjectConstructor[] = new Array<SceneEntityObjectConstructor>();
 
 	static init() {
-
 		objDatabase.idToType[0x0001] = ObjWater;
 		objDatabase.idToType[0x0003] = ObjWater;
 		objDatabase.idToType[0x0006] = ObjWater;
 		objDatabase.idToType[0x0008] = ObjSoundMaker;
 		objDatabase.idToType[0x0009] = ObjWater;
-		objDatabase.idToType[0x000C] = ObjWater;
+		objDatabase.idToType[0x000c] = ObjWater;
 
 		objDatabase.idToType[0x0065] = ItemBox;
 
-		objDatabase.idToType[0x00CA] = ObjRoutePlatform;
-		objDatabase.idToType[0x00CB] = ObjGear;
-		objDatabase.idToType[0x00CE] = ObjGear; //test_cylinder, tick tock clock end
-		objDatabase.idToType[0x00D0] = ObjRotaryRoom;
-		objDatabase.idToType[0x00D1] = ObjGear; //rotary bridge		
+		objDatabase.idToType[0x00ca] = ObjRoutePlatform;
+		objDatabase.idToType[0x00cb] = ObjGear;
+		objDatabase.idToType[0x00ce] = ObjGear; //test_cylinder, tick tock clock end
+		objDatabase.idToType[0x00d0] = ObjRotaryRoom;
+		objDatabase.idToType[0x00d1] = ObjGear; //rotary bridge
 
-		objDatabase.idToType[0x012D] = BeachTree;
-		objDatabase.idToType[0x012E] = BeachTree;
-		objDatabase.idToType[0x012F] = ObjDecor;
+		objDatabase.idToType[0x012d] = BeachTree;
+		objDatabase.idToType[0x012e] = BeachTree;
+		objDatabase.idToType[0x012f] = ObjDecor;
 
 		objDatabase.idToType[0x0130] = ObjDecor;
 		objDatabase.idToType[0x0131] = ObjDecor;
@@ -52,12 +50,12 @@ export class objDatabase {
 		objDatabase.idToType[0x0135] = ObjDecor;
 		objDatabase.idToType[0x0138] = ObjDecor;
 		objDatabase.idToType[0x0139] = ObjDecor;
-		objDatabase.idToType[0x013C] = ObjDecor; //DEBUG: cheep cheep (routed)
-		objDatabase.idToType[0x013D] = ObjDecor; //DEBUG: ghost
+		objDatabase.idToType[0x013c] = ObjDecor; //DEBUG: cheep cheep (routed)
+		objDatabase.idToType[0x013d] = ObjDecor; //DEBUG: ghost
 
-		objDatabase.idToType[0x013A] = ObjDecor; //figure 8 tree
-		objDatabase.idToType[0x013C] = ObjDecor;
-		objDatabase.idToType[0x013F] = ObjDecor;
+		objDatabase.idToType[0x013a] = ObjDecor; //figure 8 tree
+		objDatabase.idToType[0x013c] = ObjDecor;
+		objDatabase.idToType[0x013f] = ObjDecor;
 
 		objDatabase.idToType[0x0140] = ObjDecor;
 		objDatabase.idToType[0x0142] = ObjDecor; //more trees
@@ -66,11 +64,11 @@ export class objDatabase {
 		objDatabase.idToType[0x0148] = ObjDecor;
 		objDatabase.idToType[0x0149] = ObjDecor; //yoshi falls egg
 
-		objDatabase.idToType[0x014B] = ObjDecor;
-		objDatabase.idToType[0x014C] = ObjDecor;
-		objDatabase.idToType[0x014D] = ObjDecor;
-		objDatabase.idToType[0x014E] = ObjDecor;
-		objDatabase.idToType[0x014F] = ObjDecor;
+		objDatabase.idToType[0x014b] = ObjDecor;
+		objDatabase.idToType[0x014c] = ObjDecor;
+		objDatabase.idToType[0x014d] = ObjDecor;
+		objDatabase.idToType[0x014e] = ObjDecor;
+		objDatabase.idToType[0x014f] = ObjDecor;
 
 		objDatabase.idToType[0x0150] = ObjDecor;
 		objDatabase.idToType[0x0151] = ObjDecor;
@@ -81,13 +79,12 @@ export class objDatabase {
 		objDatabase.idToType[0x0156] = ObjDecor;
 		objDatabase.idToType[0x0157] = ObjDecor;
 
-		objDatabase.idToType[0x019C] = ObjTruck;
-		objDatabase.idToType[0x019A] = ObjCar;
+		objDatabase.idToType[0x019c] = ObjTruck;
+		objDatabase.idToType[0x019a] = ObjCar;
 		objDatabase.idToType[0x0195] = ObjBus;
 
-
-		objDatabase.idToType[0x00CC] = ObjBridge; //DEBUG: pianta bridge
-		objDatabase.idToType[0x000D] = ObjDecor; //DEBUG: puddle
+		objDatabase.idToType[0x00cc] = ObjBridge; //DEBUG: pianta bridge
+		objDatabase.idToType[0x000d] = ObjDecor; //DEBUG: puddle
 
 		objDatabase.idToType[0x0158] = ObjDecor; //DEBUG: airship (routed)
 
@@ -100,31 +97,30 @@ export class objDatabase {
 		objDatabase.idToType[0x0198] = ObjDecor;
 		objDatabase.idToType[0x0199] = ObjDecor;
 		//truck
-		objDatabase.idToType[0x019B] = ObjDecor;
-		objDatabase.idToType[0x019D] = ObjDecor;
-		objDatabase.idToType[0x019E] = ObjDecor;
+		objDatabase.idToType[0x019b] = ObjDecor;
+		objDatabase.idToType[0x019d] = ObjDecor;
+		objDatabase.idToType[0x019e] = ObjDecor;
 
-		objDatabase.idToType[0x01A0] = ObjDecor;
-		objDatabase.idToType[0x01A1] = ObjDecor;
-		objDatabase.idToType[0x01A3] = ObjDecor;
-		objDatabase.idToType[0x01A4] = ObjDecor;
-		objDatabase.idToType[0x01A5] = ObjDecor;
-		objDatabase.idToType[0x01A6] = ObjDecor;
-		objDatabase.idToType[0x01A7] = ObjDecor;
-		objDatabase.idToType[0x01A8] = ObjDecor;
-		objDatabase.idToType[0x01A9] = ObjDecor;
+		objDatabase.idToType[0x01a0] = ObjDecor;
+		objDatabase.idToType[0x01a1] = ObjDecor;
+		objDatabase.idToType[0x01a3] = ObjDecor;
+		objDatabase.idToType[0x01a4] = ObjDecor;
+		objDatabase.idToType[0x01a5] = ObjDecor;
+		objDatabase.idToType[0x01a6] = ObjDecor;
+		objDatabase.idToType[0x01a7] = ObjDecor;
+		objDatabase.idToType[0x01a8] = ObjDecor;
+		objDatabase.idToType[0x01a9] = ObjDecor;
 
-		objDatabase.idToType[0x01AA] = ObjDecor;
-		objDatabase.idToType[0x01AC] = ObjDecor;
-		objDatabase.idToType[0x01AD] = ObjDecor;
+		objDatabase.idToType[0x01aa] = ObjDecor;
+		objDatabase.idToType[0x01ac] = ObjDecor;
+		objDatabase.idToType[0x01ad] = ObjDecor;
 		//rotating fireballs
 
-		objDatabase.idToType[0x01B0] = ObjDecor;
-		objDatabase.idToType[0x01B1] = ObjDecor;
-		objDatabase.idToType[0x01B2] = ObjDecor;
-		objDatabase.idToType[0x01B3] = ObjDecor;
-		objDatabase.idToType[0x01B4] = ObjDecor;
-		objDatabase.idToType[0x01B5] = ObjDecor;
+		objDatabase.idToType[0x01b0] = ObjDecor;
+		objDatabase.idToType[0x01b1] = ObjDecor;
+		objDatabase.idToType[0x01b2] = ObjDecor;
+		objDatabase.idToType[0x01b3] = ObjDecor;
+		objDatabase.idToType[0x01b4] = ObjDecor;
+		objDatabase.idToType[0x01b5] = ObjDecor;
 	}
-
 }

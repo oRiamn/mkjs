@@ -1,0 +1,7 @@
+bundle.js
+coverage
+dist
+node_modules
+rom
+*.nds
+*.exe

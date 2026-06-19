@@ -9,17 +9,11 @@ import { shadowRender } from "../../render/shadowRender";
 import { courseScene } from "./courseScene";
 
 export class sceneDrawer {
-	gl: CustomWebGLRenderingContext;
-	shadowTarg: {
-		color: CustomWebGLTexture;
-		depth: CustomWebGLTexture;
-		fb: WebGLFramebuffer;
-	};
+	gl!: CustomWebGLRenderingContext;
+	shadowTarg!: RenderTarget;
 	shadowRes: number;
 	static instance: sceneDrawer;
 	constructor() {
-		this.gl = null;
-		this.shadowTarg = null;
 		this.shadowRes = 2048;
 	}
 
@@ -32,12 +26,7 @@ export class sceneDrawer {
 
 	init(gl: CustomWebGLRenderingContext) {
 		this.gl = gl;
-		this.shadowTarg = this.createRenderTarget(
-			gl,
-			this.shadowRes,
-			this.shadowRes,
-			true
-		);
+		this.shadowTarg = this.createRenderTarget(gl, this.shadowRes, this.shadowRes, true);
 	}
 
 	drawWithShadow(gl: CustomWebGLRenderingContext, scn: courseScene, x: number, y: number, width: number, height: number) {
@@ -47,10 +36,10 @@ export class sceneDrawer {
 			scn.renderTarg = this.createRenderTarget(gl, width, height, true);
 		}
 
-		var view = scn.camera.getView(scn, width, height);
-		var viewProj = mat4.mul(view.p, view.p, view.mv);
+		let view = scn.camera.getView(scn, width, height);
+		let viewProj = mat4.mul(view.p, view.p, view.mv);
 
-		var shadMat = scn.shadMat;
+		let shadMat = scn.shadMat;
 
 		if (scn.farShad == null) {
 			scn.farShad = this.createRenderTarget(gl, this.shadowRes * 2, this.shadowRes * 2, true);
@@ -78,16 +67,23 @@ export class sceneDrawer {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 		gl.viewport(x, y, width, height);
-		shadowRender.drawShadowed(scn.renderTarg.color, scn.renderTarg.depth, this.shadowTarg.depth, scn.farShad.depth, viewProj, shadMat, scn.farShadMat)
+		shadowRender.drawShadowed(
+			scn.renderTarg.color,
+			scn.renderTarg.depth,
+			this.shadowTarg.depth,
+			scn.farShad.depth,
+			viewProj,
+			shadMat,
+			scn.farShadMat
+		);
 	}
 
 	drawTest(gl: CustomWebGLRenderingContext, scn: courseScene, x: number, y: number, width: number, height: number) {
-
-		var shadMat = scn.shadMat;
-		var viewProj = mat4.mul(mat4.create(), scn.camera.view.p, scn.camera.view.mv);
-		var view = {
+		let shadMat = scn.shadMat;
+		let viewProj = mat4.mul(mat4.create(), scn.camera.view.p, scn.camera.view.mv);
+		let view = {
 			p: viewProj,
-			mv: scn.camera.view.mv
+			mv: scn.camera.view.mv,
 		};
 
 		nitroRender.unsetShadowMode();
@@ -120,14 +116,14 @@ export class sceneDrawer {
 		scn.draw(gl, viewProj, false);
 
 		scn.sndUpdate(view.mv);
-
 	}
 
-	createRenderTarget(gl: CustomWebGLRenderingContext, xsize: number, ysize: number, _depth: boolean) {
-		var depthTextureExt = gl.getExtension("WEBGL_depth_texture");
-		if (!depthTextureExt) alert("depth texture not supported! we're DOOMED! jk we'll just have to add a fallback for people with potato gfx");
+	private createRenderTarget(gl: CustomWebGLRenderingContext, xsize: number, ysize: number, _depth: boolean): RenderTarget {
+		let depthTextureExt = gl.getExtension("WEBGL_depth_texture");
+		if (!depthTextureExt)
+			alert("depth texture not supported! we're DOOMED! jk we'll just have to add a fallback for people with potato gfx");
 
-		var colorTexture = gl.createTexture() as CustomWebGLTexture;
+		let colorTexture = gl.createTexture() as CustomWebGLTexture;
 		gl.bindTexture(gl.TEXTURE_2D, colorTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -135,7 +131,7 @@ export class sceneDrawer {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, xsize, ysize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
-		var depthTexture = gl.createTexture() as CustomWebGLTexture;
+		let depthTexture = gl.createTexture() as CustomWebGLTexture;
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -143,7 +139,7 @@ export class sceneDrawer {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, xsize, ysize, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
 
-		var framebuffer = gl.createFramebuffer();
+		let framebuffer = gl.createFramebuffer();
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);
@@ -151,7 +147,7 @@ export class sceneDrawer {
 		return {
 			color: colorTexture,
 			depth: depthTexture,
-			fb: framebuffer
-		}
+			fb: framebuffer,
+		};
 	}
 }
