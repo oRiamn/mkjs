@@ -54,6 +54,20 @@ export class nitroAudio {
 
 		SSEQWaveCache.init(sdat, nitroAudio.ctx);
 		nitroAudio.sdat = sdat;
+
+		const suspendAudio = () => {
+			void nitroAudio.ctx.suspend();
+		};
+		const resumeAudio = () => {
+			if (!document.hidden) void nitroAudio.ctx.resume();
+		};
+
+		document.addEventListener("visibilitychange", () => {
+			if (document.hidden) suspendAudio();
+			else resumeAudio();
+		});
+		window.addEventListener("blur", suspendAudio);
+		window.addEventListener("focus", resumeAudio);
 	}
 
 	static updateListener(pos: vec3 | null, view: mat4) {
