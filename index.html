@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 	<head>
 		<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
 		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -482,43 +482,42 @@
 		<canvas id="canvas3d"></canvas>
 
 		<div id="hud">
-			<label>Course <select id="kcls"></select></label>
-			<label>Langue <select id="klang"></select></label>
-			<label>Tours <select id="klaptype"></select></label>
-			<label>Contrôles <select id="kcontrols"></select></label>
+			<label>Track <select id="kcls"></select></label>
+			<label>Language <select id="klang"></select></label>
+			<label>Laps <select id="klaptype"></select></label>
+			<label>Controls <select id="kcontrols"></select></label>
 		</div>
 
 		<div id="menu-overlay">
-			<!-- État 1 : aucune ROM -->
+			<!-- State 1: no ROM -->
 			<div id="screen-upload" class="menu-screen hidden">
 				<h1 class="menu-title">Mario Kart JS</h1>
 				<p class="menu-subtitle">
-					Pour jouer, vous devez fournir une ROM Mario Kart DS (.nds). Le fichier sera enregistré localement dans
-					votre navigateur.
+					To play, you must provide a Mario Kart DS ROM (.nds). The file will be stored locally in your browser.
 				</p>
-				<button id="btn-upload" class="menu-btn">Choisir un fichier ROM</button>
-				<p class="menu-hint">Vous devez posséder légalement le jeu pour utiliser sa ROM.</p>
+				<button id="btn-upload" class="menu-btn">Choose ROM file</button>
+				<p class="menu-hint">You must legally own the game to use its ROM.</p>
 			</div>
 
-			<!-- État 2 : ROM présente, prêt à initialiser -->
+			<!-- State 2: ROM present, ready to initialize -->
 			<div id="screen-ready" class="menu-screen hidden">
-				<h1 class="menu-title">ROM chargée</h1>
-				<p class="menu-subtitle">Configurez votre partie ci-dessous, puis initialisez le moteur de jeu.</p>
-				<button id="btn-init" class="menu-btn menu-btn--secondary">Initialiser le jeu</button>
+				<h1 class="menu-title">ROM loaded</h1>
+				<p class="menu-subtitle">Configure your game below, then initialize the game engine.</p>
+				<button id="btn-init" class="menu-btn menu-btn--secondary">Initialize game</button>
 			</div>
 
-			<!-- Chargement -->
+			<!-- Loading -->
 			<div id="screen-loading" class="menu-screen hidden">
 				<div class="loading-spinner"></div>
-				<h1 class="menu-title">Chargement…</h1>
-				<p class="menu-subtitle">Préparation des ressources, veuillez patienter.</p>
+				<h1 class="menu-title">Loading…</h1>
+				<p class="menu-subtitle">Preparing resources, please wait.</p>
 			</div>
 
-			<!-- État 3 : jeu initialisé, prêt à démarrer -->
+			<!-- State 3: game initialized, ready to start -->
 			<div id="screen-start" class="menu-screen hidden">
-				<h1 class="menu-title">Prêt !</h1>
-				<p class="menu-subtitle">Le circuit est chargé. Appuyez sur Démarrer pour lancer la course.</p>
-				<button id="btn-start" class="menu-btn">Démarrer</button>
+				<h1 class="menu-title">Ready!</h1>
+				<p class="menu-subtitle">The track is loaded. Press Start to begin the race.</p>
+				<button id="btn-start" class="menu-btn">Start</button>
 			</div>
 		</div>
 
