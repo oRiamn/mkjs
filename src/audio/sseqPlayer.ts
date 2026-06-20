@@ -168,8 +168,7 @@ export class SSEQPlayer {
 		try {
 			//can throw exception if note has already ended.
 			if (note.ended) return;
-			const time = thread.calculateCurrentTime();
-			const baseTime = time == Infinity ? this.ctx.currentTime : time;
+			const baseTime = this._scheduleTime(thread.calculateCurrentTime());
 			if (baseTime > note.noteEndsAt) return;
 			const releaseTime = note.relTime;
 			note.note.gain.cancelScheduledValues(baseTime);
@@ -206,7 +205,31 @@ export class SSEQPlayer {
 		}
 	}
 
+	instaKill() {
+		for (let i = 0; i < this.threads.length; i++) {
+			const note = this.threads[i].lastNote;
+			if (note != null && !note.ended) {
+				try {
+					note.src.stop();
+				} catch {
+					/* already stopped */
+				}
+				note.ended = true;
+			}
+		}
+		this.threads = [];
+		this.dead = true;
+	}
+
 	playNote(thread: SSEQThread, velocity: number, duration: number, num: number): ThreadM | null {
+		try {
+			return this._playNote(thread, velocity, duration, num);
+		} catch (e) {
+			return null;
+		}
+	}
+
+	private _playNote(thread: SSEQThread, velocity: number, duration: number, num: number): ThreadM | null {
 		// if (thread.wait < 0) // console.log(`warning - MIDI buffer overflowed! ${thread.wait}`);
 		velocity /= 127;
 		if (this.bank == null || this.bank.bank.instruments == null) return null;
@@ -242,7 +265,7 @@ export class SSEQPlayer {
 
 		const noteOffsets = thread.transpose + this.properties.transpose; // (thread.pitchBend/0x7F)*thread.pitchBendRange+
 
-		const baseTime = thread.calculateCurrentTime();
+		const baseTime = this._scheduleTime(thread.calculateCurrentTime());
 		const realDur = thread.tie ? Infinity : this._ticksToMs(duration) / 1000;
 
 		const targetFreq = this._noteToFreq(num + noteOffsets) / inst.freq / snd.info.mul;
@@ -257,11 +280,14 @@ export class SSEQPlayer {
 			source.playbackRate.setValueAtTime(this._noteToFreq(thread.portaKey + noteOffsets) / inst.freq / snd.info.mul, baseTime);
 
 			if (thread.portaTime == 0 && duration != Infinity)
-				source.playbackRate.exponentialRampToValueAtTime(targetFreq, baseTime + this._ticksToMs(duration) / 1000);
+				source.playbackRate.exponentialRampToValueAtTime(
+					targetFreq,
+					this._scheduleOffset(baseTime, this._ticksToMs(duration) / 1000)
+				);
 			else {
 				const timeS = thread.portaTime * thread.portaTime;
 				const time = this._ticksToMs((Math.abs(sweepPitch) * timeS) >> 11) / 1000;
-				source.playbackRate.exponentialRampToValueAtTime(targetFreq, baseTime + time);
+				source.playbackRate.exponentialRampToValueAtTime(targetFreq, this._scheduleOffset(baseTime, time));
 			}
 		}
 
@@ -272,15 +298,17 @@ export class SSEQPlayer {
 		const sus = thread.sustain != null ? thread.sustain : inst.sustainLvl;
 		const rel = thread.release != null ? thread.release : inst.release;
 
-		const attackTime = this._calculateRequiredAttackCycles(this._convertAttToRate(atk)) * this.CYCLE_TIME; //(255/convertAttToRate(inst.attack))*0.016; //0.01;
-		const decayTime = ((92544 / this._convertFallToRate(dec)) * (1 - sus / 0x7f) * this.CYCLE_TIME) / 2;
-		const releaseTime = ((92544 / this._convertFallToRate(rel)) * (sus / 0x7f) * this.CYCLE_TIME) / 2;
+		const attackTime = this._finiteTime(
+			this._calculateRequiredAttackCycles(this._convertAttToRate(atk)) * this.CYCLE_TIME
+		);
+		const decayTime = this._finiteTime(((92544 / this._convertFallToRate(dec)) * (1 - sus / 0x7f) * this.CYCLE_TIME) / 2);
+		const releaseTime = this._finiteTime(((92544 / this._convertFallToRate(rel)) * (sus / 0x7f) * this.CYCLE_TIME) / 2);
 
 		if (!thread.tie || thread.lastNote == null) {
 			note.gain.value = 0.0;
-			note.gain.setValueAtTime(0.0, baseTime); //initially 0
-			note.gain.linearRampToValueAtTime(velocity, baseTime + attackTime); //attack
-			note.gain.linearRampToValueAtTime((velocity * sus) / 0x7f, baseTime + attackTime + decayTime); //decay
+			note.gain.setValueAtTime(0.0, baseTime);
+			note.gain.linearRampToValueAtTime(velocity, this._scheduleOffset(baseTime, attackTime));
+			note.gain.linearRampToValueAtTime((velocity * sus) / 0x7f, this._scheduleOffset(baseTime, attackTime + decayTime));
 
 			source.start(baseTime);
 
@@ -291,12 +319,14 @@ export class SSEQPlayer {
 		}
 
 		if (realDur != Infinity) {
-			if (baseTime + attackTime + decayTime < baseTime + realDur)
-				note.gain.linearRampToValueAtTime((velocity * sus) / 0x7f, baseTime + realDur); //sustain until
-			note.gain.linearRampToValueAtTime(0, baseTime + realDur + releaseTime); //then release
-			source.stop(baseTime + realDur + releaseTime);
+			const sustainUntil = this._scheduleOffset(baseTime, realDur);
+			const releaseAt = this._scheduleOffset(baseTime, realDur + releaseTime);
+			if (this._scheduleOffset(baseTime, attackTime + decayTime) < sustainUntil)
+				note.gain.linearRampToValueAtTime((velocity * sus) / 0x7f, sustainUntil);
+			note.gain.linearRampToValueAtTime(0, releaseAt);
+			source.stop(releaseAt);
 
-			if (baseTime + realDur + releaseTime > this.lastNoteEnd) this.lastNoteEnd = baseTime + realDur + releaseTime;
+			if (releaseAt > this.lastNoteEnd) this.lastNoteEnd = releaseAt;
 		}
 
 		return {
@@ -359,5 +389,19 @@ export class SSEQPlayer {
 
 	private _ticksToMs(ticks: number) {
 		return (ticks / 48) * (60000 / this.properties.bpm);
+	}
+
+	private _scheduleTime(time: number) {
+		if (!Number.isFinite(time)) return this.ctx.currentTime;
+		return Math.max(time, this.ctx.currentTime);
+	}
+
+	private _scheduleOffset(baseTime: number, offset: number) {
+		if (!Number.isFinite(offset)) return this._scheduleTime(baseTime);
+		return this._scheduleTime(baseTime + offset);
+	}
+
+	private _finiteTime(time: number) {
+		return Number.isFinite(time) && time >= 0 ? time : 0;
 	}
 }

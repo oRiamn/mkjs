@@ -21,9 +21,23 @@
 			var lastLang = null;
 			var currentAppState = "upload";
 
+			function unlockAudio() {
+				if (typeof osc !== "undefined" && osc && !osc.donezo) {
+					osc.start(0);
+					osc.donezo = true;
+				}
+				if (typeof nitroAudio !== "undefined" && nitroAudio.ctx && nitroAudio.ctx.state === "suspended") {
+					return nitroAudio.ctx.resume();
+				}
+				return Promise.resolve();
+			}
+
 			function applySettings() {
+				unlockAudio();
 				refreshSettings();
 				if (!gameInitialized) return;
+
+				nitroAudio.killAll();
 
 				if (MKDSCONST.CURRENTLANG !== lastLang) {
 					ingameRes = new IngameRes(gameROM);
@@ -85,6 +99,7 @@
 			}
 
 			function handleInitClick() {
+				unlockAudio();
 				showAppState("loading");
 				setTimeout(function () {
 					fileStore.getInstance().loadRom(function (rom) {
@@ -99,12 +114,10 @@
 			}
 
 			function handleStartClick() {
-				showAppState("playing");
-				mainScene.startRace();
-				if (!osc.donezo) {
-					osc.start(0);
-					osc.donezo = true;
-				}
+				unlockAudio().then(function () {
+					showAppState("playing");
+					mainScene.startRace();
+				});
 			}
 
 			let init = false;
@@ -425,6 +438,10 @@
 				background: rgba(0, 0, 0, 0.88);
 				border-top: 1px solid rgba(255, 255, 255, 0.12);
 				pointer-events: auto;
+				opacity: 0;
+			}
+			#hud:hover {
+				opacity: 1;
 			}
 			#hud label {
 				display: flex;
