@@ -73,28 +73,31 @@ const COURSES: MKCONST_course_obj[] = [
 	{ name: "mini_dokan_gc", music: 43, battle: true },
 ];
 
-let CURRENTCOURSE = parseInt(localStorage.getItem("CURRENTCOURSE") || "");
-if (Number.isInteger(CURRENTCOURSE) && CURRENTCOURSE >= 0 && CURRENTCOURSE <= COURSES.length) {
-	CURRENTCOURSE = CURRENTCOURSE;
-} else {
-	CURRENTCOURSE = Math.floor(Math.random() * COURSES.length);
+function readCourse(): number {
+	const course = parseInt(localStorage.getItem("CURRENTCOURSE") || "");
+	if (Number.isInteger(course) && course >= 0 && course < COURSES.length) {
+		return course;
+	}
+	return Math.floor(Math.random() * COURSES.length);
 }
 
-const CURRENTLANG = localStorage.getItem("CURRENTLANG") || "us";
+function readMaxLap(): number {
+	const laps = parseInt(localStorage.getItem("CURRENTLAPTYPE") || "");
+	return [3, 5].includes(laps) ? laps : 3;
+}
 
-let MAX_LAP = parseInt(localStorage.getItem("CURRENTLAPTYPE") || "");
-MAX_LAP = [3, 5].includes(MAX_LAP) ? MAX_LAP : 3;
+function readControlType(): string {
+	return (localStorage.getItem("CONTROLTYPE") || "cpu").toUpperCase();
+}
 
-const CONTROLTYPE = (localStorage.getItem("CONTROLTYPE") || "cpu").toUpperCase();
-let USER_CONTROLLER;
-switch (CONTROLTYPE) {
-	case "MAN":
-		USER_CONTROLLER = getPlayerControls();
-		break;
-	case "CPU":
-	default:
-		USER_CONTROLLER = controlRaceCPU;
-		break;
+function readUserController() {
+	switch (readControlType()) {
+		case "MAN":
+			return getPlayerControls();
+		case "CPU":
+		default:
+			return controlRaceCPU;
+	}
 }
 
 export const MKDSCONST = {
@@ -103,9 +106,17 @@ export const MKDSCONST = {
 	DAMAGE_EXPLODE,
 	COURSEDIR,
 	COURSES,
-	CURRENTCOURSE,
-	CURRENTLANG,
-	MAX_LAP,
-	CONTROLTYPE,
-	USER_CONTROLLER,
+	CURRENTCOURSE: readCourse(),
+	CURRENTLANG: localStorage.getItem("CURRENTLANG") || "us",
+	MAX_LAP: readMaxLap(),
+	CONTROLTYPE: readControlType(),
+	USER_CONTROLLER: readUserController(),
 };
+
+export function refreshSettings() {
+	MKDSCONST.CURRENTCOURSE = readCourse();
+	MKDSCONST.CURRENTLANG = localStorage.getItem("CURRENTLANG") || "us";
+	MKDSCONST.MAX_LAP = readMaxLap();
+	MKDSCONST.CONTROLTYPE = readControlType();
+	MKDSCONST.USER_CONTROLLER = readUserController();
+}

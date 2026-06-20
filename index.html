@@ -16,13 +16,51 @@
 			var waitForROM = false;
 
 			var canvas3D = null;
+			var gameInitialized = false;
+			var ingameRes = null;
+			var lastLang = null;
+			var currentAppState = "upload";
+
+			function applySettings() {
+				refreshSettings();
+				if (!gameInitialized) return;
+
+				if (MKDSCONST.CURRENTLANG !== lastLang) {
+					ingameRes = new IngameRes(gameROM);
+					lastLang = MKDSCONST.CURRENTLANG;
+				}
+
+				mainScene = new singleScene("mkds/" + MKDSCONST.CURRENTCOURSE, 0, ingameRes, false);
+
+				if (currentAppState === "playing") {
+					showAppState("start");
+				}
+			}
+
+			function showAppState(state) {
+				currentAppState = state;
+				document.body.className = "state-" + state;
+				if (state === "playing") {
+					hideMenu();
+				} else {
+					showMenu();
+					showMenuScreen(state);
+				}
+			}
 
 			window.onload = function (argument) {
 				window.simpleMatStack = { dat: mat4.create(), built: true };
 				canvas3D = document.getElementById("canvas3d");
-				setupHUD();
-				var canvas = document.getElementById("canvas3d");
-				document.body.addEventListener("click", lockPtr);
+				setupHUD({ onChange: applySettings });
+				setupMenu({
+					onUploadClick: handleUploadClick,
+					onInitClick: handleInitClick,
+					onStartClick: handleStartClick,
+				});
+
+				fileStore.getInstance().checkRom(function (hasRom) {
+					showAppState(hasRom ? "ready" : "upload");
+				});
 			};
 
 			window.onerror = function (...args) {
@@ -38,10 +76,41 @@
 				}
 			};
 
+			function handleUploadClick() {
+				fileStore.getInstance().promptForRom(function (rom) {
+					if (rom) {
+						showAppState("ready");
+					}
+				});
+			}
+
+			function handleInitClick() {
+				showAppState("loading");
+				setTimeout(function () {
+					fileStore.getInstance().loadRom(function (rom) {
+						if (!rom) {
+							showAppState("upload");
+							return;
+						}
+						initNitro(rom, false);
+						showAppState("start");
+					});
+				}, 50);
+			}
+
+			function handleStartClick() {
+				showAppState("playing");
+				mainScene.startRace();
+				if (!osc.donezo) {
+					osc.start(0);
+					osc.donezo = true;
+				}
+			}
+
 			let init = false;
-			function initNitro(rom) {
-				if(init) {
-					return
+			function initNitro(rom, autostart) {
+				if (init) {
+					return;
 				}
 				init = true;
 				gl = initGL(document.getElementById("canvas3d"));
@@ -62,6 +131,9 @@
 				if (osc.noteOn) osc.start = osc.noteOn;
 
 				var res = new IngameRes(gameROM);
+				ingameRes = res;
+				lastLang = MKDSCONST.CURRENTLANG;
+				gameInitialized = true;
 				vert = 0;
 
 				var canvas = document.getElementById("canvas3d");
@@ -81,7 +153,7 @@
 						osc.donezo = true;
 					}
 				});
-				mainScene = new singleScene("mkds/" + MKDSCONST.CURRENTCOURSE, 0, res);
+				mainScene = new singleScene("mkds/" + MKDSCONST.CURRENTCOURSE, 0, res, autostart);
 
 				big();
 				render();
@@ -195,14 +267,6 @@
 				}
 			}
 
-			function lockPtr(e) {
-				if (fileStore.getInstance().waitForROM) {
-					document.getElementById("fileIn").click();
-				} else {
-					fileStore.getInstance().requestGameFiles(initNitro);
-				}
-			}
-
 			function mouseMove(e) {
 				var movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
 				var movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
@@ -246,31 +310,201 @@
 				left: 0;
 				right: 0;
 				bottom: 0;
+				font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 			}
-			#hud {
-				z-index: 10;
+			#canvas3d {
+				display: block;
+				width: 100%;
+				height: 100%;
+			}
+
+			#menu-overlay {
 				position: fixed;
-				top: 0;
+				inset: 0;
+				z-index: 100;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding-bottom: 4rem;
+				background: radial-gradient(ellipse at center, rgba(20, 20, 40, 0.97) 0%, rgba(0, 0, 0, 0.98) 100%);
+			}
+			body.state-start #menu-overlay {
+				background: transparent;
+				pointer-events: none;
+			}
+			body.state-start #screen-start {
+				pointer-events: auto;
+			}
+			#menu-overlay.hidden {
+				display: none;
+			}
+			#screen-start {
+				background: rgba(0, 0, 0, 0.65);
+				backdrop-filter: blur(4px);
+				border-radius: 1.25rem;
+				border: 1px solid rgba(255, 255, 255, 0.12);
+			}
+
+			.menu-screen {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 1.25rem;
+				max-width: 28rem;
+				width: 90%;
+				padding: 2.5rem 2rem;
+				text-align: center;
+				color: #fff;
+			}
+			.menu-screen.hidden {
+				display: none;
+			}
+
+			.menu-title {
+				margin: 0;
+				font-size: 2rem;
+				font-weight: 800;
+				letter-spacing: -0.02em;
+				background: linear-gradient(135deg, #ff4444, #ffcc00);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+			}
+			.menu-subtitle {
+				margin: 0;
+				font-size: 1rem;
+				line-height: 1.5;
+				color: rgba(255, 255, 255, 0.75);
+			}
+			.menu-hint {
+				margin: 0;
+				font-size: 0.85rem;
+				color: rgba(255, 255, 255, 0.45);
+			}
+
+			.menu-btn {
+				appearance: none;
+				border: none;
+				border-radius: 999px;
+				padding: 0.85rem 2.5rem;
+				font-size: 1.05rem;
+				font-weight: 700;
+				cursor: pointer;
+				color: #fff;
+				background: linear-gradient(135deg, #e82020, #ff6600);
+				box-shadow: 0 4px 20px rgba(232, 32, 32, 0.45);
+				transition: transform 0.15s, box-shadow 0.15s;
+			}
+			.menu-btn:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 6px 28px rgba(232, 32, 32, 0.6);
+			}
+			.menu-btn:active {
+				transform: translateY(0);
+			}
+			.menu-btn--secondary {
+				background: linear-gradient(135deg, #2266cc, #4499ff);
+				box-shadow: 0 4px 20px rgba(34, 102, 204, 0.45);
+			}
+			.menu-btn--secondary:hover {
+				box-shadow: 0 6px 28px rgba(34, 102, 204, 0.6);
 			}
 
 			#hud {
-				opacity: 0;
+				position: fixed;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				z-index: 200;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				justify-content: center;
+				align-items: center;
+				padding: 0.6rem 1rem;
+				background: rgba(0, 0, 0, 0.88);
+				border-top: 1px solid rgba(255, 255, 255, 0.12);
+				pointer-events: auto;
+			}
+			#hud label {
+				display: flex;
+				flex-direction: column;
+				gap: 0.2rem;
+				font-size: 0.7rem;
+				color: rgba(255, 255, 255, 0.55);
+				text-transform: uppercase;
+				letter-spacing: 0.04em;
+			}
+			#hud select {
+				min-width: 6.5rem;
+				padding: 0.4rem 0.6rem;
+				border-radius: 8px;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				background: rgba(255, 255, 255, 0.1);
+				color: #fff;
+				font-size: 0.85rem;
 			}
 
-			body:hover #hud {
-				opacity: 1;
+			.loading-spinner {
+				width: 3rem;
+				height: 3rem;
+				border: 4px solid rgba(255, 255, 255, 0.15);
+				border-top-color: #ffcc00;
+				border-radius: 50%;
+				animation: spin 0.8s linear infinite;
+			}
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
 			}
 		</style>
 	</head>
 
 	<body>
 		<canvas id="canvas3d"></canvas>
+
 		<div id="hud">
-			<select id="kcls"></select>
-			<select id="klang"></select>
-			<select id="klaptype"></select>
-			<select id="kcontrols"></select>
+			<label>Course <select id="kcls"></select></label>
+			<label>Langue <select id="klang"></select></label>
+			<label>Tours <select id="klaptype"></select></label>
+			<label>Contrôles <select id="kcontrols"></select></label>
 		</div>
+
+		<div id="menu-overlay">
+			<!-- État 1 : aucune ROM -->
+			<div id="screen-upload" class="menu-screen hidden">
+				<h1 class="menu-title">Mario Kart JS</h1>
+				<p class="menu-subtitle">
+					Pour jouer, vous devez fournir une ROM Mario Kart DS (.nds). Le fichier sera enregistré localement dans
+					votre navigateur.
+				</p>
+				<button id="btn-upload" class="menu-btn">Choisir un fichier ROM</button>
+				<p class="menu-hint">Vous devez posséder légalement le jeu pour utiliser sa ROM.</p>
+			</div>
+
+			<!-- État 2 : ROM présente, prêt à initialiser -->
+			<div id="screen-ready" class="menu-screen hidden">
+				<h1 class="menu-title">ROM chargée</h1>
+				<p class="menu-subtitle">Configurez votre partie ci-dessous, puis initialisez le moteur de jeu.</p>
+				<button id="btn-init" class="menu-btn menu-btn--secondary">Initialiser le jeu</button>
+			</div>
+
+			<!-- Chargement -->
+			<div id="screen-loading" class="menu-screen hidden">
+				<div class="loading-spinner"></div>
+				<h1 class="menu-title">Chargement…</h1>
+				<p class="menu-subtitle">Préparation des ressources, veuillez patienter.</p>
+			</div>
+
+			<!-- État 3 : jeu initialisé, prêt à démarrer -->
+			<div id="screen-start" class="menu-screen hidden">
+				<h1 class="menu-title">Prêt !</h1>
+				<p class="menu-subtitle">Le circuit est chargé. Appuyez sur Démarrer pour lancer la course.</p>
+				<button id="btn-start" class="menu-btn">Démarrer</button>
+			</div>
+		</div>
+
 		<input type="file" id="fileIn" style="display: none" />
 	</body>
-
+</html>
