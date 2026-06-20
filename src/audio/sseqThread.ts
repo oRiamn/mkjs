@@ -297,11 +297,11 @@ export class SSEQThread {
 		}; //pan
 		this._Instructions[0xc1] = () => {
 			const value = this._forcableValue();
-			this.gain.gain.setValueAtTime((value / 0x7f) * this._VOLMUL, this.calculateCurrentTime());
+			this.gain.gain.setValueAtTime((value / 0x7f) * this._VOLMUL, this._scheduleTime(this.calculateCurrentTime()));
 		}; //volume
 		this._Instructions[0xc2] = () => {
 			const value = this._forcableValue();
-			this._player.masterGain.gain.setValueAtTime(value / 0x7f, this.calculateCurrentTime());
+			this._player.masterGain.gain.setValueAtTime(value / 0x7f, this._scheduleTime(this.calculateCurrentTime()));
 		}; //master volume
 		this._Instructions[0xc3] = () => {
 			this.transpose = this._forcableValue();
@@ -448,7 +448,13 @@ export class SSEQThread {
 	}
 
 	calculateCurrentTime() {
-		return this._player.baseAudioTime + this._ticksToMs(this.wait - this._player.remainder) / 1000;
+		const time = this._player.baseAudioTime + this._ticksToMs(this.wait - this._player.remainder) / 1000;
+		return this._scheduleTime(time);
+	}
+
+	private _scheduleTime(time: number) {
+		if (!Number.isFinite(time)) return this._ctx.currentTime;
+		return Math.max(time, this._ctx.currentTime);
 	}
 
 	private _read16() {

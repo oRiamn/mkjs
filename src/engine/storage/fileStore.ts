@@ -4,6 +4,9 @@ type MKSROMLOADEventTarget = EventTarget & {
 
 type StoredGameData = FileReader["result"];
 type GameFileCallback = (data: StoredGameData) => void;
+type RomPresenceCallback = (hasRom: boolean) => void;
+
+export const ROM_LOADED_KEY = "mkjs_rom_loaded";
 
 export class fileStore {
 	db: IDBDatabase;
@@ -25,26 +28,60 @@ export class fileStore {
 		return this.instance;
 	}
 
-	requestGameFiles(callback: GameFileCallback) {
+	private openDb(onReady: () => void) {
 		this.indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.shimIndexedDB || null;
+		if (!this.indexedDB) {
+			alert("IndexedDB is not available in this browser.");
+			return;
+		}
 
-		let request = this.indexedDB!.open("MKJS-DB", 1);
+		const request = this.indexedDB.open("MKJS-DB", 1);
 		request.onerror = window.onerror;
 
 		request.onsuccess = (event) => {
 			const target = <MKSROMLOADEventTarget>event.target;
 			this.db = target.result;
-			this.loadGameFiles(callback);
+			onReady();
 		};
 
 		request.onupgradeneeded = (event) => {
 			const target = <MKSROMLOADEventTarget>event.target;
 			this.db = target.result;
-			let objectStore = this.db.createObjectStore("files", { keyPath: "filename" });
-			objectStore.transaction.oncomplete = (event) => {
-				this.loadGameFiles(callback);
-			};
+			this.db.createObjectStore("files", { keyPath: "filename" });
 		};
+	}
+
+	checkRom(callback: RomPresenceCallback) {
+		this.openDb(() => {
+			const transaction = this.db.transaction(["files"]);
+			const objectStore = transaction.objectStore("files");
+			const request = objectStore.get("mkds.nds");
+			request.onerror = () => callback(false);
+			request.onsuccess = () => {
+				const hasRom = request.result != null;
+				if (hasRom) {
+					localStorage.setItem(ROM_LOADED_KEY, "1");
+				} else {
+					localStorage.removeItem(ROM_LOADED_KEY);
+				}
+				callback(hasRom);
+			};
+		});
+	}
+
+	loadRom(callback: GameFileCallback) {
+		this.openDb(() => this.loadGameFiles(callback));
+	}
+
+	promptForRom(callback: GameFileCallback) {
+		this.fileCallback = callback;
+		this.waitForROM = true;
+		document.getElementById("fileIn")!.onchange = (...args) => this.fileInChange(...args);
+		document.getElementById("fileIn")!.click();
+	}
+
+	requestGameFiles(callback: GameFileCallback) {
+		this.loadRom(callback);
 	}
 
 	private loadGameFiles(callback: GameFileCallback) {
@@ -59,7 +96,7 @@ export class fileStore {
 			alert("Fatal database error!");
 		};
 		request.onsuccess = (event) => {
-			if (request.result == null) this.downloadGame(null, callback);
+			if (request.result == null) callback(null!);
 			else callback(request.result.data);
 		};
 	}
@@ -77,23 +114,6 @@ export class fileStore {
 		request.onsuccess = () => {
 			if (request.result == null) alert("Locally storing files failed!");
 		};
-	}
-
-	private downloadGame(url: string | null, callback: GameFileCallback) {
-		if (typeof url == "string") {
-			let xml = new XMLHttpRequest();
-			xml.open("GET", url, true);
-			xml.responseType = "arraybuffer";
-			xml.onload = () => {
-				this.storeGame(xml.response, callback);
-			};
-			xml.send();
-		} else {
-			alert("You need to supply MKJS with a Mario Kart DS ROM to function. Click anywhere on the page to load a file.");
-			this.fileCallback = callback;
-			document.getElementById("fileIn")!.onchange = (...args) => this.fileInChange(...args);
-			this.waitForROM = true;
-		}
 	}
 
 	private fileInChange(e: Event) {
@@ -119,6 +139,7 @@ export class fileStore {
 			callback(dat);
 		};
 		request.onsuccess = () => {
+			localStorage.setItem(ROM_LOADED_KEY, "1");
 			this.validateFiles();
 			callback(dat);
 		};

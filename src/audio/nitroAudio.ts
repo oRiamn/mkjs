@@ -123,6 +123,27 @@ export class nitroAudio {
 		nitroAudio.sounds.splice(ind, 1);
 	}
 
+	static killAll() {
+		const sounds = nitroAudio.sounds.splice(0);
+		for (const snd of sounds) {
+			try {
+				snd.seq.instaKill();
+			} catch {
+				/* sequence may already be dead */
+			}
+			try {
+				snd.gainN.disconnect();
+			} catch {
+				/* already disconnected */
+			}
+			try {
+				snd.panner?.disconnect();
+			} catch {
+				/* no panner */
+			}
+		}
+	}
+
 	static playSound(
 		seqN: number,
 		params: SSEQPlayer_param | null,

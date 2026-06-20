@@ -25,11 +25,13 @@ export function getRequestAnimationFrameFnct(window: Window) {
 	);
 }
 
-export function setupHUD() {
+export function setupHUD(options?: { onChange?: () => void }) {
+	const onChange = options?.onChange ?? (() => location.reload());
+
 	const kcls = document.querySelector("#kcls") as HTMLSelectElement;
 	kcls.onchange = function () {
 		localStorage.setItem("CURRENTCOURSE", kcls.value);
-		location.reload();
+		onChange();
 	};
 	for (let i = 0; i < MKDSCONST.COURSES.length; i++) {
 		const course = MKDSCONST.COURSES[i];
@@ -45,7 +47,7 @@ export function setupHUD() {
 	const klangs = document.querySelector("#klang") as HTMLSelectElement;
 	klangs.onchange = function () {
 		localStorage.setItem("CURRENTLANG", klangs.value);
-		location.reload();
+		onChange();
 	};
 
 	["us", "fr", "es", "ge", "it"].map((lang) => {
@@ -61,7 +63,7 @@ export function setupHUD() {
 	const kcontrols = document.querySelector("#kcontrols") as HTMLSelectElement;
 	kcontrols.onchange = function () {
 		localStorage.setItem("CONTROLTYPE", kcontrols.value);
-		location.reload();
+		onChange();
 	};
 	["CPU", "MAN"].map((ctrl) => {
 		const opt = document.createElement("option");
@@ -76,7 +78,7 @@ export function setupHUD() {
 	const klaptype = document.querySelector("#klaptype") as HTMLSelectElement;
 	klaptype.onchange = function () {
 		localStorage.setItem("CURRENTLAPTYPE", klaptype.value);
-		location.reload();
+		onChange();
 	};
 
 	[3, 5].map((laptype) => {
@@ -88,4 +90,29 @@ export function setupHUD() {
 			opt.selected = true;
 		}
 	});
+}
+
+export type MenuScreen = "upload" | "ready" | "loading" | "start";
+
+export function showMenuScreen(screen: MenuScreen) {
+	document.querySelectorAll(".menu-screen").forEach((el) => el.classList.add("hidden"));
+	document.getElementById(`screen-${screen}`)?.classList.remove("hidden");
+}
+
+export function hideMenu() {
+	document.getElementById("menu-overlay")?.classList.add("hidden");
+}
+
+export function showMenu() {
+	document.getElementById("menu-overlay")?.classList.remove("hidden");
+}
+
+export function setupMenu(handlers: {
+	onUploadClick: () => void;
+	onInitClick: () => void;
+	onStartClick: () => void;
+}) {
+	document.getElementById("btn-upload")!.addEventListener("click", handlers.onUploadClick);
+	document.getElementById("btn-init")!.addEventListener("click", handlers.onInitClick);
+	document.getElementById("btn-start")!.addEventListener("click", handlers.onStartClick);
 }

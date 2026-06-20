@@ -84,7 +84,7 @@ import { NitroParticle } from "./particles/nitroParticle";
 import { NitroEmitter } from "./particles/nitroEmitter";
 import { Kart } from "./entities/kart";
 import { courseScene } from "./engine/scenes/courseScene";
-import { MKDSCONST } from "./engine/mkdsConst";
+import { MKDSCONST, refreshSettings } from "./engine/mkdsConst";
 import { sceneDrawer } from "./engine/scenes/sceneDrawer";
 import { singleScene } from "./engine/scenes/singleScene";
 import { BeachTree } from "./entities/objDecor/BeachTree";
@@ -102,7 +102,7 @@ import {
 	KillerC,
 	BlueShellC,
 } from "./entities/items/placeholder";
-import { mobilecheck, getRequestAnimationFrameFnct, setupHUD } from "./app";
+import { mobilecheck, getRequestAnimationFrameFnct, setupHUD, setupMenu, showMenuScreen, hideMenu, showMenu } from "./app";
 
 Object.assign(window, {
 	vec2,
@@ -201,6 +201,7 @@ Object.assign(window, {
 	Kart,
 	courseScene,
 	MKDSCONST,
+	refreshSettings,
 	sceneDrawer,
 	singleScene,
 	BeachTree,
@@ -209,4 +210,8 @@ Object.assign(window, {
 	setupHUD,
 	getRequestAnimationFrameFnct,
 	mobilecheck,
+	setupMenu,
+	showMenuScreen,
+	hideMenu,
+	showMenu,
 });

@@ -30,14 +30,30 @@ export class singleScene {
 	mchar: number;
 	mkart: number;
 	advanceTimes: number[];
-	constructor(course: string, wsInstance: WebSocket, res: IngameRes) {
+	raceStarted: boolean;
+	constructor(course: string, wsInstance: WebSocket, res: IngameRes, autostart = true) {
 		this.res = res; //gameRes
 
 		this.mode = undefined!;
 		this.mchar = Math.floor(Math.random() * 12);
 		this.mkart = Math.floor(Math.random() * 0x24);
 		this.advanceTimes = [3, 4, -1, -1];
-		this.begin(course);
+		this.raceStarted = autostart;
+		this.begin(course, autostart);
+	}
+
+	startRace() {
+		if (this.raceStarted) return;
+		this.raceStarted = true;
+		this.mode = {
+			id: 0,
+			time: 0,
+			frameDiv: 0,
+			mode: 0,
+		};
+		this.activeScene.updateMode({
+			...this.mode,
+		});
 	}
 
 	update() {
@@ -49,6 +65,7 @@ export class singleScene {
 	}
 
 	private updateServer() {
+		if (!this.raceStarted) return;
 		let m = this.mode;
 		m.frameDiv++;
 		if (m.frameDiv == 60) {
@@ -71,18 +88,18 @@ export class singleScene {
 		}
 	}
 
-	private begin(courseId: string) {
+	private begin(courseId: string, autostart: boolean) {
 		if (courseId.substr(0, 5) == "mkds/") {
 			let cnum = Number(courseId.substr(5));
 			let course = MKDSCONST.COURSES[cnum];
 			let cDir = MKDSCONST.COURSEDIR + course.name;
 			let mainNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}.carc`)!));
 			let texNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}Tex.carc`)!));
-			this.setUpCourse(mainNarc, texNarc, course);
+			this.setUpCourse(mainNarc, texNarc, course, autostart);
 		} else throw "custom tracks are not implemented yet!";
 	}
 
-	private setUpCourse(mainNarc: narc, texNarc: narc, course: MKCONST_course_obj) {
+	private setUpCourse(mainNarc: narc, texNarc: narc, course: MKCONST_course_obj, autostart: boolean) {
 		let chars = [];
 		chars.push({
 			charN: this.mchar,
@@ -117,15 +134,17 @@ export class singleScene {
 		this.myKart.local = true;
 
 		this.mode = {
-			id: 0,
+			id: autostart ? 0 : -1,
 			time: 0,
 			frameDiv: 0,
-			mode: 0,
+			mode: autostart ? 0 : -1,
 		};
 
-		this.activeScene.updateMode({
-			...this.mode,
-		});
+		if (autostart) {
+			this.activeScene.updateMode({
+				...this.mode,
+			});
+		}
 		this.activeScene.entities.push(
 			new PlacementUI(this.activeScene, this.myKart),
 			new LapCountUI(this.activeScene, this.myKart),
