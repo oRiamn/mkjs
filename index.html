@@ -588,15 +588,24 @@
 			.mob-ctrl--steer {
 				border-radius: 1.25rem;
 				flex-direction: column;
-				gap: 0.25rem;
+				justify-content: center;
+				align-items: center;
 				padding: 0.35rem;
+			}
+			.mob-ctrl__steer-separator {
+				display: block;
+				width: 2px;
+				height: 1.35rem;
+				background: rgba(255, 255, 255, 0.35);
+				border-radius: 1px;
+				flex-shrink: 0;
 			}
 			.mob-ctrl__steer-arrows {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				width: 100%;
-				padding: 0 0.5rem;
+				width: 78%;
+				max-width: 100%;
 			}
 			.mob-ctrl__steer-dir {
 				font-size: 1.35rem;

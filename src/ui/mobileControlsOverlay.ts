@@ -34,20 +34,19 @@ export function setupMobileControlsOverlay() {
 		el.style.height = `${(rect[3] - rect[1]) * 100}%`;
 
 		if (zone.id === "steer") {
-			const label = document.createElement("span");
-			label.className = "mob-ctrl__label";
-			label.textContent = "Steer";
-			el.appendChild(label);
-
 			const arrows = document.createElement("div");
 			arrows.className = "mob-ctrl__steer-arrows";
 			steerLeftEl = document.createElement("span");
 			steerLeftEl.className = "mob-ctrl__steer-dir";
 			steerLeftEl.textContent = "◀";
+			const separator = document.createElement("span");
+			separator.className = "mob-ctrl__steer-separator";
+			separator.setAttribute("aria-hidden", "true");
 			steerRightEl = document.createElement("span");
 			steerRightEl.className = "mob-ctrl__steer-dir";
 			steerRightEl.textContent = "▶";
 			arrows.appendChild(steerLeftEl);
+			arrows.appendChild(separator);
 			arrows.appendChild(steerRightEl);
 			el.appendChild(arrows);
 		} else {
