@@ -27,9 +27,9 @@ export class controlDefault implements Controls {
 		const down = window.keysArray[40] ? 1 : 0;
 
 		return {
-			accel: !!window.keysArray[88], //x
-			decel: !!window.keysArray[90], //z
-			drift: !!window.keysArray[83], //s
+			accel: !!window.keysArray[38], //up
+			decel: !!window.keysArray[40], // down
+			drift: !!window.keysArray[32], // space
 			item: !!window.keysArray[65], //a
 
 			//-1 to 1, intensity.

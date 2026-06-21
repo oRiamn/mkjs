@@ -19,7 +19,7 @@ import { BombC } from "./items/droppable/bombC";
 import { FakeBoxC } from "./items/droppable/fakeBoxC";
 import { GreenShellC } from "./items/shells/greenShellC";
 import { RedShellC } from "./items/shells/redShellC";
-import { ShellGroupC } from "./items/shells/shellGroupC";
+import { GreenShellGroup, RedShellGroup } from "./items/shells/shellGroup";
 import { Kart } from "./kart";
 
 //
@@ -32,7 +32,8 @@ let itemTypes: { [x: string]: typeof KartItemEntity } = {
 	$f_box: FakeBoxC,
 
 	//groups
-	$koura_group: ShellGroupC,
+	$koura_group_g: GreenShellGroup,
+	$koura_group_r: RedShellGroup,
 	//'$banana_group': BananaGroupC,
 
 	//one use items
@@ -86,6 +87,7 @@ export class Item {
 	controller: KartItemEntity;
 	holdPos!: vec3;
 	sprMat: mat4 | null;
+	groupItem: Item | null;
 	constructor(scene: courseScene, owner: Kart, type: keyof items_IngameRes, id: number) {
 		this._minimumMove = 0.01;
 		this._scene = scene;
@@ -128,6 +130,7 @@ export class Item {
 		this._working = vec3.create();
 		this.deadTimer = 0; //animates death. goes to 20, then deletes for real. dead objects can't run update or otherwise
 		this.sprMat = null;
+		this.groupItem = null;
 
 		//a controller makes this item what it is...
 		// canBeHeld: boolean
@@ -185,7 +188,7 @@ export class Item {
 		this.enablePhysics = true;
 	}
 
-	release(forward: number) {
+	release(forward: number): boolean {
 		//release the item, either forward or back
 		this.holdTime = 0;
 		if (this.canBeHeld()) {
@@ -193,7 +196,8 @@ export class Item {
 			this._updateCollision(this._scene);
 		}
 		this.enablePhysics = true;
-		if (this.controller.release) this.controller.release(forward);
+		let hasMore = false;
+		if (this.controller.release) hasMore = this.controller.release(forward) ?? false;
 		else {
 			//default drop and throw. just here for template purposes
 			if (forward > 0) {
@@ -222,6 +226,7 @@ export class Item {
 			}
 		}
 		this.held = false;
+		return hasMore;
 	}
 
 	canBeHeld() {
@@ -347,6 +352,7 @@ export class Item {
 			for (let i = 0; i < scene.items.items.length; i++) {
 				let ot = scene.items.items[i];
 				if (ot == this || (this.held && ot.held)) continue;
+				if (this.groupItem != null && this.groupItem === ot.groupItem) continue;
 				let dist = vec3.dist(this.pos, ot.pos);
 				if (dist < this.colRadius + ot.colRadius && ot.holdTime <= 7 && ot.deadTimer == 0) {
 					//two items are colliding.

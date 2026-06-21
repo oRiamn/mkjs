@@ -5,14 +5,14 @@ import { Item } from "./item";
 import { Kart } from "./kart";
 
 export class KartItems {
-	//koura_g, banana, f_box, koura_group, koura_group-bomb-7
 	static items = [
-		"koura_g", // greenshell
-		"koura_r", // redshell
-		"banana", // banana
-		"f_box", // fake_box
+		"koura_g",
+		"koura_r",
+		"banana",
+		"f_box",
 		"bomb",
-		"koura_group",
+		"koura_group_g",
+		"koura_group_r",
 		// 'koura_group-bomb-7' bug (too many bomb)
 	];
 	kart: Kart;
@@ -27,6 +27,10 @@ export class KartItems {
 	private _carouselSfx: nitroAudioSound | null;
 	private _lastItemState: boolean;
 	private _specialItems: string[];
+	private _itemPressDebounce: number;
+	private _itemReleaseDebounce: number;
+	private static readonly ITEM_PRESS_DEBOUNCE = 12;
+	private static readonly ITEM_RELEASE_DEBOUNCE = 12;
 
 	constructor(kart: Kart, scene: Scene) {
 		this.kart = kart;
@@ -43,6 +47,8 @@ export class KartItems {
 		this._carouselSfx = null;
 		this._lastItemState = false;
 		this._specialItems = ["star"];
+		this._itemPressDebounce = 0;
+		this._itemReleaseDebounce = 0;
 
 		// var holdAppearDelay = 15;
 		// var hurtExplodeDelay = 105; //turn right slightly, huge double backflip, small bounces.
@@ -58,6 +64,8 @@ export class KartItems {
 	update(input: InputData) {
 		let pressed = input.item && !this._lastItemState;
 		const released = this._lastItemState && !input.item;
+		if (this._itemPressDebounce > 0) this._itemPressDebounce--;
+		if (this._itemReleaseDebounce > 0) this._itemReleaseDebounce--;
 		if (!this.empty) {
 			if (this.currentItem == null) {
 				//carousel
@@ -90,7 +98,8 @@ export class KartItems {
 					this.empty = true;
 
 					if (this.heldItem.canBeHeld()) {
-						//begin holding
+						//begin holding; ignore release from the same tap that equipped the item
+						this._itemPressDebounce = KartItems.ITEM_PRESS_DEBOUNCE;
 					} else {
 						this._release(input);
 					}
@@ -106,16 +115,10 @@ export class KartItems {
 				this.heldItem = null;
 			} else {
 				//t.heldItem.updateHold(kart);
-				if (released) {
-					if (this.heldItem.canBeHeld()) {
+				if (released && this.heldItem.canBeHeld()) {
+					if (this._itemPressDebounce <= 0 && this._itemReleaseDebounce <= 0) {
 						this._release(input);
-					}
-				} else if (pressed) {
-					//special release: triple shells, bananas. object stays bound when released
-					this.heldItem.release(input.airTurn);
-					this.kart.playCharacterSound(7);
-					if (this.heldItem.dead) {
-						this.heldItem = null;
+						this._itemReleaseDebounce = KartItems.ITEM_RELEASE_DEBOUNCE;
 					}
 				}
 			}
@@ -153,9 +156,11 @@ export class KartItems {
 
 	private _release(input: InputData): void {
 		if (this.heldItem != null) {
-			this.heldItem.release(input.airTurn);
+			const hasMore = this.heldItem.release(input.airTurn);
+			if (!hasMore || this.heldItem.dead) {
+				this.heldItem = null;
+			}
 		}
-		this.heldItem = null;
 		this.kart.playCharacterSound(7);
 	}
 }
