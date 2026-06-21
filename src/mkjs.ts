@@ -64,7 +64,7 @@ import { ItemShard } from "./particles/itemboxShard";
 
 import { RedShellC } from "./entities/items/shells/redShellC";
 import { GreenShellC } from "./entities/items/shells/greenShellC";
-import { ShellGroupC } from "./entities/items/shells/shellGroupC";
+import { GreenShellGroup } from "./entities/items/shells/shellGroup";
 import { BananaC } from "./entities/items/droppable/bananaC";
 import { FakeBoxC } from "./entities/items/droppable/fakeBoxC";
 import { BombC } from "./entities/items/droppable/bombC";
@@ -180,7 +180,7 @@ Object.assign(window, {
 	ItemShard,
 	RedShellC,
 	GreenShellC,
-	ShellGroupC,
+	GreenShellGroup,
 	BananaGroupC,
 	MushroomC,
 	MushroomGroupC,

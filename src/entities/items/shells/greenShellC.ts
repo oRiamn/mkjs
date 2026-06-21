@@ -2,7 +2,6 @@ import { nitroAudioSound, nitroAudio } from "../../../audio/nitroAudio";
 import { MKDS_COLTYPE } from "../../../engine/collisionTypes";
 import { MKDSCONST } from "../../../engine/mkdsConst";
 import { Item } from "../../item";
-
 import { Kart } from "../../kart";
 
 export class GreenShellC implements KartItemEntity {

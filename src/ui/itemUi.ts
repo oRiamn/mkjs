@@ -22,7 +22,7 @@ const itemsTex: Record<string, number> = {
 	koura_w: 27,
 	f_box: 20,
 	killer: 28,
-	koura_group: 19, // green
+	koura_group_g: 19, // green
 	koura_group_r: 17, // red
 };
 

@@ -19,7 +19,7 @@ import { BombC } from "./items/droppable/bombC";
 import { FakeBoxC } from "./items/droppable/fakeBoxC";
 import { GreenShellC } from "./items/shells/greenShellC";
 import { RedShellC } from "./items/shells/redShellC";
-import { ShellGroupC } from "./items/shells/shellGroupC";
+import { GreenShellGroup, RedShellGroup } from "./items/shells/shellGroup";
 import { Kart } from "./kart";
 
 //
@@ -32,7 +32,9 @@ let itemTypes: { [x: string]: typeof KartItemEntity } = {
 	$f_box: FakeBoxC,
 
 	//groups
-	$koura_group: ShellGroupC,
+	// $koura_group_r: ShellGroupC,
+	$koura_group_g: GreenShellGroup,
+	$koura_group_r: RedShellGroup,
 	//'$banana_group': BananaGroupC,
 
 	//one use items

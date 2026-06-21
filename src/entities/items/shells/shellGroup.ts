@@ -1,6 +1,8 @@
 import { nitroAudioSound, nitroAudio } from "../../../audio/nitroAudio";
 import { Item } from "../../item";
-export class ShellGroupC implements KartItemEntity {
+
+
+class ShellGroup implements KartItemEntity {
 	canBeHeld: boolean;
 	canBeDropped: boolean;
 	rotationPeriod: number;
@@ -15,20 +17,15 @@ export class ShellGroupC implements KartItemEntity {
 	sound: nitroAudioSound | null;
 	isDestructive!: boolean;
 	isSolid!: boolean;
-	constructor(item: Item, scene: Scene, type: string) {
+	constructor(item: Item, scene: Scene, type: string, itemType: string) {
 		this.canBeHeld = true;
 		this.canBeDropped = true;
 		this.rotationPeriod = 45;
-
 		this.item = item;
 		this.scene = scene;
 		this.type = type;
-
 		this.item.colRadius = -Infinity;
-
 		this.children = [];
-
-		let itemType = "koura_g";
 		this.itemCount = 3;
 
 		if (this.type.length > 0) {
@@ -109,5 +106,17 @@ export class ShellGroupC implements KartItemEntity {
 
 	draw(_mvMatrix: mat4, _pMatrix: mat4) {
 		//the group itself is invisible - the shells draw individually
+	}
+}
+
+export class GreenShellGroup extends ShellGroup {
+	constructor(item: Item, scene: Scene, type: string) {
+		super(item, scene, type, "koura_g")
+	}
+}
+
+export class RedShellGroup extends ShellGroup {
+	constructor(item: Item, scene: Scene, type: string) {
+		super(item, scene, type, "koura_r")
 	}
 }
