@@ -50,6 +50,21 @@ export function setupHUD(options?: { onChange?: () => void }) {
 		onChange();
 	};
 
+	const kcams = document.querySelector("#kcam") as HTMLSelectElement;
+	kcams.onchange = function () {
+		localStorage.setItem("CURRENTCAM", kcams.value);
+		onChange();
+	};
+	["POV", "SPEC"].map((cam) => {
+		const opt = document.createElement("option");
+		opt.textContent = cam;
+		opt.value = cam;
+		kcams.appendChild(opt);
+		if (cam === MKDSCONST.CURRENTCAM) {
+			opt.selected = true;
+		}
+	});
+
 	["us", "fr", "es", "ge", "it"].map((lang) => {
 		const opt = document.createElement("option");
 		opt.textContent = lang;
