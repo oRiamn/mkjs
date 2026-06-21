@@ -39,6 +39,7 @@ export class RedShellC implements KartItemEntity {
 		} else {
 			this.speed += this.item.owner.speed;
 		}
+		return true;
 	}
 
 	onDie(final: boolean) {

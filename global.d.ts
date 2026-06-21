@@ -168,7 +168,7 @@ declare global {
 		isSolid: boolean;
 		constructor(item: Item, scene: Scene, type: string);
 		update(scene: Scene): void;
-		release?(forward: number): void;
+		release?(forward: number): boolean;
 		onDie?(final: boolean): void;
 		collide?(item: Item | Kart): void;
 		collideKart?(k: Kart): void;

@@ -40,6 +40,7 @@ export class GreenShellC implements KartItemEntity {
 		} else {
 			this.speed += this.item.owner.speed;
 		}
+		return true;
 	}
 
 	onDie(final: boolean) {
