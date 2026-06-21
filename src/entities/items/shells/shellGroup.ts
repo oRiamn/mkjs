@@ -95,7 +95,7 @@ export class GreenShellGroup extends ShellGroup {
 }
 
 export class RedShellGroup extends ShellGroup {
-	constructor(item: Item, scene: Scene, type: string) {
+	constructor(item: Item, scene: Scene) {
 		super(item, scene, "koura_r");
 	}
 }
