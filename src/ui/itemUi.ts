@@ -99,11 +99,11 @@ export class ItemUi implements SceneEntity {
 		}
 		nitroRender.pauseShadowMode();
 		this.flattenerBackground.draw(this.pos.x, this.pos.y, this.zoom);
+		this.flattenerBorder.draw(this.pos.x, this.pos.y, this.zoom);
 		if (this.currentItem) {
-			const inset = uiPx(2, this.zoom);
+			const inset = uiPx(3, this.zoom);
 			this.flattenerItem.draw(this.pos.x + inset, this.pos.y + inset, this.zoom);
 		}
-		this.flattenerBorder.draw(this.pos.x, this.pos.y, this.zoom);
 
 		nitroRender.unpauseShadowMode();
 	}
