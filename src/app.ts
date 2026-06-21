@@ -50,6 +50,21 @@ export function setupHUD(options?: { onChange?: () => void }) {
 		onChange();
 	};
 
+	const kcams = document.querySelector("#kcam") as HTMLSelectElement;
+	kcams.onchange = function () {
+		localStorage.setItem("CURRENTCAM", kcams.value);
+		onChange();
+	};
+	["POV", "SPEC"].map((cam) => {
+		const opt = document.createElement("option");
+		opt.textContent = cam;
+		opt.value = cam;
+		kcams.appendChild(opt);
+		if (cam === MKDSCONST.CURRENTCAM) {
+			opt.selected = true;
+		}
+	});
+
 	["us", "fr", "es", "ge", "it"].map((lang) => {
 		const opt = document.createElement("option");
 		opt.textContent = lang;
@@ -107,11 +122,7 @@ export function showMenu() {
 	document.getElementById("menu-overlay")?.classList.remove("hidden");
 }
 
-export function setupMenu(handlers: {
-	onUploadClick: () => void;
-	onInitClick: () => void;
-	onStartClick: () => void;
-}) {
+export function setupMenu(handlers: { onUploadClick: () => void; onInitClick: () => void; onStartClick: () => void }) {
 	document.getElementById("btn-upload")!.addEventListener("click", handlers.onUploadClick);
 	document.getElementById("btn-init")!.addEventListener("click", handlers.onInitClick);
 	document.getElementById("btn-start")!.addEventListener("click", handlers.onStartClick);

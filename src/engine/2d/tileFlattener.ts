@@ -43,6 +43,7 @@ export class TileFlattener {
 	emptyTile: Uint8ClampedArray;
 	texture: CustomWebGLTexture;
 	textures: Map<number, CustomWebGLTexture>;
+	pixelArt: boolean;
 	program: WebGLProgram;
 	positionLocation: number;
 	texcoordLocation: number;
@@ -55,11 +56,13 @@ export class TileFlattener {
 	palette: nclr;
 	tiles: ncgr;
 	map: ncer;
+	loadedTextureIndex: number | null;
 
-	constructor(palette: nclr, tiles: ncgr, map: ncer) {
+	constructor(palette: nclr, tiles: ncgr, map: ncer, pixelArt = false) {
 		this.palette = palette;
 		this.tiles = tiles;
 		this.map = map;
+		this.pixelArt = pixelArt;
 		this.cellMode = this.map.cebk != null;
 
 		this.tileCache = new Map();
@@ -68,6 +71,7 @@ export class TileFlattener {
 
 		this.texture = gl.createTexture() as CustomWebGLTexture;
 		this.textures = new Map();
+		this.loadedTextureIndex = null;
 
 		this.program = gl.createProgram()!;
 		const vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -242,37 +246,36 @@ export class TileFlattener {
 		return canvas;
 	}
 
-	toTexture(pal0trans: boolean, imageInd: number): CustomWebGLTexture {
-		const image = new Image();
-		image.crossOrigin = "Anonymous";
-		image.src = this.toCanvas(pal0trans, imageInd).toDataURL();
-		const texture = gl.createTexture() as CustomWebGLTexture;
-		texture.width = 0;
-		texture.height = 0;
-		image.onload = () => {
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-			texture.width = image.width;
-			texture.height = image.height;
-		};
+	private applyTextureFilter() {
+		const filter = this.pixelArt ? gl.NEAREST : gl.LINEAR;
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+	}
 
+	toTexture(pal0trans: boolean, imageInd: number): CustomWebGLTexture {
+		const canvas = this.toCanvas(pal0trans, imageInd);
+		const texture = gl.createTexture() as CustomWebGLTexture;
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		this.applyTextureFilter();
+		texture.width = canvas.width;
+		texture.height = canvas.height;
 		return texture;
 	}
 
 	loadTextue(i: number) {
 		if (this.textures.has(i)) {
 			this.texture = this.textures.get(i)!;
+			this.loadedTextureIndex = i;
 		} else {
 			const texture = this.toTexture(true, i);
 			this.textures.set(i, texture);
 			this.texture = texture;
+			this.loadedTextureIndex = i;
 		}
-
 		return this.texture;
 	}
 
@@ -288,10 +291,21 @@ export class TileFlattener {
 		if (zoom === undefined) {
 			zoom = 1;
 		}
+		if (this.pixelArt) {
+			x = Math.round(x);
+			y = Math.round(y);
+			zoom = Math.round(zoom);
+		}
 		this.drawTexture(this.texture, zoom * this.texture.width, zoom * this.texture.height, x, y);
 	}
 
 	drawTexture(tex: CustomWebGLTexture, texWidth: number, texHeight: number, dstX: number, dstY: number) {
+		if (this.pixelArt) {
+			dstX = Math.round(dstX);
+			dstY = Math.round(dstY);
+			texWidth = Math.round(texWidth);
+			texHeight = Math.round(texHeight);
+		}
 		// Tell WebGL to use our shader program pair
 		gl.useProgram(this.program);
 		gl.bindTexture(gl.TEXTURE_2D, tex);

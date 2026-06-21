@@ -4,6 +4,7 @@ import { nsbtp } from "../formats/nsbtp";
 import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
 import { nitroModel } from "../render/nitroModel";
 import { nitroRender } from "../render/nitroRender";
+import { getUiScale } from "./uiScale";
 
 export class CountD3DUI implements SceneEntity {
 	transparent: boolean;
@@ -12,7 +13,8 @@ export class CountD3DUI implements SceneEntity {
 	mat: mat4;
 	proj: mat4;
 	param: number[];
-	lastWidth: number;
+	lastViewWidth: number;
+	lastViewHeight: number;
 	length: number;
 	animFrame: number;
 	animMat: nitroAnimator_matStack;
@@ -31,8 +33,9 @@ export class CountD3DUI implements SceneEntity {
 
 		this.param = [-128, 128, -96, 96].map((e) => e / 1024);
 
+		this.lastViewWidth = 0;
+		this.lastViewHeight = 0;
 		this.buildOrtho(nitroRender.getViewWidth(), nitroRender.getViewHeight());
-		this.lastWidth = 0;
 
 		let bmdFile = this.scene.gameRes.Race.getFile("count.nsbmd")!;
 		let bcaFile = this.scene.gameRes.Race.getFile("count.nsbca")!;
@@ -53,17 +56,21 @@ export class CountD3DUI implements SceneEntity {
 	}
 
 	private buildOrtho(width: number, height: number) {
-		this.lastWidth = width;
-		let ratio = width / height;
-		let w = ((this.param[3] - this.param[2]) * ratio) / 2;
-		mat4.ortho(this.proj, -w, w, this.param[2], this.param[3], -0.001, 10);
+		this.lastViewWidth = width;
+		this.lastViewHeight = height;
+		const scale = getUiScale(width, height);
+		const ratio = width / height;
+		const vHalf = ((this.param[3] - this.param[2]) * scale) / 2;
+		const w = vHalf * ratio;
+		mat4.ortho(this.proj, -w, w, this.param[2] * scale, this.param[3] * scale, -0.001, 10);
 	}
 
 	draw(view: mat4) {
 		if (nitroRender.flagShadow || this.animFrame < 0) return;
-		let width = nitroRender.getViewWidth();
-		if (width != this.lastWidth) {
-			this.buildOrtho(width, nitroRender.getViewHeight());
+		const width = nitroRender.getViewWidth();
+		const height = nitroRender.getViewHeight();
+		if (width !== this.lastViewWidth || height !== this.lastViewHeight) {
+			this.buildOrtho(width, height);
 		}
 		mat4.translate(this.mat, view, this.pos);
 		nitroRender.pauseShadowMode();

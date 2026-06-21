@@ -405,7 +405,7 @@ export class courseScene implements Scene {
 				this
 			);
 			this.karts.push(kart);
-			const spectator = false; //(prompt("Type y for spectator cam")=="y")
+			const spectator = MKDSCONST.CURRENTCAM === "SPEC";
 			if (c.raceCam) {
 				if (spectator) {
 					this.camera = new cameraSpectator(kart);
@@ -420,6 +420,7 @@ export class courseScene implements Scene {
 			chardiv.setAttribute("charname", kart.profile.name);
 			chardiv.appendChild(kart.profile.emblem);
 			chardiv.appendChild(kart.profile.thumb);
+			chardiv.style.cssText = "display: none";
 			document.body.appendChild(chardiv);
 		}
 
