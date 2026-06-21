@@ -39,6 +39,7 @@
 			function applySettings() {
 				unlockAudio();
 				refreshSettings();
+				syncMobileControlsVisibility();
 				if (!gameInitialized) return;
 
 				nitroAudio.killAll();
@@ -74,6 +75,7 @@
 				setupHUD({ onChange: applySettings });
 				setupHudBehavior();
 				setupFullscreen();
+				setupMobileControlsOverlay();
 				setupMenu({
 					onUploadClick: handleUploadClick,
 					onInitClick: handleInitClick,
@@ -197,6 +199,7 @@
 				while (timeSync > 0) {
 					mainScene.update();
 					processTouches();
+					updateMobileControlsOverlay();
 					if (timeSync > 1000) timeSync = 1000; //don't run way too many frames.
 					timeSync -= 1000 / 60;
 				}
@@ -334,6 +337,8 @@
 					gl.viewportWidth = fit.width;
 					gl.viewportHeight = fit.height;
 				}
+
+				syncMobileControlsLayout(fit);
 			}
 		</script>
 		<style>
@@ -545,6 +550,87 @@
 			}
 			.hud-btn:hover {
 				background: rgba(255, 255, 255, 0.2);
+			}
+
+			#mobile-controls {
+				position: fixed;
+				z-index: 50;
+				pointer-events: none;
+				display: none;
+				user-select: none;
+				-webkit-user-select: none;
+			}
+			#mobile-controls.visible {
+				display: block;
+			}
+			.mob-ctrl {
+				position: absolute;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border: 2px solid rgba(255, 255, 255, 0.35);
+				background: rgba(255, 255, 255, 0.12);
+				color: rgba(255, 255, 255, 0.85);
+				box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+				transition:
+					background 0.1s ease,
+					border-color 0.1s ease,
+					box-shadow 0.1s ease;
+			}
+			.mob-ctrl__label {
+				font-size: 0.7rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.04em;
+				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+				pointer-events: none;
+			}
+			.mob-ctrl--steer {
+				border-radius: 1.25rem;
+				flex-direction: column;
+				gap: 0.25rem;
+				padding: 0.35rem;
+			}
+			.mob-ctrl__steer-arrows {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				width: 100%;
+				padding: 0 0.5rem;
+			}
+			.mob-ctrl__steer-dir {
+				font-size: 1.35rem;
+				line-height: 1;
+				opacity: 0.45;
+				transition: opacity 0.1s ease;
+			}
+			.mob-ctrl__steer-dir.active {
+				opacity: 1;
+				color: #ffcc00;
+			}
+			.mob-ctrl--item,
+			.mob-ctrl--drift {
+				border-radius: 999px;
+			}
+			.mob-ctrl--accel {
+				border-radius: 999px;
+			}
+			.mob-ctrl--accel .mob-ctrl__label {
+				font-size: 1.1rem;
+			}
+			.mob-ctrl.active {
+				background: rgba(255, 204, 0, 0.35);
+				border-color: rgba(255, 204, 0, 0.9);
+				box-shadow: 0 0 18px rgba(255, 204, 0, 0.45);
+			}
+			.mob-ctrl--accel.reverse.active {
+				background: rgba(255, 68, 68, 0.35);
+				border-color: rgba(255, 68, 68, 0.9);
+				box-shadow: 0 0 18px rgba(255, 68, 68, 0.45);
+			}
+			.mob-ctrl--accel.reverse.active .mob-ctrl__label::after {
+				content: " (R)";
+				font-size: 0.55rem;
 			}
 
 			.loading-spinner {

@@ -53,6 +53,12 @@ import { ItemUi } from "./ui/itemUi";
 import { PlacementUI } from "./ui/placementUI";
 import { Start3DUI } from "./ui/start3DUI";
 import { fitCanvasToWindow } from "./ui/uiScale";
+import {
+	setupMobileControlsOverlay,
+	syncMobileControlsLayout,
+	syncMobileControlsVisibility,
+	updateMobileControlsOverlay,
+} from "./ui/mobileControlsOverlay";
 
 import { ItemShard } from "./particles/itemboxShard";
 
@@ -219,4 +225,8 @@ Object.assign(window, {
 	onAppStateChange,
 	setupFullscreen,
 	fitCanvasToWindow,
+	setupMobileControlsOverlay,
+	syncMobileControlsLayout,
+	syncMobileControlsVisibility,
+	updateMobileControlsOverlay,
 });

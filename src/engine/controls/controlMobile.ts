@@ -1,11 +1,14 @@
+import { Kart } from "../../entities/kart";
+import { getZoneById, MOBILE_REF_HEIGHT, MOBILE_REF_WIDTH } from "../../ui/mobileControlLayout";
+
 type MKJSTouch = {
 	id: number;
-	x: number; // (0-1),
-	y: number; // (0-1),
+	x: number;
+	y: number;
 	pressed: boolean;
 	released: boolean;
-	lastx: number; //(0-1),
-	lasty: number; //(0-1)
+	lastx: number;
+	lasty: number;
 };
 
 type MKJSTouchInput = {
@@ -13,8 +16,6 @@ type MKJSTouchInput = {
 	enterLeave: number;
 	active: boolean;
 };
-
-import { Kart } from "../../entities/kart";
 
 export class controlMobile implements Controls {
 	local: boolean;
@@ -31,7 +32,6 @@ export class controlMobile implements Controls {
 	}
 
 	private searchForTouch(rect: [number, number, number, number]): MKJSTouchInput | null {
-		//{touch: Touch, enterLeave: number} 1 is enter, leave is 2,
 		const touches = window.touches;
 		for (let i = 0; i < touches.length; i++) {
 			let touch = touches[i];
@@ -56,54 +56,47 @@ export class controlMobile implements Controls {
 	}
 
 	fetchInput(): InputData {
-		let targW = 1136;
-		let targH = 640;
-		//window.touches array is filled by the game container
-		//touches [{x:number (0-1), y:number (0-1), pressed:boolean, released:boolean, lastx:number (0-1), lasty:number (0-1)}]
+		const accelZone = getZoneById("accel").rect;
+		const driftZone = getZoneById("drift").rect;
+		const itemZone = getZoneById("item").rect;
+		const steerZone = getZoneById("steer").rect;
 
-		//accel unless reverse button is pressed
-		let search = this.searchForTouch([955 / targW, 320 / targH, (955 + 125) / targW, (320 + 125) / targH]);
+		let search = this.searchForTouch(accelZone);
 		const reverse = search != null && search.active;
 
-		let driftTouch = this.searchForTouch([780 / targW, 468 / targH, (780 + 300) / targW, (468 + 125) / targH]); //drift button on the right
-		let itemTouch = this.searchForTouch([50 / targW, 468 / targH, (50 + 300) / targW, (468 + 125) / targH]); //touch the button exactly
-		let dPadTouch = this.searchForTouch([0 / targW, (468 - 50) / targH, (0 + 400) / targW, (468 + 225) / targH]); //allow for some space
+		let driftTouch = this.searchForTouch(driftZone);
+		let itemTouch = this.searchForTouch(itemZone);
+		let dPadTouch = this.searchForTouch(steerZone);
 
 		let turn = 0;
 		if (dPadTouch != null && dPadTouch.active) {
-			turn = this.step(0 / targW, 400 / targW, dPadTouch.touch.x);
-			//digitize
+			turn = this.step(0 / MOBILE_REF_WIDTH, 400 / MOBILE_REF_WIDTH, dPadTouch.touch.x);
 			turn = Math.floor(turn * 3) - 1;
 		}
 
 		let itemDir = 0;
 		if (!this.item) {
-			//if we touch the dpad (more exact than direction), start pressing item
 			if (itemTouch != null && itemTouch.active && itemTouch.touch.pressed) {
 				this.item = true;
 			}
 		} else {
-			//if we release dpad, fire the item
 			if (dPadTouch == null || !dPadTouch.active) {
 				if (dPadTouch != null) {
-					//set direction based on flick direction or position
 					let vel = dPadTouch.touch.lasty - dPadTouch.touch.y;
-					if (vel > 2 / targH) itemDir = -1; //flicked down
-					if (vel < -2 / targH) itemDir = 1; //flicked up
+					if (vel > 2 / MOBILE_REF_HEIGHT) itemDir = -1;
+					if (vel < -2 / MOBILE_REF_HEIGHT) itemDir = 1;
 				}
 				this.item = false;
 			}
 		}
 
 		return {
-			accel: !reverse, //x
-			decel: reverse, //z
-			drift: driftTouch != null && driftTouch.active, //s
-			item: this.item, //a
-
-			//-1 to 1, intensity.
+			accel: !reverse,
+			decel: reverse,
+			drift: driftTouch != null && driftTouch.active,
+			item: this.item,
 			turn: turn,
-			airTurn: itemDir, //air excitebike turn, item fire direction
+			airTurn: itemDir,
 		};
 	}
 }

@@ -1,4 +1,5 @@
 import { MKDSCONST } from "./engine/mkdsConst";
+import { syncMobileControlsVisibility } from "./ui/mobileControlsOverlay";
 
 export function mobilecheck(window: Window & { opera: string }) {
 	let check = false;
@@ -84,6 +85,7 @@ export function onAppStateChange(state: string) {
 		document.body.classList.add("hud-visible");
 		clearHudHideTimer();
 	}
+	syncMobileControlsVisibility();
 }
 
 function getFullscreenElement(): Element | null {
