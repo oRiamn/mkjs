@@ -23,7 +23,11 @@ const ITEM_BOTTOM = 478 / MOBILE_REF_HEIGHT;
 export const MOBILE_CONTROL_ZONES: MobileControlZone[] = [
 	{ id: "item", label: "Item", rect: [ITEM_LEFT, ITEM_TOP, ITEM_RIGHT, ITEM_BOTTOM] },
 	{ id: "steer", label: "← →", rect: [STEER_LEFT, STEER_TOP, STEER_RIGHT, STEER_BOTTOM] },
-	{ id: "drift", label: "Drift", rect: [780 / MOBILE_REF_WIDTH, 468 / MOBILE_REF_HEIGHT, (780 + 300) / MOBILE_REF_WIDTH, (468 + 125) / MOBILE_REF_HEIGHT] },
+	{
+		id: "drift",
+		label: "Drift",
+		rect: [780 / MOBILE_REF_WIDTH, 468 / MOBILE_REF_HEIGHT, (780 + 300) / MOBILE_REF_WIDTH, (468 + 125) / MOBILE_REF_HEIGHT],
+	},
 	{
 		id: "accel",
 		label: "A",

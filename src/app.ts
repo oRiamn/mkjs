@@ -89,25 +89,18 @@ export function onAppStateChange(state: string) {
 }
 
 function getFullscreenElement(): Element | null {
-	return (
-		document.fullscreenElement ||
-		(document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement ||
-		null
-	);
+	return document.fullscreenElement || (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement || null;
 }
 
 function requestAppFullscreen() {
 	const root = document.documentElement;
 	const request =
-		root.requestFullscreen ||
-		(root as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen;
+		root.requestFullscreen || (root as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen;
 	request?.call(root)?.catch?.(() => {});
 }
 
 function exitAppFullscreen() {
-	const exit =
-		document.exitFullscreen ||
-		(document as Document & { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen;
+	const exit = document.exitFullscreen || (document as Document & { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen;
 	exit?.call(document)?.catch?.(() => {});
 }
 
