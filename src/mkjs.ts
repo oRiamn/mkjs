@@ -103,7 +103,7 @@ import {
 	KillerC,
 	BlueShellC,
 } from "./entities/items/placeholder";
-import { mobilecheck, getRequestAnimationFrameFnct, setupHUD, setupMenu, showMenuScreen, hideMenu, showMenu } from "./app";
+import { mobilecheck, getRequestAnimationFrameFnct, setupHUD, setupMenu, showMenuScreen, hideMenu, showMenu, setupHudBehavior, onAppStateChange, setupFullscreen } from "./app";
 
 Object.assign(window, {
 	vec2,
@@ -215,5 +215,8 @@ Object.assign(window, {
 	showMenuScreen,
 	hideMenu,
 	showMenu,
+	setupHudBehavior,
+	onAppStateChange,
+	setupFullscreen,
 	fitCanvasToWindow,
 });

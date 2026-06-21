@@ -3,6 +3,9 @@
 	<head>
 		<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
 		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+		<script>
+			window.mobile = /android|iphone|ipad|ipod|mobile|iemobile|blackberry|opera mini/i.test(navigator.userAgent);
+		</script>
 		<script src="bundle.js"></script>
 		<!-- Inline code (because that's always a good idea) -->
 		<script>
@@ -12,6 +15,7 @@
 			var fileQuota;
 			var filesLoaded = 0;
 			var mobile = mobilecheck(window);
+			window.mobile = mobile;
 			var mainRT;
 			var waitForROM = false;
 
@@ -54,6 +58,7 @@
 			function showAppState(state) {
 				currentAppState = state;
 				document.body.className = "state-" + state;
+				onAppStateChange(state);
 				if (state === "playing") {
 					hideMenu();
 				} else {
@@ -65,7 +70,10 @@
 			window.onload = function (argument) {
 				window.simpleMatStack = { dat: mat4.create(), built: true };
 				canvas3D = document.getElementById("canvas3d");
+				window.mobile = mobile;
 				setupHUD({ onChange: applySettings });
+				setupHudBehavior();
+				setupFullscreen();
 				setupMenu({
 					onUploadClick: handleUploadClick,
 					onInitClick: handleInitClick,
@@ -126,6 +134,7 @@
 					return;
 				}
 				init = true;
+				refreshSettings();
 				gl = initGL(document.getElementById("canvas3d"));
 				gameROM = new ndsFS(rom);
 
@@ -245,7 +254,12 @@
 				return result;
 			}
 
+			function isInteractiveUITarget(target) {
+				return target && target.closest && target.closest("#menu-overlay, #hud, #hud-peek, button, select, input, label, a");
+			}
+
 			function touchStart(e) {
+				if (isInteractiveUITarget(e.target)) return;
 				//identifier
 				if (!osc.donezo) {
 					osc.start(0);
@@ -259,6 +273,7 @@
 			}
 
 			function touchEnd(e) {
+				if (isInteractiveUITarget(e.target)) return;
 				e.preventDefault();
 				for (var i = 0; i < e.changedTouches.length; i++) {
 					var obj = getTouchObj(e.changedTouches[i]);
@@ -267,6 +282,7 @@
 			}
 
 			function touchMove(e) {
+				if (isInteractiveUITarget(e.target)) return;
 				e.preventDefault();
 				for (var i = 0; i < e.changedTouches.length; i++) {
 					var obj = getTouchObj(e.changedTouches[i]);
@@ -274,6 +290,7 @@
 			}
 
 			function touchCancel(e) {
+				if (isInteractiveUITarget(e.target)) return;
 				e.preventDefault();
 				for (var i = 0; i < e.changedTouches.length; i++) {
 					var obj = getTouchObj(e.changedTouches[i]);
@@ -341,6 +358,12 @@
 			#canvas3d {
 				display: block;
 				position: fixed;
+			}
+			body:not(.state-playing) #canvas3d {
+				pointer-events: none;
+			}
+			body.state-playing #canvas3d {
+				z-index: 1;
 			}
 
 			#menu-overlay {
@@ -415,6 +438,8 @@
 				font-size: 1.05rem;
 				font-weight: 700;
 				cursor: pointer;
+				touch-action: manipulation;
+				-webkit-tap-highlight-color: transparent;
 				color: #fff;
 				background: linear-gradient(135deg, #e82020, #ff6600);
 				box-shadow: 0 4px 20px rgba(232, 32, 32, 0.45);
@@ -439,7 +464,7 @@
 
 			#hud {
 				position: fixed;
-				bottom: 0;
+				top: 0;
 				left: 0;
 				right: 0;
 				z-index: 200;
@@ -450,12 +475,41 @@
 				align-items: center;
 				padding: 0.6rem 1rem;
 				background: rgba(0, 0, 0, 0.88);
-				border-top: 1px solid rgba(255, 255, 255, 0.12);
-				pointer-events: auto;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+				pointer-events: none;
 				opacity: 0;
+				transition: opacity 0.25s ease;
 			}
-			#hud:hover {
+			body.hud-visible #hud {
 				opacity: 1;
+			}
+			body.hud-visible #hud label,
+			body.hud-visible #hud .hud-btn {
+				pointer-events: auto;
+			}
+			#hud-peek {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 3rem;
+				z-index: 201;
+				pointer-events: none;
+				touch-action: manipulation;
+				-webkit-tap-highlight-color: transparent;
+				/* iOS needs a non-transparent background to register touches */
+				background: rgba(0, 0, 0, 0.001);
+			}
+			body.state-playing #hud-peek {
+				pointer-events: auto;
+			}
+			body.state-playing.hud-visible #hud-peek {
+				pointer-events: none;
+			}
+			@media (hover: none) and (pointer: coarse) {
+				#hud-peek {
+					height: 3.5rem;
+				}
 			}
 			#hud label {
 				display: flex;
@@ -475,6 +529,23 @@
 				color: #fff;
 				font-size: 0.85rem;
 			}
+			.hud-btn {
+				appearance: none;
+				border: 1px solid rgba(255, 255, 255, 0.25);
+				border-radius: 8px;
+				padding: 0.45rem 0.85rem;
+				font-size: 0.85rem;
+				font-weight: 600;
+				cursor: pointer;
+				touch-action: manipulation;
+				-webkit-tap-highlight-color: transparent;
+				color: #fff;
+				background: rgba(255, 255, 255, 0.12);
+				align-self: flex-end;
+			}
+			.hud-btn:hover {
+				background: rgba(255, 255, 255, 0.2);
+			}
 
 			.loading-spinner {
 				width: 3rem;
@@ -492,8 +563,10 @@
 		</style>
 	</head>
 
-	<body>
+	<body class="state-upload hud-visible">
 		<canvas id="canvas3d"></canvas>
+
+		<div id="hud-peek" aria-hidden="true"></div>
 
 		<div id="hud">
 			<label
@@ -516,6 +589,7 @@
 				>Camera
 				<select id="kcam"></select
 			></label>
+			<button type="button" id="btn-fullscreen" class="hud-btn">Fullscreen</button>
 		</div>
 
 		<div id="menu-overlay">
