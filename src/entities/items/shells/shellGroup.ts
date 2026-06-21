@@ -1,7 +1,6 @@
 import { nitroAudioSound, nitroAudio } from "../../../audio/nitroAudio";
 import { Item } from "../../item";
 
-
 class ShellGroup implements KartItemEntity {
 	canBeHeld: boolean;
 	canBeDropped: boolean;
@@ -10,7 +9,6 @@ class ShellGroup implements KartItemEntity {
 	scene: Scene;
 	type: string;
 	children: (Item | null)[];
-	itemCount: number;
 	phase: number;
 	spinDist: number;
 	sound: nitroAudioSound | null;
@@ -25,18 +23,17 @@ class ShellGroup implements KartItemEntity {
 		this.type = type;
 		this.item.colRadius = -Infinity;
 		this.children = [];
-		
+
 		this.phase = 0;
 		this.spinDist = 6;
 		this.item.holdPos = [0, 0, 0];
 		//create children
-		this.children = Array.from({ length: 3 })
-			.map(() => {
-				let sub = this.scene.items.createItem(this.type, this.item.owner);
-				sub.holdTime = 7;
-				sub.groupItem = this.item;
-				return sub;
-			})
+		this.children = Array.from({ length: 3 }).map(() => {
+			let sub = this.scene.items.createItem(this.type, this.item.owner);
+			sub.holdTime = 7;
+			sub.groupItem = this.item;
+			return sub;
+		});
 
 		nitroAudio.playSound(231, { volume: 2 }, 0, this.item);
 		this.sound = nitroAudio.playSound(227, { volume: 1.5 }, 0, this.item);
@@ -93,12 +90,12 @@ class ShellGroup implements KartItemEntity {
 
 export class GreenShellGroup extends ShellGroup {
 	constructor(item: Item, scene: Scene) {
-		super(item, scene, "koura_g")
+		super(item, scene, "koura_g");
 	}
 }
 
 export class RedShellGroup extends ShellGroup {
 	constructor(item: Item, scene: Scene, type: string) {
-		super(item, scene, "koura_r")
+		super(item, scene, "koura_r");
 	}
 }

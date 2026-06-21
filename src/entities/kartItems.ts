@@ -5,13 +5,12 @@ import { Item } from "./item";
 import { Kart } from "./kart";
 
 export class KartItems {
-	//koura_g, banana, f_box, koura_group, koura_group-bomb-7
 	static items = [
-		// "koura_g", // greenshell
-		// "koura_r", // redshell
-		// "banana", // banana
-		// "f_box", // fake_box
-		// "bomb",
+		"koura_g",
+		"koura_r",
+		"banana",
+		"f_box",
+		"bomb",
 		"koura_group_g",
 		"koura_group_r",
 		// 'koura_group-bomb-7' bug (too many bomb)

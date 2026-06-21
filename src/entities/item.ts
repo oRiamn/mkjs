@@ -32,7 +32,6 @@ let itemTypes: { [x: string]: typeof KartItemEntity } = {
 	$f_box: FakeBoxC,
 
 	//groups
-	// $koura_group_r: ShellGroupC,
 	$koura_group_g: GreenShellGroup,
 	$koura_group_r: RedShellGroup,
 	//'$banana_group': BananaGroupC,
