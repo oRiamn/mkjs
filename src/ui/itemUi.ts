@@ -74,7 +74,7 @@ export class ItemUi implements SceneEntity {
 
 		this.updateLayout(nitroRender.getViewWidth(), nitroRender.getViewHeight());
 		this.flattenerBorder.loadTextue(8);
-		this.flattenerBackground.loadTextue(11);
+		this.flattenerBackground.loadTextue(12);
 		this.flattenerItem.loadTextue(blank);
 
 		this.place = this.kart.placement;
@@ -98,11 +98,11 @@ export class ItemUi implements SceneEntity {
 			this.updateLayout(width, height);
 		}
 		nitroRender.pauseShadowMode();
-
-		const inset = uiPx(2, this.zoom);
-		this.flattenerBackground.draw(this.pos.x + inset, this.pos.y + inset, this.zoom);
-		this.flattenerItem.draw(this.pos.x + inset, this.pos.y + inset, this.zoom);
-
+		this.flattenerBackground.draw(this.pos.x, this.pos.y, this.zoom);
+		if (this.currentItem) {
+			const inset = uiPx(2, this.zoom);
+			this.flattenerItem.draw(this.pos.x + inset, this.pos.y + inset, this.zoom);
+		}
 		this.flattenerBorder.draw(this.pos.x, this.pos.y, this.zoom);
 
 		nitroRender.unpauseShadowMode();
