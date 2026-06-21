@@ -269,12 +269,12 @@ export class TileFlattener {
 	loadTextue(i: number) {
 		if (this.textures.has(i)) {
 			this.texture = this.textures.get(i)!;
-			this.loadedTextureIndex = i
+			this.loadedTextureIndex = i;
 		} else {
 			const texture = this.toTexture(true, i);
 			this.textures.set(i, texture);
 			this.texture = texture;
-			this.loadedTextureIndex = i
+			this.loadedTextureIndex = i;
 		}
 		return this.texture;
 	}

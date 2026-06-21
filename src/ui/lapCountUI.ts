@@ -56,9 +56,9 @@ export class LapCountUI implements SceneEntity {
 
 		this.updateLayout(nitroRender.getViewWidth(), nitroRender.getViewHeight());
 
-		this.flattenerLapLabel.loadTextue(32)
+		this.flattenerLapLabel.loadTextue(32);
 		this.flattenerCurrentLap.loadTextue(32 + this.lap);
-		this.flattenerLapNumber.loadTextue(MKDSCONST.MAX_LAP === 3 ? 38 : 39)
+		this.flattenerLapNumber.loadTextue(MKDSCONST.MAX_LAP === 3 ? 38 : 39);
 	}
 
 	private updateLayout(width: number, height: number) {
@@ -79,21 +79,9 @@ export class LapCountUI implements SceneEntity {
 		}
 		nitroRender.pauseShadowMode();
 
-		this.flattenerCurrentLap.draw(
-			this.pos.x - uiPx(32, this.uiScale),
-			this.pos.y,
-			this.zoom
-		);
-		this.flattenerLapNumber.draw(
-			this.pos.x - uiPx(15, this.uiScale),
-			this.pos.y,
-			this.zoom
-		);
-		this.flattenerLapLabel.draw(
-			this.pos.x - uiPx(132, this.uiScale),
-			this.pos.y,
-			this.zoom
-		);
+		this.flattenerCurrentLap.draw(this.pos.x - uiPx(32, this.uiScale), this.pos.y, this.zoom);
+		this.flattenerLapNumber.draw(this.pos.x - uiPx(15, this.uiScale), this.pos.y, this.zoom);
+		this.flattenerLapLabel.draw(this.pos.x - uiPx(132, this.uiScale), this.pos.y, this.zoom);
 
 		nitroRender.unpauseShadowMode();
 	}

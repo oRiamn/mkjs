@@ -104,7 +104,6 @@ function readUserCam() {
 	return (localStorage.getItem("CURRENTCAM") || "POV").toUpperCase();
 }
 
-
 export const MKDSCONST = {
 	DAMAGE_SPIN,
 	DAMAGE_FLIP,
@@ -116,7 +115,7 @@ export const MKDSCONST = {
 	MAX_LAP: readMaxLap(),
 	CONTROLTYPE: readControlType(),
 	USER_CONTROLLER: readUserController(),
-	CURRENTCAM: readUserCam()
+	CURRENTCAM: readUserCam(),
 };
 
 export function refreshSettings() {

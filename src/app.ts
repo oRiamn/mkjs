@@ -122,11 +122,7 @@ export function showMenu() {
 	document.getElementById("menu-overlay")?.classList.remove("hidden");
 }
 
-export function setupMenu(handlers: {
-	onUploadClick: () => void;
-	onInitClick: () => void;
-	onStartClick: () => void;
-}) {
+export function setupMenu(handlers: { onUploadClick: () => void; onInitClick: () => void; onStartClick: () => void }) {
 	document.getElementById("btn-upload")!.addEventListener("click", handlers.onUploadClick);
 	document.getElementById("btn-init")!.addEventListener("click", handlers.onInitClick);
 	document.getElementById("btn-start")!.addEventListener("click", handlers.onStartClick);

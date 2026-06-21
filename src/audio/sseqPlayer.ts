@@ -298,9 +298,7 @@ export class SSEQPlayer {
 		const sus = thread.sustain != null ? thread.sustain : inst.sustainLvl;
 		const rel = thread.release != null ? thread.release : inst.release;
 
-		const attackTime = this._finiteTime(
-			this._calculateRequiredAttackCycles(this._convertAttToRate(atk)) * this.CYCLE_TIME
-		);
+		const attackTime = this._finiteTime(this._calculateRequiredAttackCycles(this._convertAttToRate(atk)) * this.CYCLE_TIME);
 		const decayTime = this._finiteTime(((92544 / this._convertFallToRate(dec)) * (1 - sus / 0x7f) * this.CYCLE_TIME) / 2);
 		const releaseTime = this._finiteTime(((92544 / this._convertFallToRate(rel)) * (sus / 0x7f) * this.CYCLE_TIME) / 2);
 
