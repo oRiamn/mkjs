@@ -4,6 +4,7 @@ import { ncer } from "../formats/2d/ncer";
 import { ncgr } from "../formats/2d/ncgr";
 import { nclr } from "../formats/2d/nclr";
 import { nitroRender } from "../render/nitroRender";
+import { getUiScale, uiPx } from "./uiScale";
 
 export class PlacementUI implements SceneEntity {
 	transparent: boolean;
@@ -11,7 +12,8 @@ export class PlacementUI implements SceneEntity {
 	kart: Kart;
 	zoom: number;
 	pos: { x: number; y: number };
-	lastWidth: number;
+	lastViewWidth: number;
+	lastViewHeight: number;
 	ncgr: ncgr;
 	nclr: nclr;
 	ncer: ncer;
@@ -29,8 +31,8 @@ export class PlacementUI implements SceneEntity {
 			y: 0,
 		};
 
-		this.buildOrtho(nitroRender.getViewWidth(), nitroRender.getViewHeight());
-		this.lastWidth = 0;
+		this.lastViewWidth = 0;
+		this.lastViewHeight = 0;
 
 		let ncgrFile = this.scene.gameRes.RaceLoc.getFile("race_m_o.NCGR")!;
 		let nclrFile = this.scene.gameRes.Race.getFile("race_m_o.NCLR")!;
@@ -40,20 +42,26 @@ export class PlacementUI implements SceneEntity {
 		this.nclr = new nclr(nclrFile);
 		this.ncer = new ncer(ncerFile);
 
-		this.flattener = new TileFlattener(this.nclr, this.ncgr, this.ncer);
+		this.flattener = new TileFlattener(this.nclr, this.ncgr, this.ncer, true);
+		this.updateLayout(nitroRender.getViewWidth(), nitroRender.getViewHeight());
 		this.place = this.kart.placement;
 	}
 
-	private buildOrtho(width: number, height: number) {
-		this.lastWidth = width;
-		this.pos.y = height - 50;
+	private updateLayout(width: number, height: number) {
+		this.lastViewWidth = width;
+		this.lastViewHeight = height;
+		const scale = getUiScale(width, height);
+		this.zoom = scale;
+		this.pos.x = uiPx(10, scale);
+		this.pos.y = height - uiPx(50, scale);
 	}
 
 	draw() {
 		if (nitroRender.flagShadow || this.animFrame < 0) return;
-		let width = nitroRender.getViewWidth();
-		if (width != this.lastWidth) {
-			this.buildOrtho(width, nitroRender.getViewHeight());
+		const width = nitroRender.getViewWidth();
+		const height = nitroRender.getViewHeight();
+		if (width !== this.lastViewWidth || height !== this.lastViewHeight) {
+			this.updateLayout(width, height);
 		}
 		nitroRender.pauseShadowMode();
 		this.flattener.draw(this.pos.x, this.pos.y, this.zoom);

@@ -4,6 +4,7 @@ import { ncer } from "../formats/2d/ncer";
 import { ncgr } from "../formats/2d/ncgr";
 import { nclr } from "../formats/2d/nclr";
 import { nitroRender } from "../render/nitroRender";
+import { getUiScale, uiPx } from "./uiScale";
 
 const blank = 11;
 
@@ -31,7 +32,8 @@ export class ItemUi implements SceneEntity {
 	kart: Kart;
 	zoom: number;
 	pos: { x: number; y: number };
-	lastWidth: number;
+	lastViewWidth: number;
+	lastViewHeight: number;
 	flattenerBorder: TileFlattener;
 	flattenerBackground: TileFlattener;
 	place: number;
@@ -50,8 +52,8 @@ export class ItemUi implements SceneEntity {
 		};
 		this.animFrame = 0;
 
-		this.buildOrtho(nitroRender.getViewWidth());
-		this.lastWidth = 0;
+		this.lastViewWidth = 0;
+		this.lastViewHeight = 0;
 
 		const ncgrFile = this.scene.gameRes.RaceLoc.getFile("race_m_o.NCGR")!;
 		const nclrFile = this.scene.gameRes.Race.getFile("race_m_o.NCLR")!;
@@ -61,38 +63,45 @@ export class ItemUi implements SceneEntity {
 		const nclrObj = new nclr(nclrFile);
 		const ncerObj = new ncer(ncerFile);
 
-		this.flattenerBorder = new TileFlattener(nclrObj, ncgrObj, ncerObj);
+		this.flattenerBorder = new TileFlattener(nclrObj, ncgrObj, ncerObj, true);
 		this.flattenerBorder.pos[2] = 0.2;
-		this.flattenerBorder.loadTextue(8);
 
-		this.flattenerBackground = new TileFlattener(nclrObj, ncgrObj, ncerObj);
-		this.flattenerBorder.pos[2] = 0.1;
-		this.flattenerBackground.loadTextue(11);
+		this.flattenerBackground = new TileFlattener(nclrObj, ncgrObj, ncerObj, true);
+		this.flattenerBackground.pos[2] = 0.1;
 
-		this.flattenerItem = new TileFlattener(nclrObj, ncgrObj, ncerObj);
+		this.flattenerItem = new TileFlattener(nclrObj, ncgrObj, ncerObj, true);
 		this.flattenerItem.pos[2] = 0.3;
+
+		this.updateLayout(nitroRender.getViewWidth(), nitroRender.getViewHeight());
+		this.flattenerBorder.loadTextue(8);
+		this.flattenerBackground.loadTextue(11);
 		this.flattenerItem.loadTextue(blank);
 
 		this.place = this.kart.placement;
 		this.currentItem = "";
 	}
 
-	private buildOrtho(width: number) {
-		this.lastWidth = width;
-		this.pos.y = 10;
-		this.pos.x = 10;
+	private updateLayout(width: number, height: number) {
+		this.lastViewWidth = width;
+		this.lastViewHeight = height;
+		const scale = getUiScale(width, height);
+		this.zoom = scale;
+		this.pos.x = uiPx(10, scale);
+		this.pos.y = uiPx(10, scale);
 	}
 
 	draw() {
 		if (nitroRender.flagShadow || this.animFrame < 0) return;
-		let width = nitroRender.getViewWidth();
-		if (width != this.lastWidth) {
-			this.buildOrtho(width);
+		const width = nitroRender.getViewWidth();
+		const height = nitroRender.getViewHeight();
+		if (width !== this.lastViewWidth || height !== this.lastViewHeight) {
+			this.updateLayout(width, height);
 		}
 		nitroRender.pauseShadowMode();
 
-		this.flattenerBackground.draw(this.pos.x + 2, this.pos.y + 2, this.zoom);
-		this.flattenerItem.draw(this.pos.x + 2, this.pos.y + 2, this.zoom);
+		const inset = uiPx(2, this.zoom);
+		this.flattenerBackground.draw(this.pos.x + inset, this.pos.y + inset, this.zoom);
+		this.flattenerItem.draw(this.pos.x + inset, this.pos.y + inset, this.zoom);
 
 		this.flattenerBorder.draw(this.pos.x, this.pos.y, this.zoom);
 

@@ -224,8 +224,9 @@
 			}
 
 			function setTouchPos(obj, touch) {
-				obj.x = touch.clientX / document.body.clientWidth;
-				obj.y = touch.clientY / document.body.clientHeight;
+				var rect = canvas3D.getBoundingClientRect();
+				obj.x = (touch.clientX - rect.left) / rect.width;
+				obj.y = (touch.clientY - rect.top) / rect.height;
 			}
 
 			function getTouchObj(touch) {
@@ -301,13 +302,21 @@
 			}
 
 			function big() {
-				const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-				const height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+				const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+				const windowHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+				const fit = fitCanvasToWindow(windowWidth, windowHeight);
 
-				canvas3D.width = width;
-				canvas3D.height = height;
-				gl.viewportWidth = width;
-				gl.viewportHeight = height;
+				canvas3D.width = fit.width;
+				canvas3D.height = fit.height;
+				canvas3D.style.width = fit.width + "px";
+				canvas3D.style.height = fit.height + "px";
+				canvas3D.style.left = fit.offsetX + "px";
+				canvas3D.style.top = fit.offsetY + "px";
+
+				if (gl) {
+					gl.viewportWidth = fit.width;
+					gl.viewportHeight = fit.height;
+				}
 			}
 		</script>
 		<style>
@@ -327,8 +336,7 @@
 			}
 			#canvas3d {
 				display: block;
-				width: 100%;
-				height: 100%;
+				position: fixed;
 			}
 
 			#menu-overlay {
