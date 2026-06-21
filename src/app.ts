@@ -1,4 +1,5 @@
 import { MKDSCONST } from "./engine/mkdsConst";
+import { syncMobileControlsVisibility } from "./ui/mobileControlsOverlay";
 
 export function mobilecheck(window: Window & { opera: string }) {
 	let check = false;
@@ -23,6 +24,105 @@ export function getRequestAnimationFrameFnct(window: Window) {
 		window.webkitRequestAnimationFrame ||
 		window.msRequestAnimationFrame
 	);
+}
+
+const HUD_HIDE_DELAY_MS = 2000;
+let hudHideTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearHudHideTimer() {
+	if (hudHideTimer != null) {
+		clearTimeout(hudHideTimer);
+		hudHideTimer = null;
+	}
+}
+
+function scheduleHudHide() {
+	clearHudHideTimer();
+	hudHideTimer = setTimeout(() => {
+		document.body.classList.remove("hud-visible");
+		hudHideTimer = null;
+	}, HUD_HIDE_DELAY_MS);
+}
+
+function showHudWhilePlaying() {
+	if (!document.body.classList.contains("state-playing")) return;
+	document.body.classList.add("hud-visible");
+	scheduleHudHide();
+}
+
+function onHudInteraction() {
+	if (!document.body.classList.contains("state-playing")) return;
+	document.body.classList.add("hud-visible");
+	scheduleHudHide();
+}
+
+function revealHudFromPeek(e: Event) {
+	e.stopPropagation();
+	showHudWhilePlaying();
+}
+
+export function setupHudBehavior() {
+	const hud = document.getElementById("hud");
+	const peek = document.getElementById("hud-peek");
+	if (!hud) return;
+
+	const interactionEvents = ["pointerdown", "touchstart", "focusin", "change"] as const;
+	for (const eventName of interactionEvents) {
+		hud.addEventListener(eventName, onHudInteraction, { passive: true });
+	}
+
+	if (peek) {
+		peek.addEventListener("touchstart", revealHudFromPeek, { passive: true, capture: true });
+		peek.addEventListener("pointerdown", revealHudFromPeek, { capture: true });
+	}
+}
+
+export function onAppStateChange(state: string) {
+	if (state === "playing") {
+		document.body.classList.remove("hud-visible");
+		clearHudHideTimer();
+	} else {
+		document.body.classList.add("hud-visible");
+		clearHudHideTimer();
+	}
+	syncMobileControlsVisibility();
+}
+
+function getFullscreenElement(): Element | null {
+	return document.fullscreenElement || (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement || null;
+}
+
+function requestAppFullscreen() {
+	const root = document.documentElement;
+	const request =
+		root.requestFullscreen || (root as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen;
+	request?.call(root)?.catch?.(() => {});
+}
+
+function exitAppFullscreen() {
+	const exit = document.exitFullscreen || (document as Document & { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen;
+	exit?.call(document)?.catch?.(() => {});
+}
+
+export function setupFullscreen() {
+	const btn = document.getElementById("btn-fullscreen");
+	if (!btn) return;
+
+	const updateLabel = () => {
+		btn.textContent = getFullscreenElement() ? "Exit fullscreen" : "Fullscreen";
+	};
+
+	btn.addEventListener("click", () => {
+		if (getFullscreenElement()) {
+			exitAppFullscreen();
+		} else {
+			requestAppFullscreen();
+		}
+	});
+
+	document.addEventListener("fullscreenchange", updateLabel);
+	document.addEventListener("webkitfullscreenchange", updateLabel);
+	updateLabel();
 }
 
 export function setupHUD(options?: { onChange?: () => void }) {

@@ -53,6 +53,12 @@ import { ItemUi } from "./ui/itemUi";
 import { PlacementUI } from "./ui/placementUI";
 import { Start3DUI } from "./ui/start3DUI";
 import { fitCanvasToWindow } from "./ui/uiScale";
+import {
+	setupMobileControlsOverlay,
+	syncMobileControlsLayout,
+	syncMobileControlsVisibility,
+	updateMobileControlsOverlay,
+} from "./ui/mobileControlsOverlay";
 
 import { ItemShard } from "./particles/itemboxShard";
 
@@ -103,7 +109,18 @@ import {
 	KillerC,
 	BlueShellC,
 } from "./entities/items/placeholder";
-import { mobilecheck, getRequestAnimationFrameFnct, setupHUD, setupMenu, showMenuScreen, hideMenu, showMenu } from "./app";
+import {
+	mobilecheck,
+	getRequestAnimationFrameFnct,
+	setupHUD,
+	setupMenu,
+	showMenuScreen,
+	hideMenu,
+	showMenu,
+	setupHudBehavior,
+	onAppStateChange,
+	setupFullscreen,
+} from "./app";
 
 Object.assign(window, {
 	vec2,
@@ -215,5 +232,12 @@ Object.assign(window, {
 	showMenuScreen,
 	hideMenu,
 	showMenu,
+	setupHudBehavior,
+	onAppStateChange,
+	setupFullscreen,
 	fitCanvasToWindow,
+	setupMobileControlsOverlay,
+	syncMobileControlsLayout,
+	syncMobileControlsVisibility,
+	updateMobileControlsOverlay,
 });
