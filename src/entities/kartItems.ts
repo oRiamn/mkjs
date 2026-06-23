@@ -122,8 +122,7 @@ export class KartItems {
 			} else if (released && this.heldItem.canBeHeld()) {
 				if (this._itemReleaseDebounce <= 0) {
 					const shortPress = this._itemButtonHoldFrames < KartItems.ITEM_PRESS_DEBOUNCE;
-					const onlyHeldShortEquip =
-						shortPress && this._itemJustEquipped && this.heldItem.onlyHeld();
+					const onlyHeldShortEquip = shortPress && this._itemJustEquipped && this.heldItem.onlyHeld();
 					if (shortPress && !onlyHeldShortEquip) {
 						this._release(input);
 						this._itemReleaseDebounce = KartItems.ITEM_RELEASE_DEBOUNCE;

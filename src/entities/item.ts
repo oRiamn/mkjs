@@ -153,8 +153,6 @@ export class Item {
 			this._scene,
 			this._type.substr(this._subtypeInd + 1)
 		);
-
-	
 	}
 
 	private updateHold(kart: Kart) {

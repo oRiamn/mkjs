@@ -30,7 +30,6 @@ export class FakeBoxC implements KartItemEntity {
 		return false;
 	}
 
-
 	collideKart(kart: Kart) {
 		this.item.deadTimer = 1;
 		nitroAudio.playSound(250, { volume: 2 }, 0, this.item);

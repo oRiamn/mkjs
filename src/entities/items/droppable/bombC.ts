@@ -8,7 +8,6 @@ export class BombC implements KartItemEntity {
 	isDestructive: boolean;
 	explodeTime: number;
 	isSolid!: boolean;
-	
 
 	constructor(item: Item, scene: Scene, _type: string) {
 		this.item = item;

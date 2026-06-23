@@ -1,13 +1,16 @@
 import { nkm_section_OBJI } from "../../formats/nkm";
 import { ObjDecor } from "../objDecor";
 
-export class BeachTree extends ObjDecor {
+export class Crab extends ObjDecor {
 	constructor(obji: nkm_section_OBJI, _scene: Scene) {
 		super(obji, _scene);
-		this._staringAtCamera = true;
+	}
+
+	update() {
+		this.setDecorTexFrame(0);
 	}
 
 	requireRes() {
-		return { mdl: [{ nsbmd: "BeachTree1.nsbmd" }] };
+		return { mdl: [{ nsbmd: "crab.nsbmd" }, { nsbmd: "crab_hand.nsbmd" }], other: [null, null, "crab.nsbtp"] };
 	}
 }

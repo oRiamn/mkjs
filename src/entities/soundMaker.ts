@@ -36,9 +36,24 @@ export class ObjSoundMaker implements SceneEntityObject {
 		this.threshold = 0.2;
 		this.gain = 1;
 		switch (this.obji.ID) {
+			case 0x0005:
+				this.sN = 261;
+				this.gain = 1;
+				this.threshold = 0.2;
+				break;
 			case 0x0008:
 				this.sN = 259;
 				this.gain = 2;
+				this.threshold = 0.2;
+				break;
+			case 0x000a:
+				this.sN = 262;
+				this.gain = 1;
+				this.threshold = 0.2;
+				break;
+			case 0x000e:
+				this.sN = 263;
+				this.gain = 1;
 				this.threshold = 0.2;
 				break;
 		}
