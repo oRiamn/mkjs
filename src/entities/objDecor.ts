@@ -23,6 +23,9 @@ export abstract class ObjDecor implements SceneEntityObject {
 	private _anim: nitroAnimator | null;
 	private _animFrame: number;
 	private _animMat: nitroAnimator_matStack | null;
+	private _decorTexFrame: number | null = null;
+	protected _yOffset = 0;
+	protected _drawScale: vec3 = [1, 1, 1];
 	pos: vec3;
 	angle: vec3;
 	scale: vec3;
@@ -39,19 +42,26 @@ export abstract class ObjDecor implements SceneEntityObject {
 		this.scale = vec3.clone(this._obji.scale);
 	}
 
+	protected _placementPos(): vec3 {
+		return [this.pos[0], this.pos[1] + this._yOffset, this.pos[2]];
+	}
+
 	draw(view: mat4, pMatrix: mat4) {
 		if (this._staringAtCamera) {
 			nitroRender.setShadBias(0.001);
 		}
-		mat4.translate(this._mat, view, this.pos);
+		mat4.translate(this._mat, view, this._placementPos());
 
 		if (this.angle[2] != 0) mat4.rotateZ(this._mat, this._mat, this.angle[2] * (Math.PI / 180));
 		if (this.angle[1] != 0) mat4.rotateY(this._mat, this._mat, this.angle[1] * (Math.PI / 180));
 		if (this.angle[0] != 0) mat4.rotateX(this._mat, this._mat, this.angle[0] * (Math.PI / 180));
 
-		mat4.scale(this._mat, this._mat, vec3.scale([0, 0, 0], this.scale, 16));
+		mat4.scale(this._mat, this._mat, vec3.scale([0, 0, 0], vec3.mul(vec3.create(), this.scale, this._drawScale), 16));
 		const animMat = this._animMat ?? undefined;
 		for (let i = 0; i < this._res.mdl.length; i++) {
+			if (this._decorTexFrame != null) {
+				this._res.mdl[i].setFrame(this._decorTexFrame);
+			}
 			this._res.mdl[i].draw(this._mat, pMatrix, i === 0 ? animMat : undefined);
 		}
 		if (this._staringAtCamera) {
@@ -70,9 +80,7 @@ export abstract class ObjDecor implements SceneEntityObject {
 	}
 
 	protected setDecorTexFrame(frame: number) {
-		for (let i = 0; i < this._res.mdl.length; i++) {
-			this._res.mdl[i].setFrame(frame);
-		}
+		this._decorTexFrame = frame;
 	}
 
 	abstract requireRes(): { mdl: { nsbmd: string; nsbtx?: string }[]; other?: (string | null)[] };

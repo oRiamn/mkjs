@@ -4,7 +4,7 @@ import { Item } from "./src/entities/item";
 import { Kart } from "./src/entities/kart";
 import { kcl } from "./src/formats/kcl";
 import { ndsFS } from "./src/formats/ndsFS";
-import { nkm_section_OBJI, nkm, nkm_section_POIT } from "./src/formats/nkm";
+import { nkm, nkm_section_OBJI, nkm_section_POIT } from "./src/formats/nkm";
 import { nsbca } from "./src/formats/nsbca";
 import { nsbmd } from "./src/formats/nsbmd";
 import { nsbta } from "./src/formats/nsbta";
@@ -112,6 +112,7 @@ declare global {
 		vel?: vec3;
 		getCollision(): lsc_collision_model;
 		moveWith?(obj: Kart | Item): void;
+		onKartHit?(): void;
 	}
 
 	type other = nsbmd | nsbtx | nsbca | nsbta | nsbtp;
@@ -224,4 +225,5 @@ declare global {
 	}
 }
 
-export {};
+export { };
+

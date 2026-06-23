@@ -14,7 +14,7 @@
 
 import { nitroAudio, nitroAudioSound } from "../../audio/nitroAudio";
 import { Kart } from "../../entities/kart";
-import { objDatabase } from "../../entities/objDatabase";
+import { ObjDatabase } from "../../entities/objDatabase";
 import { kcl } from "../../formats/kcl";
 import { narc } from "../../formats/narc";
 import { nkm, nkm_section_POIT } from "../../formats/nkm";
@@ -426,18 +426,19 @@ export class courseScene implements Scene {
 
 		const obj = this.nkm.sections["OBJI"].entries;
 		for (let i = 0; i < obj.length; i++) {
-			const o = obj[i];
-			const func = objDatabase.idToType[o.ID];
-			if (func != null) {
-				const ent = new func(o, this);
+			if (ObjDatabase.has(obj[i].ID)) {
+				const objClass = <SceneEntityObjectConstructor>ObjDatabase.get(obj[i].ID);
+				const ent = new objClass(obj[i], this);
 
-				if (this.typeRes[o.ID] == null) {
-					this.loadRes(ent.requireRes()!, o.ID);
+				if (this.typeRes[obj[i].ID] == null) {
+					this.loadRes(ent.requireRes()!, obj[i].ID);
 				}
 
-				ent.provideRes(this.typeRes[o.ID]);
+				ent.provideRes(this.typeRes[obj[i].ID]);
 				this.entities.push(ent);
-				if (ent.collidable && "getCollision" in ent && "colRad" in ent) this.colEnt.push(ent as unknown as lsc_taget);
+				if (ent.collidable && "getCollision" in ent && "colRad" in ent) {
+					this.colEnt.push(ent as lsc_taget);
+				}
 			}
 		}
 	}
