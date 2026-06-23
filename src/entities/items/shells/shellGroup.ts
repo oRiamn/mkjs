@@ -14,6 +14,7 @@ class ShellGroup implements KartItemEntity {
 	sound: nitroAudioSound | null;
 	isDestructive!: boolean;
 	isSolid!: boolean;
+
 	constructor(item: Item, scene: Scene, type: string) {
 		this.canBeHeld = true;
 		this.canBeDropped = true;
@@ -37,6 +38,10 @@ class ShellGroup implements KartItemEntity {
 
 		nitroAudio.playSound(231, { volume: 2 }, 0, this.item);
 		this.sound = nitroAudio.playSound(227, { volume: 1.5 }, 0, this.item);
+	}
+
+	onlyHeld() {
+		return true;
 	}
 
 	onDie(_final: boolean) {

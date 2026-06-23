@@ -167,6 +167,7 @@ declare global {
 		isDestructive: boolean;
 		isSolid: boolean;
 		constructor(item: Item, scene: Scene, type: string);
+		onlyHeld(): boolean;
 		update(scene: Scene): void;
 		release?(forward: number): boolean;
 		onDie?(final: boolean): void;

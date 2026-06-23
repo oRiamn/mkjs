@@ -27,7 +27,8 @@ export class KartItems {
 	private _carouselSfx: nitroAudioSound | null;
 	private _lastItemState: boolean;
 	private _specialItems: string[];
-	private _itemPressDebounce: number;
+	private _itemButtonHoldFrames: number;
+	private _itemJustEquipped: boolean;
 	private _itemReleaseDebounce: number;
 	private static readonly ITEM_PRESS_DEBOUNCE = 12;
 	private static readonly ITEM_RELEASE_DEBOUNCE = 12;
@@ -47,7 +48,8 @@ export class KartItems {
 		this._carouselSfx = null;
 		this._lastItemState = false;
 		this._specialItems = ["star"];
-		this._itemPressDebounce = 0;
+		this._itemButtonHoldFrames = 0;
+		this._itemJustEquipped = false;
 		this._itemReleaseDebounce = 0;
 
 		// var holdAppearDelay = 15;
@@ -64,7 +66,11 @@ export class KartItems {
 	update(input: InputData) {
 		let pressed = input.item && !this._lastItemState;
 		const released = this._lastItemState && !input.item;
-		if (this._itemPressDebounce > 0) this._itemPressDebounce--;
+		if (pressed) {
+			this._itemButtonHoldFrames = 0;
+		} else if (input.item) {
+			this._itemButtonHoldFrames++;
+		}
 		if (this._itemReleaseDebounce > 0) this._itemReleaseDebounce--;
 		if (!this.empty) {
 			if (this.currentItem == null) {
@@ -98,8 +104,7 @@ export class KartItems {
 					this.empty = true;
 
 					if (this.heldItem.canBeHeld()) {
-						//begin holding; ignore release from the same tap that equipped the item
-						this._itemPressDebounce = KartItems.ITEM_PRESS_DEBOUNCE;
+						this._itemJustEquipped = true;
 					} else {
 						this._release(input);
 					}
@@ -113,14 +118,18 @@ export class KartItems {
 		if (this.heldItem != null) {
 			if (this.heldItem.dead) {
 				this.heldItem = null;
-			} else {
-				//t.heldItem.updateHold(kart);
-				if (released && this.heldItem.canBeHeld()) {
-					if (this._itemPressDebounce <= 0 && this._itemReleaseDebounce <= 0) {
+				this._itemJustEquipped = false;
+			} else if (released && this.heldItem.canBeHeld()) {
+				if (this._itemReleaseDebounce <= 0) {
+					const shortPress = this._itemButtonHoldFrames < KartItems.ITEM_PRESS_DEBOUNCE;
+					const onlyHeldShortEquip =
+						shortPress && this._itemJustEquipped && this.heldItem.onlyHeld();
+					if (shortPress && !onlyHeldShortEquip) {
 						this._release(input);
 						this._itemReleaseDebounce = KartItems.ITEM_RELEASE_DEBOUNCE;
 					}
 				}
+				this._itemJustEquipped = false;
 			}
 		}
 		this._lastItemState = input.item;

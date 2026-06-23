@@ -15,6 +15,8 @@ export class RedShellC implements KartItemEntity {
 	sound: nitroAudioSound | null;
 	soundCooldown: number;
 	gravity: vec3;
+
+
 	constructor(item: Item, _scene: Scene, _type: string) {
 		this.item = item;
 		this.minimumMove = 0.17;
@@ -27,6 +29,10 @@ export class RedShellC implements KartItemEntity {
 		this.soundCooldown = 0;
 		this.item.colRadius = 3;
 		this.gravity = [0, -0.17, 0]; //100% confirmed by me messing around with the gravity value in mkds
+	}
+
+	onlyHeld() {
+		return false;
 	}
 
 	release(forward: number) {
