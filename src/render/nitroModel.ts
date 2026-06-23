@@ -47,7 +47,7 @@ export class nitroModel {
 	private _matBuf: nitromodel_matStack[];
 	shadVol!: nitroModel;
 
-	constructor(bmd: nsbmd, btx: nsbtx | null, texMap?: nitroModel_textMapper) {
+	constructor(bmd: nsbmd, btx: nsbtx | null, texMap?: nitroModel_textMapper | null) {
 		this.btx = btx;
 		this.bmd = bmd;
 
@@ -379,18 +379,18 @@ export class nitroModel {
 			console.warn(`WARNING: material ${m} in model could not be assigned a texture.`);
 			/*
     
-            var fC = document.createElement("canvas");
-            fC.width = 2;
-            fC.height = 2;
-            var ctx = fC.getContext("2d")
-            ctx.fillStyle = "white";
-            ctx.fillRect(0,0,2,2);
-            texCanvas.push(fC);
-            var t = nitroModel._loadTex(fC, gl, !mat.repeatX, !mat.repeatY);
-            t.realWidth = 2;
-            t.realHeight = 2;
-            tex.push(t);
-            */
+			var fC = document.createElement("canvas");
+			fC.width = 2;
+			fC.height = 2;
+			var ctx = fC.getContext("2d")
+			ctx.fillStyle = "white";
+			ctx.fillRect(0,0,2,2);
+			texCanvas.push(fC);
+			var t = nitroModel._loadTex(fC, gl, !mat.repeatX, !mat.repeatY);
+			t.realWidth = 2;
+			t.realHeight = 2;
+			tex.push(t);
+			*/
 
 			return;
 		}
@@ -500,8 +500,8 @@ export class nitroModel {
 						const oMat = model.materials.objectData[pmat];
 						this._loadMatTex(oMat, oBtx, oMatReplace);
 						/*
-                        tex[pmat] = cacheTex(btx == null ? bmd.tex : btx, anim.frames[i].tex, anim.frames[i].mat, model.materials.objectData[pmat]);
-                        */
+						tex[pmat] = cacheTex(btx == null ? bmd.tex : btx, anim.frames[i].tex, anim.frames[i].mat, model.materials.objectData[pmat]);
+						*/
 						break;
 					}
 				}

@@ -80,7 +80,7 @@ import { ObjRotaryRoom } from "./entities/platforms/objRotaryRoom";
 import { ObjDecor } from "./entities/objDecor";
 import { ObjGear } from "./entities/rotatingGear";
 import { ObjSoundMaker } from "./entities/soundMaker";
-import { objDatabase } from "./entities/objDatabase";
+import { ObjDatabase } from "./entities/objDatabase";
 
 import { MKDS_COLSOUNDS } from "./engine/collisionSounds";
 import { KartItems } from "./entities/kartItems";
@@ -208,7 +208,7 @@ Object.assign(window, {
 	ObjDecor,
 	ObjGear,
 	ObjSoundMaker,
-	objDatabase,
+	ObjDatabase,
 	MKDS_COLSOUNDS,
 	KartItems,
 	Item,

@@ -1342,7 +1342,7 @@ export class Kart {
 			this.soundProps.refDistance /
 			(this.soundProps.refDistance +
 				this.soundProps.rolloffFactor *
-					(Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance));
+				(Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance));
 	}
 
 	private _gramShmidt(v1: vec3, v2: vec3, v3: vec3) {
@@ -1413,11 +1413,17 @@ export class Kart {
 			vec3.sub(this.vel, this.vel, vec3.scale(vec3.create(), adjN, proj));
 
 			if (colType == MKDS_COLTYPE.KNOCKBACK_DAMAGE && this.damageType == -1) {
-				if (dat.object?.vel) {
-					vec3.add(this.vel, this.vel, dat.object.vel);
+				if (dat.object) {
+					if (dat.object.vel) {
+						vec3.add(this.vel, this.vel, dat.object.vel);
+					}
+					if (dat.object.onKartHit) {
+						dat.object.onKartHit();
+					}
 				}
 				vec3.add(this.vel, this.vel, vec3.scale(vec3.create(), adjN, 1.25));
 				this.damage(MKDSCONST.DAMAGE_FLIP);
+
 			}
 
 			//convert back to angle + speed to keep change to kart vel
