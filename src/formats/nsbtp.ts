@@ -47,16 +47,6 @@ export class nsbtp implements MKJSDataFormator {
 
 	constructor(input: MKJSDataInput) {
 		this.input = input;
-
-		//anim data structure:
-		// {
-		//     objectData: [
-		//         {
-		//             obj: { }
-		//         }
-		//	   ]
-		// }
-
 		this.prop = ["scaleS", "scaleT", "rotation", "translateS", "translateT"];
 
 		if (this.input != null) {

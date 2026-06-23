@@ -11,7 +11,7 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 	colMode: number;
 	colRad: number;
 	private _obji: nkm_section_OBJI;
-	private _res: ProvidedRes;
+	protected _res: ProvidedRes;
 	private _genCol: ObjRoutePlatformCollision;
 	private _scene: Scene;
 	private _movVel: vec3;

@@ -16,7 +16,6 @@ export class GreenShellC implements KartItemEntity {
 	sound: nitroAudioSound | null;
 	soundCooldown: number;
 	gravity: vec3;
-	
 
 	constructor(item: Item, _scene: Scene, _type: string) {
 		this.item = item;

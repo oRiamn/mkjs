@@ -16,7 +16,6 @@ export class RedShellC implements KartItemEntity {
 	soundCooldown: number;
 	gravity: vec3;
 
-
 	constructor(item: Item, _scene: Scene, _type: string) {
 		this.item = item;
 		this.minimumMove = 0.17;

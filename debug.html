@@ -9,6 +9,7 @@
 			var viewer = null; // state of the currently displayed model
 			var archiveCache = {}; // already-opened narcs, indexed by archive path
 			var view2d = null; // state of the currently displayed 2D image (NCGR / NCLR)
+			var animTimeRemainder = 0;
 
 			window.onload = function () {
 				init();
@@ -369,6 +370,9 @@
 						}
 					}
 
+					animTimeRemainder = 0;
+					renderLoop.lastTime = 0;
+
 					viewer = {
 						bmdPath: bmdPath,
 						model: model,
@@ -474,6 +478,8 @@
 				document.getElementById("ncgrSelect").style.display = "none";
 				document.getElementById("nclrSelect").style.display = "none";
 				document.getElementById("palSelect").style.display = "none";
+				document.getElementById("animFps").style.display = "";
+				document.getElementById("animFpsLabel").style.display = "";
 			}
 
 			// Switches to 2D rendering (images): stops 3D rendering.
@@ -489,6 +495,8 @@
 				document.getElementById("bcaSelect").style.display = "none";
 				document.getElementById("btpSelect").style.display = "none";
 				document.getElementById("btaSelect").style.display = "none";
+				document.getElementById("animFps").style.display = "none";
+				document.getElementById("animFpsLabel").style.display = "none";
 				document.getElementById("view2d").style.display = "block";
 			}
 
@@ -1101,18 +1109,34 @@
 				return { center: center, radius: r };
 			}
 
-			function renderLoop() {
+			function renderLoop(now) {
 				requestAnimationFrame(renderLoop);
 				resizeCanvas();
 				gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
-				if (!viewer) return;
+				if (!viewer) {
+					animTimeRemainder = 0;
+					renderLoop.lastTime = 0;
+					return;
+				}
 
 				// Advances the animation (skeleton and/or texture pattern) and updates
 				// the matrix stack. Looping is handled internally by each animation
 				// (nitroAnimator and texPAnim), so we increment freely.
 				if (viewer.anim || viewer.hasTexAnim) {
+					var fps = Math.max(1, parseFloat(document.getElementById("animFps").value) || 60);
+					var frameDuration = 1000 / fps;
+					if (now == null) now = performance.now();
+					if (!renderLoop.lastTime) renderLoop.lastTime = now;
+					animTimeRemainder += now - renderLoop.lastTime;
+					renderLoop.lastTime = now;
+					while (animTimeRemainder >= frameDuration) {
+						viewer.frame++;
+						if (viewer.frame >= 1e7) viewer.frame = 0;
+						animTimeRemainder -= frameDuration;
+					}
+
 					viewer.model.setFrame(viewer.frame);
 					if (viewer.anim) {
 						try {
@@ -1122,8 +1146,9 @@
 							viewer.animMat = null;
 						}
 					}
-					viewer.frame++;
-					if (viewer.frame >= 1e7) viewer.frame = 0;
+				} else {
+					animTimeRemainder = 0;
+					renderLoop.lastTime = now || performance.now();
 				}
 
 				var aspect = gl.viewportWidth / gl.viewportHeight;
@@ -1199,6 +1224,7 @@
 					viewer.animIndex = +e.target.value;
 					viewer.length = Math.max(1, viewer.anim.getLength(viewer.animIndex));
 					viewer.frame = 0;
+					animTimeRemainder = 0;
 				});
 
 				["btxSelect", "bcaSelect", "btpSelect", "btaSelect"].forEach(function (id) {
@@ -1524,6 +1550,18 @@
 				font-family: monospace;
 				font-size: 12px;
 			}
+			#animFps {
+				background: #121212;
+				color: #ddd;
+				border: 1px solid #333;
+				font-family: monospace;
+				font-size: 12px;
+				width: 48px;
+				padding: 2px 4px;
+			}
+			#animFpsLabel {
+				color: #888;
+			}
 			#status {
 				overflow: hidden;
 				text-overflow: ellipsis;
@@ -1546,6 +1584,8 @@
 					<canvas id="canvas2d"></canvas>
 				</div>
 				<div id="topbar">
+					<label id="animFpsLabel" for="animFps">FPS</label>
+					<input id="animFps" type="number" min="1" max="240" step="1" value="60" />
 					<select id="animSelect" style="display: none"></select>
 					<select id="btxSelect" style="display: none"></select>
 					<select id="bcaSelect" style="display: none"></select>
