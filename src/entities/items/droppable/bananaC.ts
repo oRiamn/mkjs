@@ -17,6 +17,11 @@ export class BananaC implements KartItemEntity {
 		this.item.floorBounce = 0;
 	}
 
+	onlyHeld() {
+		return false;
+	}
+
+
 	collideKart(kart: Kart) {
 		this.item.deadTimer = 1;
 		kart.damage(MKDSCONST.DAMAGE_SPIN);

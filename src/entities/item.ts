@@ -154,17 +154,7 @@ export class Item {
 			this._type.substr(this._subtypeInd + 1)
 		);
 
-		//functions
-		this.update = this.update;
-		this.draw = this.draw;
-		this.updateHold = this.updateHold;
-		this.release = this.release;
-		this.canBeHeld = this.canBeHeld;
-		this.canBeDropped = this.canBeDropped;
-		this.isDestructive = this.isDestructive;
-		this.isSolid = this.isSolid;
-		this.finalize = this.finalize;
-		this.collide = this.collide;
+	
 	}
 
 	private updateHold(kart: Kart) {
@@ -231,6 +221,10 @@ export class Item {
 
 	canBeHeld() {
 		return this.controller.canBeHeld || false;
+	}
+
+	onlyHeld() {
+		return this.controller.onlyHeld();
 	}
 
 	private canBeDropped() {

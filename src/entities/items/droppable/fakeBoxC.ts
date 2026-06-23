@@ -11,6 +11,7 @@ export class FakeBoxC implements KartItemEntity {
 	isSolid: boolean;
 	xyScale: number[];
 	dir: number;
+
 	constructor(item: Item, scene: Scene, _type: string) {
 		this.canBeHeld = true;
 		this.scene = scene;
@@ -24,6 +25,11 @@ export class FakeBoxC implements KartItemEntity {
 		this.xyScale = [1, 1];
 		this.dir = 0;
 	}
+
+	onlyHeld() {
+		return false;
+	}
+
 
 	collideKart(kart: Kart) {
 		this.item.deadTimer = 1;
