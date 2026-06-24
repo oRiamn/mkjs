@@ -160,15 +160,12 @@ export class nitroModel {
 
 		let tris = this._modelBuffers[modelind][polyind].strips[0].posArray;
 
-		let tC = tris.length / 3;
-		let off = 0;
 		let min = [Infinity, Infinity, Infinity];
 		let max = [-Infinity, -Infinity, -Infinity];
-		for (let i = 0; i < tC; i++) {
-			let tri = [tris[off++], tris[off++], tris[off++]];
+		for (let i = 0; i < tris.length; i += 3) {
 			for (let j = 0; j < 3; j++) {
-				if (tri[j] < min[j]) min[j] = tri[j];
-				if (tri[j] > max[j]) max[j] = tri[j];
+				if (tris[i + j] < min[j]) min[j] = tris[i + j];
+				if (tris[i + j] > max[j]) max[j] = tris[i + j];
 			}
 		}
 		//create the bounding box
@@ -281,7 +278,6 @@ export class nitroModel {
 				Normal: [-1, 0, 0],
 			},
 		];
-		out.push();
 		return { dat: out, scale: model.head.scale };
 	}
 

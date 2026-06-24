@@ -151,6 +151,8 @@ export class Kart {
 	specialControlHandler!: boolean;
 
 	damageMat: mat4 | null;
+	private _stompSquashY = 1;
+	private _stompSquashXZ = 1;
 	physBasis: KartPhysicsBasis | null;
 	profile: {
 		name: string;
@@ -352,8 +354,11 @@ export class Kart {
 
 		if (this._groundAnim != -1) yscale *= this._hitGroundAnim[this._groundAnim];
 
+		const stompY = this.damageType == MKDSCONST.DAMAGE_STOMP ? this._stompSquashY : 1;
+		const stompXZ = this.damageType == MKDSCONST.DAMAGE_STOMP ? this._stompSquashXZ : 1;
+
 		mat4.translate(mat, mat, [0, -this._params.colRadius, 0]); //main part
-		let kmat = mat4.scale(this._drawMat.kart, mat, [16 * xscale, 16 * yscale, 16]);
+		let kmat = mat4.scale(this._drawMat.kart, mat, [16 * xscale * stompXZ, 16 * yscale * stompY, 16 * stompXZ]);
 
 		//wheels
 		for (let i = 0; i < 4; i++) {
@@ -361,6 +366,9 @@ export class Kart {
 			let wmat = mat4.translate(this._drawMat.wheels[i], mat, [0, 0, 0]);
 
 			if (this._groundAnim != -1) mat4.scale(wmat, wmat, [1, this._hitGroundAnim[this._groundAnim], 1]);
+			if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
+				mat4.scale(wmat, wmat, [stompXZ, stompY, stompXZ]);
+			}
 
 			mat4.translate(wmat, wmat, this._offsets.wheels[i]);
 			mat4.scale(wmat, wmat, [scale, scale, scale]);
@@ -385,7 +393,11 @@ export class Kart {
 
 		if (this._groundAnim != -1) pos[1] *= this._charGroundAnim[this._groundAnim];
 
-		let cmat = mat4.translate(this._drawMat.character, mat, vec3.scale([0, 0, 0], pos, 16));
+		let cmat = mat4.translate(this._drawMat.character, mat, [0, 0, 0]);
+		if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
+			mat4.scale(cmat, cmat, [stompXZ, stompY, stompXZ]);
+		}
+		mat4.translate(cmat, cmat, vec3.scale(vec3.create(), pos, 16));
 		mat4.scale(cmat, cmat, [scale, scale, scale]);
 
 		if (this.animMode == "drive") this.animMat = this.anim.setFrame(0, 0, this.driveAnimF);
@@ -471,13 +483,15 @@ export class Kart {
 		this.lastInput = input;
 		this.items.update(input);
 
-		if (input.turn > 0.3) {
-			if (this.driveAnimF > 0) this.driveAnimF--;
-		} else if (input.turn < -0.3) {
-			if (this.driveAnimF < 28) this.driveAnimF++;
-		} else {
-			if (this.driveAnimF > 14) this.driveAnimF--;
-			else if (this.driveAnimF < 14) this.driveAnimF++;
+		if (this.damageType != MKDSCONST.DAMAGE_STOMP) {
+			if (input.turn > 0.3) {
+				if (this.driveAnimF > 0) this.driveAnimF--;
+			} else if (input.turn < -0.3) {
+				if (this.driveAnimF < 28) this.driveAnimF++;
+			} else {
+				if (this.driveAnimF > 14) this.driveAnimF--;
+				else if (this.driveAnimF < 14) this.driveAnimF++;
+			}
 		}
 
 		//update sounds
@@ -856,6 +870,12 @@ export class Kart {
 				*/
 			}
 
+			if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
+				this.vel = [0, 0, 0];
+				this.speed = 0;
+				this._ylvel = 0;
+			}
+
 			if (this.kartColTimer > 0) this.kartColTimer--;
 			if (this.kartWallTimer > 0) this.kartWallTimer--;
 			if (this.charSoundTimer > 0) this.charSoundTimer--;
@@ -866,7 +886,7 @@ export class Kart {
 			//end kart controls
 
 			//move kart on moving platforms (no collision, will be corrected by next step)
-			if (this._stuckTo != null) {
+			if (this._stuckTo != null && this.damageType != MKDSCONST.DAMAGE_STOMP) {
 				if (this._stuckTo.moveWith != null) {
 					this._stuckTo.moveWith(this);
 				}
@@ -874,7 +894,7 @@ export class Kart {
 			}
 
 			//move kart.
-
+			if (this.damageType != MKDSCONST.DAMAGE_STOMP) {
 			let steps = 0;
 			let remainingT = 1;
 			let baseVel = this.vel;
@@ -914,6 +934,7 @@ export class Kart {
 				}
 			}
 			this.pos = posSeg;
+			}
 		}
 
 		//interpolate visual normal roughly to target
@@ -949,12 +970,11 @@ export class Kart {
 		}
 		//TODO: check invuln state
 		this.specialControlHandler = true;
-		this.playCharacterSound(damageType == 0 ? 1 : 0);
+		this.playCharacterSound(
+			damageType == MKDSCONST.DAMAGE_SPIN || damageType == MKDSCONST.DAMAGE_STOMP ? 1 : 0
+		);
 		this.damageType = damageType;
 		this.ylock = 0;
-
-		this.anim.setAnim(this.charRes.spinA);
-		this.animMode = "spin";
 
 		if (this.drifting) {
 			this._endDrift();
@@ -963,20 +983,36 @@ export class Kart {
 		this.boostNorm = 0;
 
 		switch (damageType) {
-			case 0:
+			case MKDSCONST.DAMAGE_SPIN:
+				this.anim.setAnim(this.charRes.spinA);
+				this.animMode = "spin";
 				this.damageTime = 40;
 				break;
-			case 1:
+			case MKDSCONST.DAMAGE_FLIP:
+				this.anim.setAnim(this.charRes.spinA);
+				this.animMode = "spin";
 				this.damageTime = 80;
 				this.vel[1] += 3;
 				this._ylvel = 3;
 				this.airTime = 4;
 				break;
-			case 2:
+			case MKDSCONST.DAMAGE_EXPLODE:
+				this.anim.setAnim(this.charRes.spinA);
+				this.animMode = "spin";
 				this.damageTime = 105;
 				this.vel[1] += 8;
 				this._ylvel = 8;
 				this.airTime = 4;
+				break;
+			case MKDSCONST.DAMAGE_STOMP:
+				this.anim.setAnim(this.charRes.driveA);
+				this.animMode = "drive";
+				this.driveAnimF = 14;
+				this.damageTime = 3 * 60; // 3 s @ 60 fps
+				this.vel = [0, 0, 0];
+				this.speed = 0;
+				this._ylvel = 0;
+				this.ylock = 0;
 				break;
 		}
 	}
@@ -988,27 +1024,60 @@ export class Kart {
 			this.specialControlHandler = false;
 			this.damageType = -1;
 			this.damageMat = null;
+			this._stompSquashY = 1;
+			this._stompSquashXZ = 1;
 		}
-		vec3.scale(this.vel, this.vel, 0.98);
-		this.speed *= 0.98;
+		if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
+			this.vel = [0, 0, 0];
+			this.speed = 0;
+			this._ylvel = 0;
+		} else {
+			vec3.scale(this.vel, this.vel, 0.98);
+			this.speed *= 0.98;
+		}
 
-		let total = 40;
-		switch (this.damageType) {
-			case 1:
-				total = 80;
-				break;
-			case 2:
-				total = 105;
-				break;
-		}
-		let anim = 1 - this.damageTime / total;
+		const total = this._damageDuration(this.damageType);
+		const anim = 1 - this.damageTime / total;
 
 		this.damageMat = mat4.create();
-		let flip = this.damageType % 2 == 1 ? 1 : -1;
-		let animOff = Math.min(1, anim * 1.75);
-		mat4.rotateX(this.damageMat, this.damageMat, Math.PI * 2 * animOff * this.damageType * flip);
-		if (this.damageType == 0) mat4.rotateY(this.damageMat, this.damageMat, Math.PI * -2 * anim);
-		else mat4.rotateY(this.damageMat, this.damageMat, (Math.PI / 12) * Math.sin(animOff * Math.PI));
+		if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
+			this._applyStompDamageMat(anim);
+		} else {
+			const flip = this.damageType % 2 == 1 ? 1 : -1;
+			const animOff = Math.min(1, anim * 1.75);
+			mat4.rotateX(this.damageMat, this.damageMat, Math.PI * 2 * animOff * this.damageType * flip);
+			if (this.damageType == MKDSCONST.DAMAGE_SPIN) {
+				mat4.rotateY(this.damageMat, this.damageMat, Math.PI * -2 * anim);
+			} else {
+				mat4.rotateY(this.damageMat, this.damageMat, (Math.PI / 12) * Math.sin(animOff * Math.PI));
+			}
+		}
+	}
+
+	private _damageDuration(damageType: number): number {
+		switch (damageType) {
+			case MKDSCONST.DAMAGE_FLIP:
+				return 80;
+			case MKDSCONST.DAMAGE_EXPLODE:
+				return 105;
+			case MKDSCONST.DAMAGE_STOMP:
+				return 3 * 60;
+			default:
+				return 40;
+		}
+	}
+
+	/** Thwomp-style squash factors; applied in _recalcMat after the ground draw offset. */
+	private _applyStompDamageMat(anim: number) {
+		const minY = 0.35;
+		const maxXZ = 1.3;
+		let squash: number;
+		if (anim < 0.08) squash = anim / 0.08;
+		else if (anim < 0.65) squash = 1;
+		else squash = 1 - (anim - 0.65) / 0.35;
+
+		this._stompSquashY = 1 - squash * (1 - minY);
+		this._stompSquashXZ = 1 + squash * (maxXZ - 1);
 	}
 
 	private _triggerCannon(id: number) {
@@ -1394,7 +1463,12 @@ export class Kart {
 			//wall
 			//sliding plane, except normal is transformed to be entirely on the xz plane (cannot ride on top of wall, treated as vertical)
 			let xz = Math.sqrt(an[0] * an[0] + an[2] * an[2]);
-			let adjN: vec3 = [an[0] / xz, 0, an[2] / xz];
+			let adjN: vec3;
+			if (xz > 0.001) {
+				adjN = [an[0] / xz, 0, an[2] / xz];
+			} else {
+				adjN = [0, 0, 0];
+			}
 			let proj = vec3.dot(this.vel, adjN);
 
 			if (proj < -1) {
@@ -1421,8 +1495,16 @@ export class Kart {
 						dat.object.onKartHit();
 					}
 				}
-				vec3.add(this.vel, this.vel, vec3.scale(vec3.create(), adjN, 1.25));
-				this.damage(MKDSCONST.DAMAGE_FLIP);
+				if (xz > 0.001) {
+					vec3.add(this.vel, this.vel, vec3.scale(vec3.create(), adjN, 1.25));
+				} else if (an[1] > 0) {
+					this.vel[1] = Math.min(this.vel[1], 0);
+				}
+				const knockbackDamage =
+					dat.object != null && "knockbackDamage" in dat.object
+						? (dat.object as lsc_taget & { knockbackDamage: number }).knockbackDamage
+						: MKDSCONST.DAMAGE_FLIP;
+				this.damage(knockbackDamage);
 
 			}
 
