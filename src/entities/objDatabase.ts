@@ -29,6 +29,7 @@ import { DonkyTree2 } from "./objDecor/DonkyTree2";
 import { Dossun } from "./objDecor/Dossun";
 import { EarthenPipe } from "./objDecor/EarthenPipe";
 import { FirePlant } from "./objDecor/FirePlant";
+import { Fireballs } from "./objDecor/Fireballs";
 import { Flipper } from "./objDecor/Flipper";
 import { GardenTree } from "./objDecor/GardenTree";
 import { IronBall } from "./objDecor/IronBall";
@@ -55,6 +56,7 @@ import { OsaTree } from "./objDecor/OsaTree";
 import { Pakkun } from "./objDecor/Pakkun";
 import { Picture1 } from "./objDecor/Picture1";
 import { Picture2 } from "./objDecor/Picture2";
+import { Psea } from "./objDecor/Psea";
 import { Puddle } from "./objDecor/Puddle";
 import { Pukupuku } from "./objDecor/Pukupuku";
 import { Pylon01 } from "./objDecor/Pylon01";
@@ -70,6 +72,8 @@ import { TownMonte } from "./objDecor/TownMonte";
 import { TownTree } from "./objDecor/TownTree";
 import { Wanwan } from "./objDecor/Wanwan";
 import { WanwanNoBase } from "./objDecor/WanwanNoBase";
+import { WaterEffect } from "./objDecor/WaterEffect";
+import { Woodbox } from "./objDecor/Woodbox";
 import { ObjInvisible } from "./objInvisible";
 import { ObjBridge } from "./platforms/objBridge";
 import { ObjKoopaBall } from "./platforms/objKoopaBall";
@@ -86,7 +90,7 @@ import { ObjWater } from "./water";
 
 export const ObjDatabase = new Map([
 	[0x0001, ObjWater],
-	// [0x0002, Psea],
+	[0x0002, Psea],
 	[0x0003, ObjWater],
 	[0x0005, ObjSoundMaker],
 	[0x0006, ObjWater],
@@ -95,10 +99,12 @@ export const ObjDatabase = new Map([
 	[0x000a, ObjSoundMaker],
 	[0x000c, ObjWater],
 	[0x000e, ObjSoundMaker],
+	[0x000f, WaterEffect],
 	[0x0065, ItemBox],
 	[0x0066, ObjInvisible],
 	[0x0069, ObjInvisible],
 	[0x006b, ObjInvisible],
+	[0x0067, Woodbox],
 	[0x00c9, ObjMovingItemBox],
 	[0x00ca, ObjRoutePlatform],
 	[0x00cb, ObjGear],
@@ -170,6 +176,7 @@ export const ObjDatabase = new Map([
 	[0x01aa, FirePlant],
 	[0x01ac, Crab],
 	[0x01ad, Sun],
+	[0x01af, Fireballs],
 	[0x01b0, IronBall],
 	[0x01b1, Rock2],
 	[0x01b2, Sanbo],
