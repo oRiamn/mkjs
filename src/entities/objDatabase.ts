@@ -56,7 +56,6 @@ import { OsaTree } from "./objDecor/OsaTree";
 import { Pakkun } from "./objDecor/Pakkun";
 import { Picture1 } from "./objDecor/Picture1";
 import { Picture2 } from "./objDecor/Picture2";
-import { Psea } from "./objDecor/Psea";
 import { Puddle } from "./objDecor/Puddle";
 import { Pukupuku } from "./objDecor/Pukupuku";
 import { Pylon01 } from "./objDecor/Pylon01";
@@ -90,7 +89,7 @@ import { ObjWater } from "./water";
 
 export const ObjDatabase = new Map([
 	[0x0001, ObjWater],
-	[0x0002, Psea],
+	// [0x0002, Psea],
 	[0x0003, ObjWater],
 	[0x0005, ObjSoundMaker],
 	[0x0006, ObjWater],
