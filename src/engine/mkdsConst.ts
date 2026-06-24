@@ -20,6 +20,7 @@ export type MKCONST_course_obj = {
 const DAMAGE_SPIN = 0;
 const DAMAGE_FLIP = 1;
 const DAMAGE_EXPLODE = 2;
+const DAMAGE_STOMP = 3;
 
 const COURSEDIR = "/data/Course/";
 
@@ -108,6 +109,7 @@ export const MKDSCONST = {
 	DAMAGE_SPIN,
 	DAMAGE_FLIP,
 	DAMAGE_EXPLODE,
+	DAMAGE_STOMP,
 	COURSEDIR,
 	COURSES,
 	CURRENTCOURSE: readCourse(),

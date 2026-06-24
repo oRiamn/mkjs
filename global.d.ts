@@ -110,6 +110,7 @@ declare global {
 		pos: vec3;
 		colRad: number;
 		vel?: vec3;
+		knockbackDamage?: number;
 		getCollision(): lsc_collision_model;
 		moveWith?(obj: Kart | Item): void;
 		onKartHit?(): void;
