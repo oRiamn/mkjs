@@ -7,6 +7,8 @@
 // includes: gl-matrix.js (glMatrix 2.0) (maybe)
 //
 
+import { MKSUtils } from "./utils";
+
 export type kartphysicalparam_kart = {
 	colRadius: number;
 	unknown1: number;
@@ -42,6 +44,7 @@ export class kartphysicalparam implements MKJSDataFormator {
 	}
 
 	load(input: MKJSDataInput) {
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let off = 0;
 		this.karts = [];

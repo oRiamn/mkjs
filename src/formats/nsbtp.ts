@@ -63,6 +63,7 @@ export class nsbtp implements MKJSDataFormator {
 	}
 
 	load(input: MKJSDataInput) {
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let header = null;
 		let offset = 0;

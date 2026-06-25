@@ -57,6 +57,7 @@ export class nitroRender {
 	private static _texWidth: number;
 	private static _texHeight: number;
 	private static _modelBuffer: nitroRender_modelBuffer;
+	private static _vtxScale: [number, number, number];
 
 	private static _instructions: {
 		[x: number]: (view: DataView, off: number) => void;
@@ -126,6 +127,14 @@ export class nitroRender {
 		nitroRender._instructions[0x14] = function (view: DataView, off: number) {
 			//restore to matrix, used constantly for bone transforms
 			nitroRender._curMat = view.getUint8(off);
+			nitroRender._vtxScale = [1, 1, 1];
+		};
+
+		nitroRender._instructions[0x1b] = function (view: DataView, off: number) {
+			//MTX_SCALE - multiply current matrix by scale matrix (num 1.19.12)
+			nitroRender._vtxScale[0] *= nitroRender._fix32(view.getUint32(off, true));
+			nitroRender._vtxScale[1] *= nitroRender._fix32(view.getUint32(off + 4, true));
+			nitroRender._vtxScale[2] *= nitroRender._fix32(view.getUint32(off + 8, true));
 		};
 
 		nitroRender._instructions[0x20] = function (view: DataView, off: number) {
@@ -362,6 +371,7 @@ export class nitroRender {
 		nitroRender._vecTx = [];
 		nitroRender._vecCol = [];
 		nitroRender._vecMat = [];
+		nitroRender._vtxScale = [1, 1, 1];
 
 		while (off < disp.byteLength) {
 			let ioff = off;
@@ -499,11 +509,26 @@ export class nitroRender {
 
 		nitroRender._vecNum++;
 
-		nitroRender._vecPos = nitroRender._vecPos.concat(nitroRender._cVec);
+		const s = nitroRender._vtxScale;
+		nitroRender._vecPos = nitroRender._vecPos.concat([
+			nitroRender._cVec[0] * s[0],
+			nitroRender._cVec[1] * s[1],
+			nitroRender._cVec[2] * s[2],
+		]);
 		nitroRender._vecTx = nitroRender._vecTx.concat(nitroRender._texCoord);
 		nitroRender._vecCol = nitroRender._vecCol.concat(nitroRender._color);
-		nitroRender._vecNorm = nitroRender._vecNorm.concat(nitroRender._norm);
+		nitroRender._vecNorm = nitroRender._vecNorm.concat([
+			nitroRender._norm[0] * s[0],
+			nitroRender._norm[1] * s[1],
+			nitroRender._norm[2] * s[2],
+		]);
 		nitroRender._vecMat.push(nitroRender._curMat);
+	}
+
+	private static _fix32(val: number) {
+		val >>>= 0;
+		if (val & 0x80000000) val -= 0x100000000;
+		return val / 4096;
 	}
 
 	private static _tenBitSign(val: number) {

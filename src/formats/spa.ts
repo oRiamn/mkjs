@@ -154,6 +154,7 @@ export class spa implements MKJSDataFormator {
 	}
 
 	load(input: MKJSDataInput): void {
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let offset = 0;
 

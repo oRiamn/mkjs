@@ -121,6 +121,7 @@ export class nsbmd implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		this.hasBillboards = false;
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let header = null;
 		let offset = 0;

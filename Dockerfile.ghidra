@@ -1,0 +1,25 @@
+# Ghidra headless analysis for MKDS ARM9 (community image blacktop/ghidra:11).
+#
+# Build (optional tag):
+#   docker build -f Dockerfile.ghidra -t mkjs-ghidra .
+#
+# Analyze extracted arm9.bin:
+#   ./scripts/analyze-arm9-ghidra.sh test/nds-extract/out
+#
+# Or run directly:
+#   docker run --rm --memory 4g -e MAXMEM=3G \
+#     -v "$PWD/test/nds-extract/out:/work:ro" \
+#     -v "$PWD/test/ghidra-project:/project" \
+#     -v "$PWD/scripts/ghidra:/scripts:ro" \
+#     mkjs-ghidra \
+#     /project mkds_arm9 -import /work/arm9.bin -overwrite -deleteProject \
+#     -processor "ARM:LE:32:v5t" -scriptPath /scripts \
+#     -postScript FindMkdsObjectIds.java
+
+FROM blacktop/ghidra:11
+
+COPY scripts/ghidra /scripts
+
+WORKDIR /work
+
+ENTRYPOINT ["support/analyzeHeadless"]

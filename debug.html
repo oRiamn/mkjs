@@ -180,9 +180,11 @@
 												? " cell"
 												: l.endsWith(".nsbtx")
 													? " btx"
-													: l.endsWith(".bin")
-														? " bin"
-														: "";
+													: l.endsWith(".nkm")
+														? " nkm"
+														: l.endsWith(".bin")
+															? " bin"
+															: "";
 		}
 
 		function renderFilteredList() {
@@ -231,6 +233,7 @@
 				else if (lp.endsWith(".nscr")) loadNSCR(path, t);
 				else if (lp.endsWith(".ncer")) loadNCER(path, t);
 				else if (lp.endsWith(".nsbtx")) loadNSBTX(path, t);
+				else if (lp.endsWith(".nkm")) loadNKM(path, t);
 				else if (lp.endsWith(".bin")) loadBIN(path, t);
 			});
 		}
@@ -682,6 +685,93 @@
 				lines.push("", "Text content:", text);
 			}
 			return lines.join("\n");
+		}
+
+		function objIdHex(id) {
+			var h = id.toString(16);
+			while (h.length < 4) h = "0" + h;
+			return "0x" + h;
+		}
+
+		function objDatabaseClassName(id) {
+			if (typeof ObjDatabase === "undefined" || !ObjDatabase.has(id)) return null;
+			var cls = ObjDatabase.get(id);
+			return cls && cls.name ? cls.name : null;
+		}
+
+		function formatNkmObjiSummary(map) {
+			var objs = map.sections.OBJI ? map.sections.OBJI.entries : [];
+			var lines = ["OBJI section: " + objs.length + " object(s)", ""];
+			for (var i = 0; i < objs.length; i++) {
+				var o = objs[i];
+				var cls = objDatabaseClassName(o.ID);
+				var label = cls != null ? cls : "(not in ObjDatabase)";
+				lines.push(
+					"#" +
+					i +
+					"  ID=" +
+					objIdHex(o.ID) +
+					"  " +
+					label +
+					"  route=" +
+					o.routeID +
+					"  pos=[" +
+					o.pos[0].toFixed(1) +
+					", " +
+					o.pos[1].toFixed(1) +
+					", " +
+					o.pos[2].toFixed(1) +
+					"]" +
+					"  angle=[" +
+					o.angle[0].toFixed(1) +
+					", " +
+					o.angle[1].toFixed(1) +
+					", " +
+					o.angle[2].toFixed(1) +
+					"]" +
+					"  scale=[" +
+					o.scale[0].toFixed(2) +
+					", " +
+					o.scale[1].toFixed(2) +
+					", " +
+					o.scale[2].toFixed(2) +
+					"]" +
+					"  s1=" +
+					o.setting1 +
+					" s2=" +
+					o.setting2 +
+					" s3=" +
+					o.setting3 +
+					" s4=" +
+					o.setting4
+				);
+			}
+			return lines.join("\n");
+		}
+
+		function loadNKM(path, el) {
+			try {
+				var buf = readROMFile(path);
+				var map = new nkm(buf);
+				showTextView();
+				var magic = readMagic4(new DataView(buf));
+				document.getElementById("binSummary").textContent =
+					"Size: " +
+					buf.byteLength +
+					" bytes\nMagic: " +
+					JSON.stringify(magic.text) +
+					" (" +
+					magic.hex +
+					")\n\n" +
+					formatNkmObjiSummary(map);
+				document.getElementById("binHex").textContent = "";
+				setSel(el);
+				var n = map.sections.OBJI ? map.sections.OBJI.entries.length : 0;
+				setStatus(path + "  (" + n + " OBJI)");
+			} catch (err) {
+				console.error(err);
+				setStatus("Load error: " + (err && err.message ? err.message : err));
+			}
 		}
 
 		function loadBIN(path, el) {
@@ -1705,6 +1795,15 @@
 
 		#list .f.bin:hover {
 			background: #3a3a1d;
+		}
+
+		#list .f.nkm {
+			color: #cf9fdf;
+			cursor: pointer;
+		}
+
+		#list .f.nkm:hover {
+			background: #3a1d3a;
 		}
 
 		#list .f.cell {

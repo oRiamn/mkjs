@@ -618,6 +618,7 @@ export class nkm implements MKJSDataFormator {
 	}
 
 	load(buffer: MKJSDataInput) {
+		buffer = MKSUtils.prepareInput(buffer);
 		let view = new DataView(buffer);
 		this.stamp =
 			MKSUtils.asciireadChar(view, 0x0) +

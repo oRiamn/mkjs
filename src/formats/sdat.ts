@@ -255,6 +255,7 @@ export class sdat implements MKJSDataFormator {
 	}
 
 	load(input: MKJSDataInput) {
+		input = MKSUtils.prepareInput(input);
 		this.buffer = input;
 		let view = new DataView(input);
 		let offset = 0;

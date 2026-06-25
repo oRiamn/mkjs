@@ -17,6 +17,8 @@ type kcl_cube =
 			items: kcl_cube[];
 	  };
 
+import { MKSUtils } from "./utils";
+
 export type kcl_plane = {
 	Len: number;
 	Vertices: [vec3, vec3, vec3];
@@ -87,6 +89,7 @@ export class kcl {
 		if (mkwii == null) mkwii = false;
 		this.end = !mkwii;
 		this.mkwiiMode = mkwii;
+		buffer = MKSUtils.prepareInput(buffer);
 		let time = Date.now();
 		//loads kcl from an array buffer.
 		let view = new DataView(buffer);

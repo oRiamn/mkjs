@@ -84,6 +84,7 @@ export class nftr implements MKJSDataFormator {
 	}
 
 	load(input: MKJSDataInput): void {
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let offset = 0;
 		let tex;
