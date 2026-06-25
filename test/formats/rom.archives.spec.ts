@@ -3,6 +3,7 @@ import { narc } from "../../src/formats/narc";
 import { lz77 } from "../../src/formats/lz77";
 import {
 	BEACH_COURSE,
+	ROM_ALL_COURSES,
 	ROM_COURSES,
 	ROM_TOP_CARCS,
 	getRomFile,
@@ -49,6 +50,21 @@ describe.skipIf(!romExists)("rom archives", () => {
 					expect(file!.byteLength).toBeGreaterThan(0);
 				}
 			}
+		}
+	});
+
+	it("should load every extra course archive", () => {
+		for (const courseName of ROM_ALL_COURSES) {
+			if (ROM_COURSES.includes(courseName as (typeof ROM_COURSES)[number])) {
+				continue;
+			}
+
+			const course = loadLz77Narc(`/data/Course/${courseName}.carc`);
+			const textures = loadLz77Narc(`/data/Course/${courseName}Tex.carc`);
+
+			expect(course.tryGetFile("/course_map.nkm")).not.toBeNull();
+			expect(course.tryGetFile("/course_collision.kcl")).not.toBeNull();
+			expect(textures.list().length).toBeGreaterThan(0);
 		}
 	});
 

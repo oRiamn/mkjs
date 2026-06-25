@@ -97,6 +97,33 @@ export const ROM_COURSES = [
 	"mini_dokan_gc",
 ] as const;
 
+/** Unused, test or mission course packs present in the retail ROM filesystem. */
+export const ROM_EXTRA_COURSES = [
+	"donkey_course",
+	"nokonoko_course",
+	"wario_course",
+	"luigi_course",
+	"dokan_course",
+	"old_mario_gc",
+	"mini_block_course",
+	"Award",
+	"MR_stage1",
+	"MR_stage2",
+	"MR_stage3",
+	"MR_stage4",
+	"StaffRoll",
+	"StaffRollTrue",
+	"test1_course",
+	"test_circle",
+] as const;
+
+/** Every race/battle/mission course CARC under /data/Course (excluding Tex/D variants). */
+export const ROM_ALL_COURSES = [...ROM_COURSES, ...ROM_EXTRA_COURSES] as const;
+
+export type RomCourseName = (typeof ROM_ALL_COURSES)[number];
+export type RomShippedCourseName = (typeof ROM_COURSES)[number];
+export type RomExtraCourseName = (typeof ROM_EXTRA_COURSES)[number];
+
 /** Node readFileSync returns a Buffer; format parsers expect an ArrayBuffer. */
 export function readRom(path = ROM_PATH): ArrayBuffer {
 	const buffer = readFileSync(path);
@@ -157,4 +184,8 @@ export function loadKartModelMainGroup(): narcGroup {
 /** Expected decompressed size encoded in the LZ77 header (bytes 1-3). */
 export function readLz77DecompressedSize(buffer: ArrayBuffer): number {
 	return new DataView(buffer).getUint32(0, true) >> 8;
+}
+
+export function listRomCourseCarcs(): string[] {
+	return listRomCarcs().filter((path) => path.startsWith("/data/Course/") && !path.endsWith("Tex.carc") && !path.endsWith("D.carc"));
 }

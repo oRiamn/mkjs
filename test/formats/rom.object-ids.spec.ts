@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { nkm } from "../../src/formats/nkm";
 import { objectIdReportExists, loadObjectIdReport } from "../helpers/extract";
 import { loadLz77Narc, romExists } from "../helpers/rom";
-import { ROM_COURSES } from "../helpers/romCourse";
+import { ROM_ALL_COURSES } from "../helpers/romCourse";
 
 const needsReport = romExists && objectIdReportExists;
 
@@ -12,8 +12,8 @@ describe.skipIf(!needsReport)("rom object IDs", () => {
 
 		expect(report.grpconfEntryCount).toBe(133);
 		expect(report.objiUniqueIds).toBe(96);
-		expect(report.unmappedInObjDatabase).toEqual(["0x0002"]);
-		expect(report.objects.filter((o) => o.inObjDatabase).length).toBe(95);
+		expect(report.unmappedInObjDatabase).toEqual([]);
+		expect(report.objects.filter((o) => o.inObjDatabase).length).toBe(96);
 	});
 
 	it("should list MapObj assets that exist in Main or MainRace archives", () => {
@@ -28,11 +28,11 @@ describe.skipIf(!needsReport)("rom object IDs", () => {
 		}
 	});
 
-	it("should agree with the NKM parser on OBJI ids for every shipped course", () => {
+	it("should agree with the NKM parser on OBJI ids for every course pack", () => {
 		const report = loadObjectIdReport();
 		const reportIds = new Set(report.objects.map((o) => o.id));
 
-		for (const courseName of ROM_COURSES) {
+		for (const courseName of ROM_ALL_COURSES) {
 			const track = new nkm(loadLz77Narc(`/data/Course/${courseName}.carc`).getFile("/course_map.nkm")!);
 			for (const obj of track.sections.OBJI.entries) {
 				expect(reportIds.has(obj.ID)).toBe(true);

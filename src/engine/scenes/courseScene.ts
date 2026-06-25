@@ -127,7 +127,9 @@ export class courseScene implements Scene {
 		this.finishers = [];
 
 		//load main course
-		this.courseTx = new nsbtx(this.texNarc.getFile("/course_model.nsbtx")!, false);
+		const courseMdl = new nsbmd(this.mainNarc.getFile("/course_model.nsbmd")!);
+		const courseTxFile = this.texNarc.tryGetFile("/course_model.nsbtx");
+		this.courseTx = courseTxFile != null ? new nsbtx(courseTxFile, false) : courseMdl.tex;
 
 		const taFile = this.mainNarc.tryGetFile("/course_model.nsbta");
 		let courseTa: nsbta | undefined;
@@ -136,22 +138,25 @@ export class courseScene implements Scene {
 		let courseTp: nsbtp | undefined;
 		if (tpFile != null) courseTp = new nsbtp(tpFile);
 
-		const courseMdl = new nsbmd(this.mainNarc.getFile("/course_model.nsbmd")!);
-
 		const course = new nitroModel(courseMdl, this.courseTx);
 		if (taFile != null) course.loadTexAnim(courseTa!);
 		if (tpFile != null) course.loadTexPAnim(courseTp!);
 
 		//load sky
-		const skyTx = new nsbtx(this.texNarc.getFile("/course_model_V.nsbtx")!, false);
-		const staFile = this.mainNarc.tryGetFile("/course_model_V.nsbta");
-		let skyTa: nsbta | undefined;
-		if (staFile != null) skyTa = new nsbta(staFile);
-		// console.log("--------- LOADING SKY ---------")
-		const skyMdl = new nsbmd(this.mainNarc.getFile("/course_model_V.nsbmd")!);
-
-		const sky = new nitroModel(skyMdl, skyTx);
-		if (staFile != null) sky.loadTexAnim(skyTa!);
+		const skyMdlFile = this.mainNarc.tryGetFile("/course_model_V.nsbmd");
+		let sky: nitroModel;
+		if (skyMdlFile != null) {
+			const skyMdl = new nsbmd(skyMdlFile);
+			const skyTxFile = this.texNarc.tryGetFile("/course_model_V.nsbtx");
+			const skyTx = skyTxFile != null ? new nsbtx(skyTxFile, false) : skyMdl.tex ?? this.courseTx;
+			const staFile = this.mainNarc.tryGetFile("/course_model_V.nsbta");
+			let skyTa: nsbta | undefined;
+			if (staFile != null) skyTa = new nsbta(staFile);
+			sky = new nitroModel(skyMdl, skyTx);
+			if (staFile != null) sky.loadTexAnim(skyTa!);
+		} else {
+			sky = course;
+		}
 
 		const ckcl = new kcl(this.mainNarc.getFile("/course_collision.kcl")!, false);
 		const cnkm = new nkm(this.mainNarc.getFile("/course_map.nkm")!);

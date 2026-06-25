@@ -362,6 +362,33 @@ export class nitroModel {
 		}
 	}
 
+	private _assignPlaceholderTex(mat: nsbmd_MatInfos) {
+		const fC = document.createElement("canvas");
+		fC.width = 2;
+		fC.height = 2;
+		const ctx = fC.getContext("2d")!;
+		ctx.fillStyle = "white";
+		ctx.fillRect(0, 0, 2, 2);
+		this._texCanvas.push(fC);
+		const t = nitroModel._loadTex(fC, gl, !mat.repeatX, !mat.repeatY);
+		t.realWidth = 2;
+		t.realHeight = 2;
+		this._tex[mat.texInd] = t;
+	}
+
+	private _resolvePaletteIndex(btx: nsbtx, texIndex: number, palName: string | null | undefined): number | null {
+		if (palName != null) {
+			return btx.paletteInfoNameToIndex[`$${palName}`] ?? 0;
+		}
+
+		const texInfo = btx.textureInfo.objectData[texIndex];
+		if (texInfo?.format === 7) {
+			return 0;
+		}
+
+		return btx.paletteInfo.numObjects > 0 ? 0 : null;
+	}
+
 	private _loadMatTex(mat: nsbmd_MatInfos, btx: nsbtx, matReplace?: nsbtp_animadata_data_frame) {
 		let m: nsbmd_MatInfos | nsbtp_animadata_data_frame = mat;
 		if (matReplace) {
@@ -370,31 +397,19 @@ export class nitroModel {
 		let texI = m.texName;
 		let palI = m.palName;
 
-		if (texI == null || palI == null) {
-			// debugger;
-			console.warn(`WARNING: material ${m} in model could not be assigned a texture.`);
-			/*
-    
-			var fC = document.createElement("canvas");
-			fC.width = 2;
-			fC.height = 2;
-			var ctx = fC.getContext("2d")
-			ctx.fillStyle = "white";
-			ctx.fillRect(0,0,2,2);
-			texCanvas.push(fC);
-			var t = nitroModel._loadTex(fC, gl, !mat.repeatX, !mat.repeatY);
-			t.realWidth = 2;
-			t.realHeight = 2;
-			tex.push(t);
-			*/
-
+		if (texI == null) {
+			console.warn(`WARNING: material in model could not be assigned a texture (missing tex name).`);
+			this._assignPlaceholderTex(mat);
 			return;
 		}
 
-		let truetex = btx.textureInfoNameToIndex[`$${texI}`] || 0;
-		let truepal = btx.paletteInfoNameToIndex[`$${palI}`] || 0;
-		let cacheID = `${truetex}:${truepal}`;
-		let cached = btx.cache[cacheID];
+		let truetex = btx.textureInfoNameToIndex[`$${texI}`] ?? 0;
+		let truepal = this._resolvePaletteIndex(btx, truetex, palI);
+		if (truepal == null) {
+			console.warn(`WARNING: material ${texI} in model could not be assigned a palette.`);
+			this._assignPlaceholderTex(mat);
+			return;
+		}
 
 		this._tex[mat.texInd] = this._cacheTex(btx, truetex, truepal, mat);
 	}

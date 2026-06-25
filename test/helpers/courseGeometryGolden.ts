@@ -1,8 +1,8 @@
-import type { RomCourseName } from "./romCourse";
+import type { RomShippedCourseName } from "./rom";
 
 /** Stable course model geometry counts from MKDS (regression guard). */
 export const COURSE_GEOMETRY_GOLDEN: Record<
-	RomCourseName,
+	RomShippedCourseName,
 	{ tris: number; quads: number; verts: number; models: number }
 > = {
 	cross_course: { tris: 628, quads: 390, verts: 2446, models: 1 },

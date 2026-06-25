@@ -73,7 +73,10 @@ import { Wanwan } from "./objDecor/Wanwan";
 import { WanwanNoBase } from "./objDecor/WanwanNoBase";
 import { WaterEffect } from "./objDecor/WaterEffect";
 import { Woodbox } from "./objDecor/Woodbox";
-import { ObjInvisible } from "./objInvisible";
+import { ObjBattleBarrier, ObjWideBarrier } from "./objBattleBarrier";
+import { ObjPost } from "./objPost";
+import { ObjRoulette } from "./platforms/objRoulette";
+import { ObjPsea } from "./psea";
 import { ObjBridge } from "./platforms/objBridge";
 import { ObjKoopaBall } from "./platforms/objKoopaBall";
 import { ObjMovingItemBox } from "./platforms/objMovingItemBox";
@@ -88,7 +91,7 @@ import { ObjWater } from "./water";
 
 export const ObjDatabase = new Map([
 	[0x0001, ObjWater],
-	// [0x0002, Psea],
+	[0x0002, ObjPsea],
 	[0x0003, ObjWater],
 	[0x0005, ObjSoundMaker],
 	[0x0006, ObjWater],
@@ -99,9 +102,9 @@ export const ObjDatabase = new Map([
 	[0x000e, ObjSoundMaker],
 	[0x000f, WaterEffect],
 	[0x0065, ItemBox],
-	[0x0066, ObjInvisible],
-	[0x0069, ObjInvisible],
-	[0x006b, ObjInvisible],
+	[0x0066, ObjPost],
+	[0x0069, ObjBattleBarrier],
+	[0x006b, ObjWideBarrier],
 	[0x0067, Woodbox],
 	[0x00c9, ObjMovingItemBox],
 	[0x00ca, ObjRoutePlatform],
@@ -111,7 +114,7 @@ export const ObjDatabase = new Map([
 	[0x00cf, ObjKoopaBall],
 	[0x00d0, ObjRotaryRoom],
 	[0x00d1, ObjGear], //rotary bridge
-	//[0x00d2, ObjSkyship],
+	[0x00d2, ObjRoulette],
 	[0x012d, BeachTree],
 	[0x012e, BeachTree],
 	[0x012f, EarthenPipe],
