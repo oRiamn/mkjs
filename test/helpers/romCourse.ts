@@ -3,10 +3,26 @@ import type { nkm } from "../../src/formats/nkm";
 import type { narc } from "../../src/formats/narc";
 import { kcl as KclParser } from "../../src/formats/kcl";
 import { nkm as NkmParser } from "../../src/formats/nkm";
-import { ROM_COURSES, loadCourseCarc } from "./rom";
+import { ROM_ALL_COURSES, ROM_COURSES, ROM_EXTRA_COURSES, loadCourseCarc, type RomCourseName } from "./rom";
 
-export { ROM_COURSES };
-export type RomCourseName = (typeof ROM_COURSES)[number];
+export { ROM_ALL_COURSES, ROM_COURSES, ROM_EXTRA_COURSES };
+export type { RomCourseName };
+
+export function isBattleCourse(courseName: string): boolean {
+	return courseName.startsWith("mini_");
+}
+
+export function isMissionStage(courseName: string): boolean {
+	return courseName.startsWith("MR_stage");
+}
+
+export function isUnusedDevCourse(courseName: string): boolean {
+	return (
+		courseName.endsWith("_course") &&
+		!ROM_COURSES.includes(courseName as (typeof ROM_COURSES)[number]) &&
+		ROM_EXTRA_COURSES.includes(courseName as (typeof ROM_EXTRA_COURSES)[number])
+	);
+}
 
 export type LoadedCourse = {
 	archive: narc;
@@ -46,10 +62,6 @@ export const ROM_KART_CHARACTERS = [
 	["robo", "RB"],
 	["heyho", "HH"],
 ] as const;
-
-export function isBattleCourse(courseName: string): boolean {
-	return courseName.startsWith("mini_");
-}
 
 export function loadCourseBundle(courseName: RomCourseName = "beach_course"): LoadedCourse {
 	const archive = loadCourseCarc(courseName);

@@ -72,6 +72,24 @@ const COURSES: MKCONST_course_obj[] = [
 	{ name: "mini_stage4", music: 43, battle: true },
 	{ name: "mini_block_64", music: 43, battle: true },
 	{ name: "mini_dokan_gc", music: 43, battle: true },
+
+	// Unused or test course packs still present in the retail ROM.
+	// { name: "donkey_course", music: 19 },
+	{ name: "nokonoko_course", music: 15 },
+	{ name: "wario_course", music: 19 },
+	// { name: "luigi_course", music: 19 },
+	{ name: "dokan_course", music: 74 },
+	{ name: "old_mario_gc", music: 35 },
+	{ name: "mini_block_course", music: 43, battle: true },
+	// { name: "test1_course", music: 74 },
+	{ name: "test_circle", music: 74 },
+	// { name: "Award", music: 41 },
+	// { name: "MR_stage1", music: 18 },
+	// { name: "MR_stage2", music: 18 },
+	// { name: "MR_stage3", music: 18 },
+	{ name: "MR_stage4", music: 18 },
+	// { name: "StaffRoll", music: 74 },
+	// { name: "StaffRollTrue", music: 74 },
 ];
 
 function readCourse(): number {

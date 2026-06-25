@@ -1,0 +1,49 @@
+import type { RomShippedCourseName } from "./rom";
+
+/** Stable course model geometry counts from MKDS (regression guard). */
+export const COURSE_GEOMETRY_GOLDEN: Record<
+	RomShippedCourseName,
+	{ tris: number; quads: number; verts: number; models: number }
+> = {
+	cross_course: { tris: 628, quads: 390, verts: 2446, models: 1 },
+	bank_course: { tris: 757, quads: 410, verts: 2745, models: 1 },
+	beach_course: { tris: 353, quads: 587, verts: 2865, models: 1 },
+	mansion_course: { tris: 718, quads: 395, verts: 3734, models: 1 },
+	desert_course: { tris: 888, quads: 329, verts: 2604, models: 1 },
+	town_course: { tris: 171, quads: 631, verts: 2909, models: 1 },
+	pinball_course: { tris: 278, quads: 648, verts: 3004, models: 1 },
+	ridge_course: { tris: 1073, quads: 244, verts: 2589, models: 1 },
+	snow_course: { tris: 1117, quads: 225, verts: 2511, models: 1 },
+	clock_course: { tris: 231, quads: 623, verts: 2351, models: 1 },
+	mario_course: { tris: 427, quads: 599, verts: 3129, models: 1 },
+	airship_course: { tris: 680, quads: 608, verts: 3162, models: 1 },
+	stadium_course: { tris: 1150, quads: 313, verts: 2944, models: 1 },
+	garden_course: { tris: 361, quads: 636, verts: 2665, models: 1 },
+	koopa_course: { tris: 336, quads: 627, verts: 2640, models: 1 },
+	rainbow_course: { tris: 654, quads: 686, verts: 2644, models: 1 },
+	old_mario_sfc: { tris: 378, quads: 520, verts: 2218, models: 1 },
+	old_momo_64: { tris: 929, quads: 262, verts: 2173, models: 1 },
+	old_peach_agb: { tris: 466, quads: 206, verts: 1612, models: 1 },
+	old_luigi_gc: { tris: 801, quads: 256, verts: 2197, models: 1 },
+	old_donut_sfc: { tris: 611, quads: 382, verts: 2093, models: 1 },
+	old_frappe_64: { tris: 1195, quads: 211, verts: 2361, models: 1 },
+	old_koopa_agb: { tris: 78, quads: 496, verts: 2124, models: 1 },
+	old_baby_gc: { tris: 56, quads: 427, verts: 1656, models: 1 },
+	old_noko_sfc: { tris: 1182, quads: 226, verts: 2798, models: 1 },
+	old_choco_64: { tris: 1359, quads: 54, verts: 2317, models: 1 },
+	old_luigi_agb: { tris: 138, quads: 693, verts: 3080, models: 1 },
+	old_kinoko_gc: { tris: 707, quads: 407, verts: 2627, models: 1 },
+	old_choco_sfc: { tris: 564, quads: 444, verts: 2364, models: 1 },
+	old_hyudoro_64: { tris: 122, quads: 672, verts: 2764, models: 1 },
+	old_sky_agb: { tris: 151, quads: 368, verts: 1655, models: 1 },
+	old_yoshi_gc: { tris: 1315, quads: 131, verts: 2597, models: 1 },
+	mini_stage1: { tris: 493, quads: 468, verts: 2277, models: 1 },
+	mini_stage2: { tris: 610, quads: 531, verts: 3310, models: 1 },
+	mini_stage3: { tris: 1020, quads: 115, verts: 1900, models: 1 },
+	mini_stage4: { tris: 1346, quads: 60, verts: 2072, models: 1 },
+	mini_block_64: { tris: 588, quads: 397, verts: 2642, models: 1 },
+	mini_dokan_gc: { tris: 642, quads: 462, verts: 2594, models: 1 },
+};
+
+/** Total animation file counts across all course CARCs. */
+export const COURSE_ANIM_TOTALS = { nsbta: 36, nsbtp: 44, nsbca: 23 } as const;

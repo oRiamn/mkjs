@@ -23,9 +23,6 @@ import { nsbmd } from "../../formats/nsbmd";
 import { nsbta } from "../../formats/nsbta";
 import { nsbtp } from "../../formats/nsbtp";
 import { nsbtx } from "../../formats/nsbtx";
-import { ItemShard } from "../../particles/itemboxShard";
-import { NitroEmitter } from "../../particles/nitroEmitter";
-import { NitroParticle } from "../../particles/nitroParticle";
 import { nitroModel } from "../../render/nitroModel";
 import { nitroRender } from "../../render/nitroRender";
 import { CountD3DUI } from "../../ui/countD3DUI";
@@ -35,6 +32,7 @@ import { cameraIngame } from "../cameras/cameraIngame";
 import { cameraSpectator } from "../cameras/cameraSpectator";
 import { controlRaceCPU } from "../controls/controlRaceCPU";
 import { IngameRes } from "../ingameRes";
+import { createMapObjResolver, resolveMapObj, type MapObjResolverContext } from "../mapObjResolver";
 import { ItemController } from "../itemController";
 import { MKCONST_course_obj, MKDSCONST } from "../mkdsConst";
 
@@ -94,6 +92,8 @@ export class courseScene implements Scene {
 	lastHeight!: number; // set in sceneDrawer.drawWithShadow...
 	renderTarg!: { color: CustomWebGLTexture; depth: CustomWebGLTexture; fb: WebGLFramebuffer | null }; // set in sceneDrawer.drawWithShadow...
 
+	private _mapObjResolver: MapObjResolverContext;
+
 	constructor(mainNarc: narc, texNarc: narc, courseObj: MKCONST_course_obj, chars: courseScene_char[], options: {}, gameRes: IngameRes) {
 		this.mainNarc = mainNarc;
 		this.texNarc = texNarc;
@@ -101,6 +101,7 @@ export class courseScene implements Scene {
 		this.chars = chars;
 		this.options = options;
 		this.gameRes = gameRes;
+		this._mapObjResolver = createMapObjResolver(this.gameRes.rom, this.mainNarc, { mapObj: this.gameRes.MapObj, mainRace: this.gameRes.MainRace }, this.courseObj.name);
 
 		this.music = this.courseObj.music;
 		this.startSetups = [
@@ -127,7 +128,9 @@ export class courseScene implements Scene {
 		this.finishers = [];
 
 		//load main course
-		this.courseTx = new nsbtx(this.texNarc.getFile("/course_model.nsbtx")!, false);
+		const courseMdl = new nsbmd(this.mainNarc.getFile("/course_model.nsbmd")!);
+		const courseTxFile = this.texNarc.tryGetFile("/course_model.nsbtx");
+		this.courseTx = courseTxFile != null ? new nsbtx(courseTxFile, false) : courseMdl.tex;
 
 		const taFile = this.mainNarc.tryGetFile("/course_model.nsbta");
 		let courseTa: nsbta | undefined;
@@ -136,22 +139,25 @@ export class courseScene implements Scene {
 		let courseTp: nsbtp | undefined;
 		if (tpFile != null) courseTp = new nsbtp(tpFile);
 
-		const courseMdl = new nsbmd(this.mainNarc.getFile("/course_model.nsbmd")!);
-
 		const course = new nitroModel(courseMdl, this.courseTx);
 		if (taFile != null) course.loadTexAnim(courseTa!);
 		if (tpFile != null) course.loadTexPAnim(courseTp!);
 
 		//load sky
-		const skyTx = new nsbtx(this.texNarc.getFile("/course_model_V.nsbtx")!, false);
-		const staFile = this.mainNarc.tryGetFile("/course_model_V.nsbta");
-		let skyTa: nsbta | undefined;
-		if (staFile != null) skyTa = new nsbta(staFile);
-		// console.log("--------- LOADING SKY ---------")
-		const skyMdl = new nsbmd(this.mainNarc.getFile("/course_model_V.nsbmd")!);
-
-		const sky = new nitroModel(skyMdl, skyTx);
-		if (staFile != null) sky.loadTexAnim(skyTa!);
+		const skyMdlFile = this.mainNarc.tryGetFile("/course_model_V.nsbmd");
+		let sky: nitroModel;
+		if (skyMdlFile != null) {
+			const skyMdl = new nsbmd(skyMdlFile);
+			const skyTxFile = this.texNarc.tryGetFile("/course_model_V.nsbtx");
+			const skyTx = skyTxFile != null ? new nsbtx(skyTxFile, false) : skyMdl.tex ?? this.courseTx;
+			const staFile = this.mainNarc.tryGetFile("/course_model_V.nsbta");
+			let skyTa: nsbta | undefined;
+			if (staFile != null) skyTa = new nsbta(staFile);
+			sky = new nitroModel(skyMdl, skyTx);
+			if (staFile != null) sky.loadTexAnim(skyTa!);
+		} else {
+			sky = course;
+		}
 
 		const ckcl = new kcl(this.mainNarc.getFile("/course_collision.kcl")!, false);
 		const cnkm = new nkm(this.mainNarc.getFile("/course_map.nkm")!);
@@ -443,10 +449,14 @@ export class courseScene implements Scene {
 		}
 	}
 
-	private loadMapObjFile(fileName: string): other {
+	private tryGetMapObjBuffer(fileName: string): ArrayBuffer | null {
+		return resolveMapObj(fileName, this._mapObjResolver);
+	}
+
+	private tryLoadMapObjFile(fileName: string): other | null {
 		const ext = fileName.split(".").pop()!;
 		const bankKey = `$${ext}`;
-		const resKey = `$MapObj/${fileName}`;
+		const resKey = fileName.includes("/") ? `$${fileName}` : `$MapObj/${fileName}`;
 		const bank = this.fileBank[bankKey] ?? (this.fileBank[bankKey] = {});
 		const cached = bank[resKey];
 		if (cached != null) return cached;
@@ -455,10 +465,8 @@ export class courseScene implements Scene {
 			throw `Unknown MapObj resource type: ${fileName}`;
 		}
 
-		// Shared map objects live in /data/Main/MapObj.carc; a course archive may override one.
-		let test = this.gameRes.MapObj.tryGetFile(fileName);
-		if (test == null) test = this.mainNarc.tryGetFile(`/MapObj/${fileName}`);
-		if (test == null) throw `COULD NOT FIND MapObj RESOURCE ${fileName}!`;
+		const test = this.tryGetMapObjBuffer(fileName);
+		if (test == null) return null;
 
 		let item;
 		switch (ext) {
@@ -483,6 +491,12 @@ export class courseScene implements Scene {
 				throw `Unknown MapObj resource type: ${fileName}`;
 		}
 		bank[resKey] = item;
+		return item;
+	}
+
+	private loadMapObjFile(fileName: string): other {
+		const item = this.tryLoadMapObjFile(fileName);
+		if (item == null) throw `COULD NOT FIND MapObj RESOURCE ${fileName}!`;
 		return item;
 	}
 
@@ -556,7 +570,7 @@ export class courseScene implements Scene {
 		if (res.other != null) {
 			for (let i = 0; i < res.other.length; i++) {
 				if (res.other[i] != null) {
-					other.push(this.loadMapObjFile(res.other[i]!));
+					other.push(this.tryLoadMapObjFile(res.other[i]!));
 				} else {
 					other.push(null);
 				}

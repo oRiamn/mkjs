@@ -27,8 +27,6 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 	mode: number;
 	colFrame: number;
 	constructor(obji: nkm_section_OBJI, scene: Scene) {
-		console.log("ObjRoutePlatform");
-
 		this.collidable = true;
 		this.colMode = 0;
 		this.colRad = 512;
@@ -46,10 +44,10 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 		this._generateCol();
 
 		this.statDur = this._obji.setting1 & 0xffff;
-		this.route = this._scene.paths[this._obji.routeID];
+		this.route = obji.routeID !== 65535 ? (scene.paths[obji.routeID] ?? []) : [];
 		this.routeSpeed = 1 / 6;
 		this.routePos = 0;
-		this.nextNode = this.route[this.routePos];
+		this.nextNode = this.route[0] ?? { pos: this.pos, pointInd: 0, duration: 1, unknown: 0, nextOff: 0 };
 		this.prevPos = this.pos;
 		this.elapsedTime = 0;
 
@@ -60,6 +58,7 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 	}
 	update(_scene: Scene) {
 		this.colFrame++;
+		if (this.route.length === 0) return;
 		if (this.mode == 0) {
 			this.elapsedTime += this.routeSpeed;
 			this._movVel = vec3.sub([0, 0, 0], this.nextNode.pos, this.prevPos);

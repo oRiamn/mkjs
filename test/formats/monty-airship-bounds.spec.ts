@@ -25,10 +25,15 @@ function montyPlacement(scaleY = 1) {
 
 describe.skipIf(!romExists)("monty airship bounds", () => {
 	it("cover stays on hole when buried and on poo head when out", () => {
-		const p = montyPlacement(1);
-		console.log(p);
-		expect(p.coverBuried).toBe(2);
-		expect(p.coverOut).toBe(15);
-		expect(p.coverOut).toBeLessThan(p.outY + 20);
+		expect(montyPlacement(1)).toEqual({
+			buriedY: -15,
+			outY: 15,
+			pooDrop: -15,
+			coverHoleY: 2,
+			coverOnPooY: 15,
+			coverBuried: 2,
+			coverOut: 15,
+			pooOutDraw: 0,
+		});
 	});
 });

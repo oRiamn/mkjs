@@ -3,14 +3,17 @@ import { nsbmd } from "../../src/formats/nsbmd";
 import { nitroModel } from "../../src/render/nitroModel";
 import { loadCourseCarc, BEACH_COURSE, romExists } from "../helpers/rom";
 
-describe.skipIf(!romExists)("dump pukupuku", () => {
-  it("model has geometry", () => {
-    const mdl = new nsbmd(loadCourseCarc(BEACH_COURSE).getFile("/MapObj/pukupuku.nsbmd")!);
-    const obj = mdl.modelData.objectData[0];
-    expect(obj.head.numTriangles + obj.head.numQuads).toBeGreaterThan(0);
-    console.log("tris:", obj.head.numTriangles, "quads:", obj.head.numQuads, "verts:", obj.head.numVerts);
-    console.log("materials:", obj.materials.numObjects, "textures:", obj.tex.numObjects);
-    const nm = new nitroModel(mdl, null);
-    console.log("nitroModel loaded, bmd names:", mdl.modelData.names);
-  });
+describe.skipIf(!romExists)("pukupuku model", () => {
+	it("loads geometry, textures, and nitroModel", () => {
+		const mdl = new nsbmd(loadCourseCarc(BEACH_COURSE).getFile("/MapObj/pukupuku.nsbmd")!);
+		const obj = mdl.modelData.objectData[0];
+
+		expect(obj.head).toMatchObject({ numTriangles: 0, numQuads: 1, numVerts: 4 });
+		expect(obj.materials.numObjects).toBe(1);
+		expect(obj.tex.numObjects).toBe(1);
+		expect(mdl.modelData.names).toEqual(["pukupuku"]);
+
+		const nm = new nitroModel(mdl, null);
+		expect(nm.bmd).toBe(mdl);
+	});
 });
