@@ -30,6 +30,7 @@ export class kartoffsetdata implements MKJSDataFormator {
 	}
 
 	load(input: MKJSDataInput) {
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let off = 0;
 		let karts: kartoffsetdata_kart[] = [];

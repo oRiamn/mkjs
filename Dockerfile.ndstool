@@ -1,0 +1,59 @@
+# ndstool — extract/pack Nintendo DS .nds ROMs (ARM9, ARM7, filesystem).
+# https://github.com/devkitPro/ndstool
+#
+# Build:
+#   docker build -f Dockerfile.ndstool -t mkjs-ndstool .
+#
+# Full extract + object ID report (needs test/mkds.nds or pass ROM path):
+#   chmod +x scripts/extract-mkds-rom.sh
+#   ./scripts/extract-mkds-rom.sh test/mkds.nds
+#
+# Manual ndstool extract (writes into mounted directory):
+#   docker run --rm -u "$(id -u):$(id -g)" -v "$PWD/test/nds-extract/out:/rom/out" \
+#     -v "$PWD/test/mkds.nds:/rom/game.nds:ro" -w /rom/out mkjs-ndstool \
+#     -x /rom/game.nds -9 arm9.bin -7 arm7.bin -d data -y overlay
+#
+# Interactive shell with ndstool on PATH:
+#   docker run --rm -it -v "$PWD:/roms" --entrypoint bash mkjs-ndstool
+
+ARG NDSTOOL_VERSION=2.3.1
+
+FROM debian:bookworm-slim AS builder
+
+ARG NDSTOOL_VERSION
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		autoconf \
+		automake \
+		ca-certificates \
+		curl \
+		g++ \
+		gcc \
+		libtool \
+		make \
+		pkg-config \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/ndstool.tar.gz \
+		"https://github.com/devkitPro/ndstool/archive/refs/tags/v${NDSTOOL_VERSION}.tar.gz" \
+	&& tar -xzf /tmp/ndstool.tar.gz -C /tmp \
+	&& cd "/tmp/ndstool-${NDSTOOL_VERSION}" \
+	&& chmod +x autogen.sh \
+	&& ./autogen.sh \
+	&& ./configure --prefix=/usr/local \
+	&& make -j"$(nproc)" \
+	&& make install
+
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends libstdc++6 \
+	&& rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local/bin/ndstool /usr/local/bin/ndstool
+
+WORKDIR /roms
+
+ENTRYPOINT ["ndstool"]
+CMD ["--help"]

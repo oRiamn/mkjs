@@ -4,11 +4,20 @@
 // Loads nscr files and provides a variety of functions for accessing and using the data.
 // Screen data for nitro 2d graphics. Each cell references a graphic (ncgr) and palette (nclr).
 // by RHY3756547
+//
 
 import { nitro, nitro_nitroHeader } from "../nitro";
 import { MKSUtils } from "../utils";
-//
-type SscrScrn = {
+
+const NSCR_MAGIC = "RCSN";
+const SCRN_MAGIC = "NRCS";
+const NSCR_FIRST_SECTION_OFFSET = 0x18;
+const BLOCK_HEADER_SIZE = 8;
+const SCRN_HEADER_SIZE = 0x14;
+const MAP_ENTRY_BYTES = 2;
+
+/** Each map entry is YYYYXXNNNNNNNNNN: 4-bit palette, 2-bit flip, 10-bit tile index. */
+type NscrScrn = {
 	type: string;
 	blockSize: number;
 	screenWidth: number;
@@ -17,77 +26,91 @@ type SscrScrn = {
 	screenDataSize: number;
 	data: number[];
 };
+
+type ScrnHeader = {
+	type: string;
+	blockSize: number;
+	screenWidth: number;
+	screenHeight: number;
+	padding: number;
+	screenDataSize: number;
+};
+
+function readScreenMap(view: DataView, offset: number, entryCount: number): number[] {
+	const data: number[] = [];
+	let entryOffset = offset;
+
+	for (let i = 0; i < entryCount; i++) {
+		data.push(view.getUint16(entryOffset, true));
+		entryOffset += MAP_ENTRY_BYTES;
+	}
+
+	return data;
+}
+
 export class nscr implements MKJSDataFormator {
-	input: MKJSDataInput;
 	mainOff: number;
-	sectionOffsets!: nitro_nitroHeader["sectionOffsets"];
-	scrn!: SscrScrn;
+	scrn!: NscrScrn;
+
+	private sectionOffsets!: nitro_nitroHeader["sectionOffsets"];
+	private input: MKJSDataInput;
+
 	constructor(input: MKJSDataInput) {
 		this.input = input;
-
 		this.mainOff = undefined!;
+
 		if (this.input != null) {
 			this.load(this.input);
 		}
 	}
 
-	load(input: MKJSDataInput) {
-		let view = new DataView(input);
-		let offset = 0;
+	load(input: MKJSDataInput): void {
+		this.input = MKSUtils.prepareInput(input);
+		const view = new DataView(this.input);
 
-		//nitro 3d header
 		const header = nitro.readHeader(view);
-		if (header.stamp != "RCSN") throw `NSCR invalid. Expected RCSN, found ${header.stamp}`;
-		if (header.numSections != 1) throw "NSCR invalid. Too many sections - should have 1.";
-		offset = header.sectionOffsets[0];
-		//end nitro
+		if (header.stamp !== NSCR_MAGIC) {
+			throw `NSCR invalid. Expected RCSN, found ${header.stamp}`;
+		}
+		if (header.numSections !== 1) {
+			throw "NSCR invalid. Too many sections - should have 1.";
+		}
+
 		this.sectionOffsets = header.sectionOffsets;
-		this.sectionOffsets[0] = 0x18;
+		this.sectionOffsets[0] = NSCR_FIRST_SECTION_OFFSET;
+		this.mainOff = header.sectionOffsets[0];
 
-		this.mainOff = offset;
-
-		this.scrn = this._loadSCRN(view);
+		this.scrn = this._loadSCRN(view, this.sectionOffsets[0]);
 	}
 
-	private _loadSCRN(view: DataView): SscrScrn {
-		let offset = this.sectionOffsets[0] - 8;
+	private _loadSCRN(view: DataView, sectionOffset: number): NscrScrn {
+		const header = this._parseScrnHeader(view, sectionOffset);
+		this.sectionOffsets[1] = sectionOffset + header.blockSize;
 
-		const type =
-			MKSUtils.asciireadChar(view, offset + 0x0) +
-			MKSUtils.asciireadChar(view, offset + 0x1) +
-			MKSUtils.asciireadChar(view, offset + 0x2) +
-			MKSUtils.asciireadChar(view, offset + 0x3);
-		if (type != "NRCS") throw `SCRN invalid. Expected NRCS, found ${type}`;
-		const blockSize = view.getUint32(offset + 0x4, true);
-		this.sectionOffsets[1] = this.sectionOffsets[0] + blockSize;
-		const screenWidth = view.getUint16(offset + 0x8, true); //in pixels
-		const screenHeight = view.getUint16(offset + 0xa, true);
-		const padding = view.getUint32(offset + 0xc, true); //always 0
-		const screenDataSize = view.getUint32(offset + 0x10, true);
-		offset += 0x14;
+		const mapOffset = sectionOffset - BLOCK_HEADER_SIZE + SCRN_HEADER_SIZE;
+		const entryCount = (header.blockSize - SCRN_HEADER_SIZE) / MAP_ENTRY_BYTES;
+		const data = readScreenMap(view, mapOffset, entryCount);
 
-		let entries = (blockSize - 0x14) / 2;
-		const data: number[] = [];
-
-		for (let i = 0; i < entries; i++) {
-			data.push(view.getUint16(offset, true));
-			offset += 2;
-		}
 		return {
-			type,
-			blockSize,
-			screenWidth,
-			screenHeight,
-			padding,
-			screenDataSize,
+			...header,
 			data,
 		};
+	}
 
-		/* 
-		Format is (YYYYXXNNNNNNNNNN)
-		Y4 Palette Number 
-		X2 Transformation (YFlip/XFlip) 
-		N10 Tile Number
-		*/
+	private _parseScrnHeader(view: DataView, sectionOffset: number): ScrnHeader {
+		const tagOffset = sectionOffset - BLOCK_HEADER_SIZE;
+		const type = MKSUtils.readAsciiTag(view, tagOffset);
+		if (type !== SCRN_MAGIC) {
+			throw `NSCR invalid. Expected NRCS, found ${type}`;
+		}
+
+		return {
+			type,
+			blockSize: view.getUint32(tagOffset + 0x4, true),
+			screenWidth: view.getUint16(tagOffset + 0x8, true),
+			screenHeight: view.getUint16(tagOffset + 0xa, true),
+			padding: view.getUint32(tagOffset + 0xc, true),
+			screenDataSize: view.getUint32(tagOffset + 0x10, true),
+		};
 	}
 }

@@ -47,6 +47,9 @@ export class swav {
 	}
 
 	private load(input: MKJSDataInput | DataView, hasHead: boolean, dataView: boolean): void {
+		if (!dataView) {
+			input = MKSUtils.prepareInput(input as MKJSDataInput);
+		}
 		let view = dataView ? (input as DataView) : new DataView(input as MKJSDataInput);
 		let offset = 0;
 

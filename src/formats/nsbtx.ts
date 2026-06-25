@@ -60,7 +60,7 @@ export class nsbtx {
 	cache: {
 		[x: string]: CustomWebGLTexture; // set in nitromodel
 	};
-	constructor(input: MKJSDataInput, tex0: boolean) {
+	constructor(input: MKJSDataInput, tex0: boolean = false) {
 		this.input = input;
 		this.tex0 = tex0;
 
@@ -74,6 +74,7 @@ export class nsbtx {
 
 	private load(input: MKJSDataInput, tex0: boolean) {
 		this.colourBuffer = new Uint32Array(4);
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let header = null;
 		let offset = 0;

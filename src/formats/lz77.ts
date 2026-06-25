@@ -6,9 +6,18 @@
 //
 
 export class lz77 {
+	/** Some games (eg. NSMB) prefix Nitro LZ77 blobs with a literal "LZ77" stamp. */
+	static maybeDecompress(buffer: MKJSDataInput): ArrayBuffer {
+		if (buffer.byteLength < 4) return buffer as ArrayBuffer;
+		const view = new DataView(buffer);
+		if (view.getUint8(0) === 0x4c && view.getUint8(1) === 0x5a && view.getUint8(2) === 0x37 && view.getUint8(3) === 0x37) {
+			return lz77.decompress(buffer.slice(4));
+		}
+		return buffer as ArrayBuffer;
+	}
+
 	static decompress(buffer: MKJSDataInput): ArrayBuffer {
 		let view = new DataView(buffer);
-		let compType = view.getUint8(0);
 		let size = view.getUint32(0, true) >> 8;
 
 		let targ = new ArrayBuffer(size);

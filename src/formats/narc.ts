@@ -132,6 +132,7 @@ export class narc implements MKJSDataFormator {
 	}
 
 	load(buffer: MKJSDataInput) {
+		buffer = MKSUtils.prepareInput(buffer);
 		this.input = buffer; //we will use this data in the future.
 
 		let view = new DataView(buffer);
@@ -289,13 +290,18 @@ export class narcGroup {
 		this.files = files;
 	}
 
-	getFile(name: string): ArrayBuffer | null {
+	tryGetFile(name: string): ArrayBuffer | null {
 		for (let i = 0; i < this.files.length; i++) {
-			let file = this.files[i].getFile(name);
+			let file = this.files[i].tryGetFile(name);
 			if (file != null) return file;
 		}
-		console.error(`File not found: ${name}`);
 		return null;
+	}
+
+	getFile(name: string): ArrayBuffer | null {
+		const file = this.tryGetFile(name);
+		if (file == null) console.error(`File not found: ${name}`);
+		return file;
 	}
 
 	list(): string[] {

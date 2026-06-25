@@ -20,6 +20,7 @@ export class sseq implements MKJSDataFormator {
 	}
 
 	load(input: MKJSDataInput) {
+		input = MKSUtils.prepareInput(input);
 		let view = new DataView(input);
 		let offset = 0;
 
