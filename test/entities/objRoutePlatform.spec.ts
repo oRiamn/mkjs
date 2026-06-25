@@ -1,0 +1,30 @@
+import { describe, expect, it } from "vitest";
+import { ObjSkyship } from "../../src/entities/platforms/objSkyship";
+import { nkm } from "../../src/formats/nkm";
+import { loadCourseCarc, romExists } from "../helpers/rom";
+
+function compilePaths(nkmData: nkm) {
+	const paths = nkmData.sections.PATH.entries;
+	const poits = nkmData.sections.POIT.entries;
+	const compiled = [];
+	let ind = 0;
+	for (let i = 0; i < paths.length; i++) {
+		const p = [];
+		for (let j = 0; j < paths[i].numPts; j++) p.push(poits[ind++]);
+		compiled.push(p);
+	}
+	return compiled;
+}
+
+describe.skipIf(!romExists)("ObjRoutePlatform", () => {
+	it("constructs static pinball_course skyships with routeID 65535", () => {
+		const nkmData = new nkm(loadCourseCarc("pinball_course").getFile("/course_map.nkm")!);
+		const skyship = nkmData.sections.OBJI.entries.find((o) => o.ID === 0x00d2)!;
+		const scene = { paths: compilePaths(nkmData) } as Scene;
+
+		const ent = new ObjSkyship(skyship, scene);
+		expect(ent.route).toEqual([]);
+		expect(ent.pos).toEqual(skyship.pos);
+		expect(() => ent.update(scene)).not.toThrow();
+	});
+});

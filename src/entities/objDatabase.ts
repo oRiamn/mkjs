@@ -80,7 +80,6 @@ import { ObjMovingItemBox } from "./platforms/objMovingItemBox";
 import { ObjRotaryRoom } from "./platforms/objRotaryRoom";
 import { ObjRouteBasabasa } from "./platforms/objRouteBasabasa";
 import { ObjRoutePlatform } from "./platforms/objRoutePlatform";
-import { ObjSkyship } from "./platforms/objSkyship";
 import { ObjGear } from "./rotatingGear";
 import { ObjSoundMaker } from "./soundMaker";
 import { ObjBus, ObjCar, ObjTruck } from "./trafficCar";
@@ -112,7 +111,7 @@ export const ObjDatabase = new Map([
 	[0x00cf, ObjKoopaBall],
 	[0x00d0, ObjRotaryRoom],
 	[0x00d1, ObjGear], //rotary bridge
-	[0x00d2, ObjSkyship],
+	//[0x00d2, ObjSkyship],
 	[0x012d, BeachTree],
 	[0x012e, BeachTree],
 	[0x012f, EarthenPipe],
