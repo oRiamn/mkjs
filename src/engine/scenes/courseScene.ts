@@ -16,7 +16,6 @@ import { nitroAudio, nitroAudioSound } from "../../audio/nitroAudio";
 import { Kart } from "../../entities/kart";
 import { ObjDatabase } from "../../entities/objDatabase";
 import { kcl } from "../../formats/kcl";
-import { lz77 } from "../../formats/lz77";
 import { narc } from "../../formats/narc";
 import { nkm, nkm_section_POIT } from "../../formats/nkm";
 import { nsbca } from "../../formats/nsbca";
@@ -33,6 +32,7 @@ import { cameraIngame } from "../cameras/cameraIngame";
 import { cameraSpectator } from "../cameras/cameraSpectator";
 import { controlRaceCPU } from "../controls/controlRaceCPU";
 import { IngameRes } from "../ingameRes";
+import { createMapObjResolver, resolveMapObj, type MapObjResolverContext } from "../mapObjResolver";
 import { ItemController } from "../itemController";
 import { MKCONST_course_obj, MKDSCONST } from "../mkdsConst";
 
@@ -92,7 +92,7 @@ export class courseScene implements Scene {
 	lastHeight!: number; // set in sceneDrawer.drawWithShadow...
 	renderTarg!: { color: CustomWebGLTexture; depth: CustomWebGLTexture; fb: WebGLFramebuffer | null }; // set in sceneDrawer.drawWithShadow...
 
-	private _fallbackNarcs = new Map<string, narc | null>();
+	private _mapObjResolver: MapObjResolverContext;
 
 	constructor(mainNarc: narc, texNarc: narc, courseObj: MKCONST_course_obj, chars: courseScene_char[], options: {}, gameRes: IngameRes) {
 		this.mainNarc = mainNarc;
@@ -101,6 +101,7 @@ export class courseScene implements Scene {
 		this.chars = chars;
 		this.options = options;
 		this.gameRes = gameRes;
+		this._mapObjResolver = createMapObjResolver(this.gameRes.rom, this.mainNarc, { mapObj: this.gameRes.MapObj, mainRace: this.gameRes.MainRace }, this.courseObj.name);
 
 		this.music = this.courseObj.music;
 		this.startSetups = [
@@ -448,75 +449,11 @@ export class courseScene implements Scene {
 		}
 	}
 
-	private mapObjAlias(fileName: string): string {
-		const base = fileName.split("/").pop()!.toLowerCase();
-		const aliases: Record<string, string> = {
-			// Retail ROM never shipped this GCN palm tree; Pipe Plaza reuses the cross-cup tree mesh.
-			"donkytree2gc.nsbmd": "CrossTree1.nsbmd",
-		};
-		return aliases[base] ?? fileName;
-	}
-
-	private mapObjFallbackCourses(fileName: string): string[] {
-		const stem = fileName.split("/").pop()!.split(".")[0].toLowerCase();
-		const courses = new Set<string>();
-
-		if (stem === "flipper") courses.add("pinball_course");
-		if (stem === "basabasa") courses.add("old_hyudoro_64");
-		if (stem === "crosstree1") courses.add("cross_course");
-		if (this.courseObj.name === "donkey_course" || this.courseObj.name === "luigi_course") {
-			courses.add("pinball_course");
-		}
-
-		return [...courses];
-	}
-
-	private courseMapObjNarc(courseName: string): narc | null {
-		if (this._fallbackNarcs.has(courseName)) return this._fallbackNarcs.get(courseName)!;
-
-		const file = this.gameRes.rom.getFile(`${MKDSCONST.COURSEDIR}${courseName}.carc`);
-		const archive = file == null ? null : new narc(lz77.decompress(file));
-		this._fallbackNarcs.set(courseName, archive);
-		return archive;
-	}
-
-	private mapObjSearchPaths(fileName: string): string[] {
-		const paths = new Set<string>([fileName]);
-		const base = fileName.split("/").pop()!;
-		paths.add(base);
-		if (!fileName.startsWith("/")) {
-			paths.add(`/MapObj/${fileName}`);
-			paths.add(`/MapObj/${base}`);
-			paths.add(`/Item/${fileName}`);
-			paths.add(`/Item/${base}`);
-		}
-		return [...paths];
-	}
-
 	private tryGetMapObjBuffer(fileName: string): ArrayBuffer | null {
-		fileName = this.mapObjAlias(fileName);
-
-		for (const archive of [this.mainNarc, this.gameRes.MapObj, this.gameRes.MainRace]) {
-			for (const path of this.mapObjSearchPaths(fileName)) {
-				const file = archive.tryGetFile(path);
-				if (file != null) return file;
-			}
-		}
-
-		for (const courseName of this.mapObjFallbackCourses(fileName)) {
-			const archive = this.courseMapObjNarc(courseName);
-			if (archive == null) continue;
-			for (const path of this.mapObjSearchPaths(fileName)) {
-				const file = archive.tryGetFile(path);
-				if (file != null) return file;
-			}
-		}
-
-		return null;
+		return resolveMapObj(fileName, this._mapObjResolver);
 	}
 
 	private tryLoadMapObjFile(fileName: string): other | null {
-		fileName = this.mapObjAlias(fileName);
 		const ext = fileName.split(".").pop()!;
 		const bankKey = `$${ext}`;
 		const resKey = fileName.includes("/") ? `$${fileName}` : `$MapObj/${fileName}`;
