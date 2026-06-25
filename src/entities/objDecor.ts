@@ -69,9 +69,14 @@ export abstract class ObjDecor implements SceneEntityObject {
 		}
 	}
 
+	protected texAnimFrame(gameFrame: number): number {
+		return gameFrame;
+	}
+
 	update(_scn?: Scene) {
+		const texFrame = this.texAnimFrame(this._animFrame);
 		for (let i = 0; i < this._res.mdl.length; i++) {
-			this._res.mdl[i].setFrame(this._animFrame);
+			this._res.mdl[i].setFrame(texFrame);
 		}
 		if (this._anim != null) {
 			this._animMat = this._anim.setFrame(0, 0, this._animFrame);

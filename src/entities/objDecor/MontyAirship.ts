@@ -36,7 +36,8 @@ export class MontyAirship extends ObjDecor {
 	private _buriedY = 0;
 	private _outY = 0;
 	private _holeY = 0;
-	private _coverDelta = 0;
+	private _coverHoleY = 0;
+	private _coverOnPooY = 0;
 	private _pooDrop = 0;
 	private _colRes!: nitromodel_BoundingCollisionModel;
 	private _colMat: mat4;
@@ -72,7 +73,8 @@ export class MontyAirship extends ObjDecor {
 		const holeBounds = modelPolyLocalYBounds(holePoly.disp);
 		const holeWorld = modelWorldYExtent(holeBounds.minY, holeBounds.maxY, this.scale[1]);
 		this._holeY = holeWorld.top + MONTY_GROUND_LIFT;
-		this._coverDelta = this._holeY + MONTY_COVER_ABOVE_HOLE - this._buriedY;
+		this._coverHoleY = this._holeY + MONTY_COVER_ABOVE_HOLE;
+		this._coverOnPooY = world.top;
 
 		super.provideRes(r);
 		this._mdl = r.mdl;
@@ -152,7 +154,12 @@ export class MontyAirship extends ObjDecor {
 			this._drawPart(view, pMatrix, this._pooY + this._pooDrop, 0, true);
 			nitroRender.resetShadOff();
 		}
-		this._drawPart(view, pMatrix, this._pooY + this._coverDelta, 1, false);
+		this._drawPart(view, pMatrix, this._coverDrawY(), 1, false);
+	}
+
+	private _coverDrawY(): number {
+		const onPooY = this._pooY + this._pooDrop + this._coverOnPooY;
+		return Math.max(this._coverHoleY, onPooY);
 	}
 
 	private _pooVisible(): boolean {
