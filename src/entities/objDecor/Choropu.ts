@@ -13,7 +13,7 @@ const CHOROPU_HIDE_BASE = 100;
 /** Head peek before jump (1 s at 60 fps). */
 const CHOROPU_LURK_DUR = 60;
 /** Fraction of body height visible during lurk (top of head). */
-const CHOROPU_LURK_PEEK = 0.25;
+const CHOROPU_LURK_PEEK = 0.35;
 
 /** Peach Gardens / Moo Moo Meadows Monty Mole (0x0199).
  *
