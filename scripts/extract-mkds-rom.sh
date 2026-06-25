@@ -18,6 +18,16 @@ if [[ ! -f "$ROM" ]]; then
 	exit 1
 fi
 
+if ! docker info >/dev/null 2>&1; then
+	echo "Docker unavailable, using Node extractor..." >&2
+	exec node "$ROOT/scripts/extract-mkds-rom-node.mjs" "$ROM" "$OUT"
+fi
+
+if ! docker image inspect mkjs-ndstool >/dev/null 2>&1; then
+	echo "Building mkjs-ndstool image..."
+	docker build -f "$ROOT/Dockerfile.ndstool" -t mkjs-ndstool "$ROOT"
+fi
+
 mkdir -p "$OUT"
 ROM_ABS="$(cd "$(dirname "$ROM")" && pwd)/$(basename "$ROM")"
 OUT_ABS="$(mkdir -p "$OUT" && cd "$OUT" && pwd)"

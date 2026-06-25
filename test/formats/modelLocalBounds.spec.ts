@@ -10,10 +10,9 @@ describe.skipIf(!romExists)("modelPolyLocalYBounds", () => {
 		const poly = m.modelData.objectData[0].polys.objectData[0];
 		const bounds = modelPolyLocalYBounds(poly.disp);
 		const world = modelWorldYExtent(bounds.minY, bounds.maxY, 1);
-		console.log("woodbox", bounds, world);
-		expect(bounds.minY).toBeGreaterThan(-5);
-		expect(bounds.maxY).toBeLessThan(5);
-		expect(world.height).toBeLessThan(80);
+
+		expect(bounds).toEqual({ minY: -0.625, maxY: 0.625 });
+		expect(world).toEqual({ bottom: -10, top: 10, height: 20 });
 	});
 
 	it("itembox bounds stay small", () => {
@@ -22,7 +21,8 @@ describe.skipIf(!romExists)("modelPolyLocalYBounds", () => {
 		const poly = m.modelData.objectData[0].polys.objectData[0];
 		const bounds = modelPolyLocalYBounds(poly.disp);
 		const world = modelWorldYExtent(bounds.minY, bounds.maxY, 1);
-		console.log("itembox", bounds, world);
-		expect(world.height).toBeLessThan(16);
+
+		expect(bounds).toEqual({ minY: -0.3125, maxY: 0.3125 });
+		expect(world).toEqual({ bottom: -5, top: 5, height: 10 });
 	});
 });
