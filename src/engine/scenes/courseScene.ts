@@ -101,7 +101,12 @@ export class courseScene implements Scene {
 		this.chars = chars;
 		this.options = options;
 		this.gameRes = gameRes;
-		this._mapObjResolver = createMapObjResolver(this.gameRes.rom, this.mainNarc, { mapObj: this.gameRes.MapObj, mainRace: this.gameRes.MainRace }, this.courseObj.name);
+		this._mapObjResolver = createMapObjResolver(
+			this.gameRes.rom,
+			this.mainNarc,
+			{ mapObj: this.gameRes.MapObj, mainRace: this.gameRes.MainRace },
+			this.courseObj.name
+		);
 
 		this.music = this.courseObj.music;
 		this.startSetups = [
@@ -149,7 +154,7 @@ export class courseScene implements Scene {
 		if (skyMdlFile != null) {
 			const skyMdl = new nsbmd(skyMdlFile);
 			const skyTxFile = this.texNarc.tryGetFile("/course_model_V.nsbtx");
-			const skyTx = skyTxFile != null ? new nsbtx(skyTxFile, false) : skyMdl.tex ?? this.courseTx;
+			const skyTx = skyTxFile != null ? new nsbtx(skyTxFile, false) : (skyMdl.tex ?? this.courseTx);
 			const staFile = this.mainNarc.tryGetFile("/course_model_V.nsbta");
 			let skyTa: nsbta | undefined;
 			if (staFile != null) skyTa = new nsbta(staFile);
@@ -185,6 +190,12 @@ export class courseScene implements Scene {
 			[0.5, 66, 47, 56, 10],
 			[1.1, 67, 48, 57, 11],
 		];
+	}
+	getRoute(pathId: number): nkm_section_POIT[] {
+		if (!(pathId in this.paths)) {
+			throw Error(`This route doesnt exist: ${pathId}`)
+		}
+		return this.paths[pathId];
 	}
 
 	draw(gl: CustomWebGLRenderingContext, pMatrix: mat4, shadow: boolean) {

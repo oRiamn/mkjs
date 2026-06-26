@@ -15,7 +15,7 @@ export class ObjMovingItemBox extends ItemBox {
 	constructor(obji: nkm_section_OBJI, scene: Scene) {
 		super(obji, scene);
 		this._statDur = obji.setting1 & 0xffff;
-		this._route = scene.paths[obji.routeID];
+		this._route = scene.getRoute(obji.routeID);
 		this._routeSpeed = 1 / 6;
 		this._routePos = 0;
 		this._nextNode = this._route[this._routePos];

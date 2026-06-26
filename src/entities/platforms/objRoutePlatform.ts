@@ -44,7 +44,7 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 		this._generateCol();
 
 		this.statDur = this._obji.setting1 & 0xffff;
-		this.route = obji.routeID !== 65535 ? (scene.paths[obji.routeID] ?? []) : [];
+		this.route = obji.routeID !== 65535 ? scene.getRoute(obji.routeID) : []
 		this.routeSpeed = 1 / 6;
 		this.routePos = 0;
 		this.nextNode = this.route[0] ?? { pos: this.pos, pointInd: 0, duration: 1, unknown: 0, nextOff: 0 };
@@ -141,9 +141,9 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 	moveWith(obj: Item) {
 		//used for collidable objects that move.
 		/*var p = vec3.sub([], obj.pos, t.pos);
-        vec3.transformMat4(p, p, mat4.rotateY([], mat4.create(), dirVel));
-        vec3.add(obj.pos, t.pos, p);
-        obj.physicalDir -= dirVel;*/
+		vec3.transformMat4(p, p, mat4.rotateY([], mat4.create(), dirVel));
+		vec3.add(obj.pos, t.pos, p);
+		obj.physicalDir -= dirVel;*/
 		vec3.add(obj.pos, obj.pos, this._movVel);
 	}
 }

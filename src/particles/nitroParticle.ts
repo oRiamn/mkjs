@@ -107,16 +107,11 @@ export class NitroParticle {
 		}
 		if (this.emitter.texAnim) {
 			let ta = this.emitter.texAnim;
-			let frame = 0;
 			if ((ta.unknown1 & 128) > 0) {
-				//select frame based on particle duration
-				let frame = ta.textures[Math.min((particlePct * ta.frames) | 0, ta.frames - 1)];
+				this.frame = ta.textures[Math.min((particlePct * ta.frames) | 0, ta.frames - 1)];
 			} else {
-				//repeating anim with framerate
-				//not sure what framerate is, but its likely in the unknowns.
-				let frame = ta.textures[this.time % ta.frames];
+				this.frame = ta.textures[this.time % ta.frames];
 			}
-			this.frame = frame;
 		}
 
 		this.dir += this.dirVel;
@@ -130,7 +125,7 @@ export class NitroParticle {
 		let pos = this.pos;
 		let vel = this.vel;
 
-		if (this.attached != null) {
+		if (this.attached != null && this.attached.mat != null) {
 			pos = vec3.transformMat4([0, 0, 0], pos, this.attached.mat);
 
 			//tranform our vector by the target matrix
@@ -161,8 +156,10 @@ export class NitroParticle {
 			vec3.normalize(camPos, camPos);
 
 			let n = vec3.sub([0, 0, 0], vel, this.ovel);
-			vec3.normalize(n, n);
-			mat4.multiply(mat, mat, mat4.invert(mat4.create(), mat4.lookAt(mat4.create(), [0, 0, 0], camPos, n)));
+			if (vec3.squaredLength(n) > 1e-8) {
+				vec3.normalize(n, n);
+				mat4.multiply(mat, mat, mat4.invert(mat4.create(), mat4.lookAt(mat4.create(), [0, 0, 0], camPos, n)));
+			}
 		} else if (bbMode == 0x20) {
 			//no billboard
 			mat4.rotateY(mat, mat, this.dir);
@@ -174,8 +171,10 @@ export class NitroParticle {
 			vec3.normalize(camPos, camPos);
 
 			let n = vec3.sub([0, 0, 0], vel, this.ovel);
-			vec3.normalize(n, n);
-			mat4.multiply(mat, mat, mat4.invert(mat4.create(), mat4.lookAt(mat4.create(), [0, 0, 0], camPos, n)));
+			if (vec3.squaredLength(n) > 1e-8) {
+				vec3.normalize(n, n);
+				mat4.multiply(mat, mat, mat4.invert(mat4.create(), mat4.lookAt(mat4.create(), [0, 0, 0], camPos, n)));
+			}
 			mat4.rotateY(mat, mat, this.dir);
 		} else {
 			//billboard
@@ -220,6 +219,7 @@ export class NitroParticle {
 		gl.uniformMatrix4fv(shader.uniforms.matStackUniform, false, this._MAT4I);
 
 		let frame = this.emitter.parent!.getTexture(this.frame, gl);
+		if (frame == null) return;
 		gl.bindTexture(gl.TEXTURE_2D, frame);
 		//texture matrix not used
 		gl.uniformMatrix3fv(shader.uniforms.texMatrixUniform, false, this._MAT3I);

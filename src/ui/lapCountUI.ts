@@ -6,7 +6,6 @@ import { ncgr } from "../formats/2d/ncgr";
 import { nclr } from "../formats/2d/nclr";
 import { nitroRender } from "../render/nitroRender";
 import { getUiScale, uiPx } from "./uiScale";
-
 export class LapCountUI implements SceneEntity {
 	transparent: boolean;
 	scene: Scene;
@@ -27,7 +26,7 @@ export class LapCountUI implements SceneEntity {
 		this.transparent = false;
 		this.animFrame = 0;
 
-		this.zoom = 1.3;
+		this.zoom = 1;
 		this.uiScale = 1;
 		this.pos = {
 			x: 10,
@@ -65,7 +64,7 @@ export class LapCountUI implements SceneEntity {
 		this.lastViewWidth = width;
 		this.lastViewHeight = height;
 		this.uiScale = getUiScale(width, height);
-		this.zoom = Math.round(1.3 * this.uiScale);
+		this.zoom = Math.round(this.uiScale);
 		this.pos.x = width - uiPx(30, this.uiScale);
 		this.pos.y = uiPx(10, this.uiScale);
 	}
@@ -79,9 +78,9 @@ export class LapCountUI implements SceneEntity {
 		}
 		nitroRender.pauseShadowMode();
 
-		this.flattenerCurrentLap.draw(this.pos.x - uiPx(32, this.uiScale), this.pos.y, this.zoom);
+		this.flattenerCurrentLap.draw(this.pos.x - uiPx(26, this.uiScale), this.pos.y, this.zoom);
 		this.flattenerLapNumber.draw(this.pos.x - uiPx(15, this.uiScale), this.pos.y, this.zoom);
-		this.flattenerLapLabel.draw(this.pos.x - uiPx(132, this.uiScale), this.pos.y, this.zoom);
+		this.flattenerLapLabel.draw(this.pos.x - uiPx(90, this.uiScale), this.pos.y, this.zoom);
 
 		nitroRender.unpauseShadowMode();
 	}

@@ -100,9 +100,5 @@ export function createMapObjResolver(rom: ndsFS, course: narc, shared: MapObjSha
  * 3. Absolute pool — any other /data/Course/*.carc MapObj entry
  */
 export function resolveMapObj(request: string, ctx: MapObjResolverContext): ArrayBuffer | null {
-	return (
-		resolveMapObjRelative(request, ctx.course) ??
-		resolveMapObjShared(request, ctx.shared) ??
-		ctx.coursePool.resolve(request)
-	);
+	return resolveMapObjRelative(request, ctx.course) ?? resolveMapObjShared(request, ctx.shared) ?? ctx.coursePool.resolve(request);
 }

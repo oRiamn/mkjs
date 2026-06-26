@@ -37,6 +37,7 @@ import { nsbmd } from "./formats/nsbmd";
 import { nsbta } from "./formats/nsbta";
 import { kartoffsetdata } from "./formats/kartoffsetdata";
 import { kartphysicalparam } from "./formats/kartphysicalparam";
+import { tbl } from "./formats/tbl";
 import { kcl } from "./formats/kcl";
 import { netKart } from "./formats/net/netKart";
 
@@ -157,6 +158,7 @@ Object.assign(window, {
 	nsbtx,
 	nsbtp,
 	kartphysicalparam,
+	tbl,
 	nftr,
 	nitro,
 	lz77,

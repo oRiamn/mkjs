@@ -34,7 +34,7 @@ export class NsKiller extends ObjDecor {
 		this._scene = scene;
 		this._drawMat = mat4.create();
 
-		this._route = obji.routeID !== 65535 ? (scene.paths[obji.routeID] ?? []) : [];
+		this._route = scene.getRoute(obji.routeID);
 		const pathMeta = scene.nkm.sections.PATH.entries[obji.routeID];
 		this._loopPath = pathMeta != null && pathMeta.loop !== 0;
 		this._fireDir = killerFireDirection(this._route);
@@ -54,7 +54,7 @@ export class NsKiller extends ObjDecor {
 
 		const scaleY = this.scale[1] * this._drawScale[1];
 		const cannonWorld = nitroModelWorldYExtent(r.mdl[0], scaleY);
-		this._projectileLiftY = cannonWorld.height * .5;
+		this._projectileLiftY = cannonWorld.height * 0.5;
 		this._initProjectilePool();
 	}
 

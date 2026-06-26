@@ -49,7 +49,7 @@ export class Crab extends ObjDecor {
 		this._drawMat = mat4.create();
 		this._prevPos = vec3.clone(this.pos);
 
-		this._route = scene.paths[obji.routeID] ?? [];
+		this._route = scene.getRoute(obji.routeID);
 		const pathMeta = scene.nkm.sections.PATH.entries[obji.routeID];
 		this._loopPath = pathMeta != null && pathMeta.loop !== 0;
 		this._speed = obji.setting1 * CRAB_SPEED_SCALE;

@@ -42,7 +42,7 @@ export class MoveTree extends ObjDecor {
 		this._colMat = mat4.create();
 		this._prevPos = vec3.clone(this.pos);
 
-		this._route = obji.routeID !== 65535 ? (scene.paths[obji.routeID] ?? []) : [];
+		this._route = scene.getRoute(obji.routeID);
 		const pathMeta = scene.nkm.sections.PATH.entries[obji.routeID];
 		this._loopPath = pathMeta != null && pathMeta.loop !== 0;
 		this._speed = obji.setting1 * MOVE_TREE_SPEED_SCALE;
@@ -102,11 +102,7 @@ export class MoveTree extends ObjDecor {
 		nitroRender.setShadBias(0.001);
 		mat4.translate(this._drawMat, view, this._placementPos());
 		mat4.multiply(this._drawMat, this._drawMat, nitroRender.yBillboardMat);
-		mat4.scale(
-			this._drawMat,
-			this._drawMat,
-			vec3.scale(vec3.create(), vec3.mul(vec3.create(), this.scale, this._drawScale), 16)
-		);
+		mat4.scale(this._drawMat, this._drawMat, vec3.scale(vec3.create(), vec3.mul(vec3.create(), this.scale, this._drawScale), 16));
 		this._mdl[0].draw(this._drawMat, pMatrix, this._walkAnimMat ?? undefined);
 		nitroRender.resetShadOff();
 	}

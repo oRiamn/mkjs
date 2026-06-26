@@ -19,8 +19,7 @@ export class Burner extends ObjDecor {
 	constructor(obji: nkm_section_OBJI, scene: Scene) {
 		super(obji, scene);
 		this._staringAtCamera = true;
-
-		this._route = obji.routeID !== 65535 ? (scene.paths[obji.routeID] ?? []) : [];
+		this._route = obji.routeID !== 65535 ? scene.getRoute(obji.routeID) : []
 		const pathMeta = scene.nkm.sections.PATH.entries[obji.routeID];
 		this._loopPath = pathMeta != null && pathMeta.loop !== 0;
 

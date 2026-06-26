@@ -895,45 +895,45 @@ export class Kart {
 
 			//move kart.
 			if (this.damageType != MKDSCONST.DAMAGE_STOMP) {
-			let steps = 0;
-			let remainingT = 1;
-			let baseVel = this.vel;
-			if (this.physBasis != null) {
-				if (this.physBasis.time-- < 0) this.exitBasis();
-				else {
-					baseVel = vec3.transformMat4([0, 0, 0], baseVel, this.physBasis.mat);
-					this.vel[1] = -1;
-				}
-			}
-			let velSeg = vec3.clone(baseVel);
-			if (this.kartColTimer > 0) {
-				vec3.add(velSeg, velSeg, vec3.scale([0, 0, 0], this.kartColVel, this.kartColTimer / this._COLBOUNCE_TIME));
-			}
-			let posSeg = vec3.clone(this.pos);
-			let ignoreList: lsc_collision_triangle[] = [];
-			while (steps++ < 10 && remainingT > 0.01) {
-				let result = lsc.sweepEllipse(
-					posSeg,
-					velSeg,
-					scene,
-					[this._params.colRadius, this._params.colRadius, this._params.colRadius],
-					ignoreList
-				);
-				if (result != null) {
-					this._colResponse(posSeg, velSeg, result, ignoreList);
-					remainingT -= result.t;
-					if (remainingT > 0.01) {
-						if (this.physBasis != null) {
-							baseVel = vec3.transformMat4([0, 0, 0], this.vel, this.physBasis.mat);
-						}
-						velSeg = vec3.scale(vec3.create(), baseVel, remainingT);
+				let steps = 0;
+				let remainingT = 1;
+				let baseVel = this.vel;
+				if (this.physBasis != null) {
+					if (this.physBasis.time-- < 0) this.exitBasis();
+					else {
+						baseVel = vec3.transformMat4([0, 0, 0], baseVel, this.physBasis.mat);
+						this.vel[1] = -1;
 					}
-				} else {
-					vec3.add(posSeg, posSeg, velSeg);
-					remainingT = 0;
 				}
-			}
-			this.pos = posSeg;
+				let velSeg = vec3.clone(baseVel);
+				if (this.kartColTimer > 0) {
+					vec3.add(velSeg, velSeg, vec3.scale([0, 0, 0], this.kartColVel, this.kartColTimer / this._COLBOUNCE_TIME));
+				}
+				let posSeg = vec3.clone(this.pos);
+				let ignoreList: lsc_collision_triangle[] = [];
+				while (steps++ < 10 && remainingT > 0.01) {
+					let result = lsc.sweepEllipse(
+						posSeg,
+						velSeg,
+						scene,
+						[this._params.colRadius, this._params.colRadius, this._params.colRadius],
+						ignoreList
+					);
+					if (result != null) {
+						this._colResponse(posSeg, velSeg, result, ignoreList);
+						remainingT -= result.t;
+						if (remainingT > 0.01) {
+							if (this.physBasis != null) {
+								baseVel = vec3.transformMat4([0, 0, 0], this.vel, this.physBasis.mat);
+							}
+							velSeg = vec3.scale(vec3.create(), baseVel, remainingT);
+						}
+					} else {
+						vec3.add(posSeg, posSeg, velSeg);
+						remainingT = 0;
+					}
+				}
+				this.pos = posSeg;
 			}
 		}
 
@@ -970,9 +970,7 @@ export class Kart {
 		}
 		//TODO: check invuln state
 		this.specialControlHandler = true;
-		this.playCharacterSound(
-			damageType == MKDSCONST.DAMAGE_SPIN || damageType == MKDSCONST.DAMAGE_STOMP ? 1 : 0
-		);
+		this.playCharacterSound(damageType == MKDSCONST.DAMAGE_SPIN || damageType == MKDSCONST.DAMAGE_STOMP ? 1 : 0);
 		this.damageType = damageType;
 		this.ylock = 0;
 
@@ -1411,7 +1409,7 @@ export class Kart {
 			this.soundProps.refDistance /
 			(this.soundProps.refDistance +
 				this.soundProps.rolloffFactor *
-				(Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance));
+					(Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance));
 	}
 
 	private _gramShmidt(v1: vec3, v2: vec3, v3: vec3) {
@@ -1505,7 +1503,6 @@ export class Kart {
 						? (dat.object as lsc_taget & { knockbackDamage: number }).knockbackDamage
 						: MKDSCONST.DAMAGE_FLIP;
 				this.damage(knockbackDamage);
-
 			}
 
 			//convert back to angle + speed to keep change to kart vel

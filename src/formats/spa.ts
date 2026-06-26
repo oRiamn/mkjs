@@ -230,37 +230,41 @@ export class spa implements MKJSDataFormator {
 			return null;
 		}
 		if (obj.glTex == null) {
-			let canvas = this._readTexWithPal(obj.info, obj);
-			let m = obj.info;
-			if (m.flipX || m.flipY) {
-				let fC = document.createElement("canvas");
-				let ctx = fC.getContext("2d")!;
-				fC.width = m.flipX ? canvas.width * 2 : canvas.width;
-				fC.height = m.flipY ? canvas.height * 2 : canvas.height;
-				ctx.drawImage(canvas, 0, 0);
-				ctx.save();
-				if (m.flipX) {
-					ctx.translate(2 * canvas.width, 0);
-					ctx.scale(-1, 1);
+			try {
+				let canvas = this._readTexWithPal(obj.info, obj);
+				let m = obj.info;
+				if (m.flipX || m.flipY) {
+					let fC = document.createElement("canvas");
+					let ctx = fC.getContext("2d")!;
+					fC.width = m.flipX ? canvas.width * 2 : canvas.width;
+					fC.height = m.flipY ? canvas.height * 2 : canvas.height;
 					ctx.drawImage(canvas, 0, 0);
-					ctx.restore();
 					ctx.save();
+					if (m.flipX) {
+						ctx.translate(2 * canvas.width, 0);
+						ctx.scale(-1, 1);
+						ctx.drawImage(canvas, 0, 0);
+						ctx.restore();
+						ctx.save();
+					}
+					if (m.flipY) {
+						ctx.translate(0, 2 * canvas.height);
+						ctx.scale(1, -1);
+						ctx.drawImage(fC, 0, 0);
+						ctx.restore();
+					}
+					let t = this._loadTex(fC, gl, !m.repeatX, !m.repeatY);
+					t.realWidth = canvas.width;
+					t.realHeight = canvas.height;
+					obj.glTex = t;
+				} else {
+					let t = this._loadTex(canvas, gl, !m.repeatX, !m.repeatY);
+					t.realWidth = canvas.width;
+					t.realHeight = canvas.height;
+					obj.glTex = t;
 				}
-				if (m.flipY) {
-					ctx.translate(0, 2 * canvas.height);
-					ctx.scale(1, -1);
-					ctx.drawImage(fC, 0, 0);
-					ctx.restore();
-				}
-				let t = this._loadTex(fC, gl, !m.repeatX, !m.repeatY);
-				t.realWidth = canvas.width;
-				t.realHeight = canvas.height;
-				obj.glTex = t;
-			} else {
-				let t = this._loadTex(canvas, gl, !m.repeatX, !m.repeatY);
-				t.realWidth = canvas.width;
-				t.realHeight = canvas.height;
-				obj.glTex = t;
+			} catch (_e) {
+				return null;
 			}
 		}
 		return obj.glTex;

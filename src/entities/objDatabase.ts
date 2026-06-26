@@ -88,7 +88,6 @@ import { ObjSoundMaker } from "./soundMaker";
 import { ObjBus, ObjCar, ObjTruck } from "./trafficCar";
 import { ObjWater } from "./water";
 
-
 export const ObjDatabase = new Map([
 	[0x0001, ObjWater],
 	[0x0002, ObjPsea],
@@ -188,4 +187,4 @@ export const ObjDatabase = new Map([
 	[0x019a, ObjCar],
 	[0x0195, ObjBus],
 	[0x00cc, ObjBridge], //DEBUG: pianta bridge
-] as [number, SceneEntityObjectConstructor][])
+] as [number, SceneEntityObjectConstructor][]);

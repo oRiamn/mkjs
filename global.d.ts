@@ -206,6 +206,7 @@ declare global {
 		};
 		particles: SceneParticule[];
 		kcl: kcl;
+		getRoute(pathId: number): nkm_section_POIT[];
 	}
 	interface InputData {
 		accel: boolean;
@@ -227,4 +228,3 @@ declare global {
 }
 
 export { };
-

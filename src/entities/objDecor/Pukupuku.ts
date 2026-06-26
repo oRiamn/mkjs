@@ -58,9 +58,7 @@ export class Pukupuku extends ObjDecor {
 		this._jumpDur = PUKUPUKU_JUMP_DUR;
 		this._fixedWait = obji.setting4 & 0xffff;
 		this._waitDur = _pickWait(this._fixedWait, this._seed, 0);
-		this._startDelay =
-			obji.setting2 +
-			Math.floor(_hash01(this._seed, 0) * PUKUPUKU_WAIT_MAX);
+		this._startDelay = obji.setting2 + Math.floor(_hash01(this._seed, 0) * PUKUPUKU_WAIT_MAX);
 		this._phase = this._startDelay > 0 ? "delay" : "wait";
 
 		const zone = PUKUPUKU_ZONE_RADIUS * (0.55 + _hash01(this._seed, 1) * 0.45);
@@ -124,8 +122,7 @@ export class Pukupuku extends ObjDecor {
 			case "jump": {
 				const t = Math.min(1, this._phaseFrame / this._jumpDur);
 				this._jumpArc = Math.sin(t * Math.PI);
-				this._yOffset =
-					this._surfaceY - this._buryDepth * (1 - this._jumpArc) + this._jumpHeight * this._jumpArc;
+				this._yOffset = this._surfaceY - this._buryDepth * (1 - this._jumpArc) + this._jumpHeight * this._jumpArc;
 				this._visible = this._jumpArc > 0.05;
 				if (this._phaseFrame >= this._jumpDur) {
 					this._beginWait();

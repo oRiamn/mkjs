@@ -58,7 +58,7 @@ export class Sanbo extends ObjDecor {
 		this.vel = vec3.create();
 		this._prevPos = vec3.clone(this.pos);
 
-		this._route = obji.routeID !== 65535 ? (scene.paths[obji.routeID] ?? []) : [];
+		this._route = scene.getRoute(obji.routeID);
 		const pathMeta = scene.nkm.sections.PATH.entries[obji.routeID];
 		this._loopPath = pathMeta != null && pathMeta.loop !== 0;
 
