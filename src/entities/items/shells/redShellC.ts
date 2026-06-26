@@ -1,5 +1,4 @@
 import { nitroAudioSound, nitroAudio } from "../../../audio/nitroAudio";
-import { controlRaceCPU } from "../../../engine/controls/controlRaceCPU";
 import { MKDS_COLTYPE } from "../../../engine/collisionTypes";
 import { MKDSCONST } from "../../../engine/mkdsConst";
 import { nkm_section_CPAT, nkm_section_EPOI, nkm_section_IPOI, nkm_section_MEPA, nkm_section_MEPO } from "../../../formats/nkm";
@@ -95,7 +94,7 @@ export class RedShellC implements KartItemEntity {
 		} else {
 			this.speed += this.item.owner.speed;
 		}
-		return true;
+		return false;
 	}
 
 	onDie(final: boolean) {
@@ -133,7 +132,7 @@ export class RedShellC implements KartItemEntity {
 
 			if (this._pathReady) {
 				this._skipBackwardWaypoints();
-				this._updatePathProgress();
+				this._updatePathProgress(scene);
 				desiredAngle = this._angleTo(this._destPoint);
 			}
 
@@ -242,26 +241,47 @@ export class RedShellC implements KartItemEntity {
 		return this._chaseTarget;
 	}
 
-	private _initRouteFromKart(kart: Kart, scene: Scene) {
-		const ctrl = kart.controller;
-		if (ctrl instanceof controlRaceCPU) {
-			this._paths = ctrl.paths;
-			this._points = ctrl.points;
-			if (!this._points.length) {
-				this._pathReady = false;
-				return;
-			}
-			const poiInd = Math.max(ctrl.ePoiInd, this._nearestForwardPointIndex());
-			this._pathReady = this._assignRoutePoint(poiInd);
-			return;
+	/** Estimate which route point best matches a kart's position and heading. */
+	private _estimateRouteIndexForKart(kart: Kart): number {
+		if (!this._points.length) return 0;
+
+		const pos = kart.pos;
+		const heading = kart.physicalDir;
+		let nearestDist = Infinity;
+		for (let i = 0; i < this._points.length; i++) {
+			nearestDist = Math.min(nearestDist, vec3.squaredDistance(pos, this._points[i].pos));
 		}
 
+		const threshold = nearestDist * 4 + 32 * 32;
+		let best = this._nearestPointIndex(pos);
+		let bestScore = Infinity;
+
+		for (let i = 0; i < this._points.length; i++) {
+			const dist = vec3.squaredDistance(pos, this._points[i].pos);
+			if (dist > threshold) continue;
+
+			const toPoi = Math.atan2(this._points[i].pos[0] - pos[0], pos[2] - this._points[i].pos[2]);
+			const ahead = Math.abs(this._dirDiff(toPoi, heading)) <= Math.PI * 0.55;
+			const score = dist * (ahead ? 1 : 2.5);
+
+			if (score < bestScore) {
+				bestScore = score;
+				best = i;
+			}
+		}
+
+		return best;
+	}
+
+	private _initRouteFromKart(kart: Kart, scene: Scene) {
 		if (!this._paths.length && !this._loadTrackPaths(scene)) {
 			this._pathReady = false;
 			return;
 		}
 
-		const poiInd = this._nearestForwardPointIndex(kart.pos);
+		const shellInd = this._nearestForwardPointIndex();
+		const targetInd = this._estimateRouteIndexForKart(kart);
+		const poiInd = Math.max(shellInd, targetInd);
 		this._pathReady = this._assignRoutePoint(poiInd);
 	}
 
@@ -273,6 +293,13 @@ export class RedShellC implements KartItemEntity {
 
 		const poiInd = this._nearestForwardPointIndex();
 		this._pathReady = this._assignRoutePoint(poiInd);
+	}
+
+	private _syncRouteToTarget(kart: Kart) {
+		const estimated = this._estimateRouteIndexForKart(kart);
+		if (estimated > this._ePoiInd + 1) {
+			this._requestRoutePoint(estimated);
+		}
 	}
 
 	private _requestRoutePoint(poiInd: number, immediate = false): boolean {
@@ -358,6 +385,34 @@ export class RedShellC implements KartItemEntity {
 		return nearest;
 	}
 
+	private _pickForkPath(fromPath: routePath, kart: Kart | null): routePath | null {
+		if (!fromPath.dest.length) return null;
+
+		let bestPath: routePath | null = null;
+		let bestScore = Infinity;
+		const ref = kart?.pos ?? this.item.pos;
+		const heading = kart?.physicalDir ?? this.angle;
+
+		for (let d = 0; d < fromPath.dest.length; d++) {
+			const path = this._paths[fromPath.dest[d]];
+			if (!path) continue;
+			const pt = this._points[path.startInd];
+			if (!pt) continue;
+
+			const dist = vec3.squaredDistance(ref, pt.pos);
+			const toPoi = Math.atan2(pt.pos[0] - ref[0], ref[2] - pt.pos[2]);
+			const ahead = Math.abs(this._dirDiff(toPoi, heading)) <= Math.PI * 0.55;
+			const score = dist * (ahead ? 1 : 2.5);
+
+			if (score < bestScore) {
+				bestScore = score;
+				bestPath = path;
+			}
+		}
+
+		return bestPath ?? this._paths[fromPath.dest[0]] ?? null;
+	}
+
 	private _skipBackwardWaypoints() {
 		if (!this._ePoi) return;
 		if (!this._isAheadAngle(this._angleTo(this._ePoi.pos))) {
@@ -373,24 +428,14 @@ export class RedShellC implements KartItemEntity {
 	private _advancePoint(): boolean {
 		if (!this._ePoi || !this._paths.length || !this._ePath) return false;
 
-		const routeCtrl = this._routeTarget?.controller;
-		if (routeCtrl instanceof controlRaceCPU && routeCtrl.ePoiInd > this._ePoiInd + 1) {
-			return this._requestRoutePoint(routeCtrl.ePoiInd);
-		}
-
 		const nextInd = this._ePoiInd + 1;
 		if (nextInd < this._ePath.startInd + this._ePath.pathLen) {
 			return this._requestRoutePoint(nextInd);
 		}
 
-		if (!this._ePath.dest.length) return false;
-
-		if (routeCtrl instanceof controlRaceCPU && routeCtrl.ePoiInd > this._ePoiInd) {
-			return this._requestRoutePoint(routeCtrl.ePoiInd);
-		}
-
-		const nextPath = this._paths[this._ePath.dest[0]];
+		const nextPath = this._pickForkPath(this._ePath, this._routeTarget);
 		if (!nextPath) return false;
+
 		this._ePath = nextPath;
 		return this._requestRoutePoint(this._ePath.startInd);
 	}
@@ -408,14 +453,11 @@ export class RedShellC implements KartItemEntity {
 		return isEpoi(this._ePoi) ? this._ePoi.pointSize : DEFAULT_POINT_SIZE;
 	}
 
-	private _updatePathProgress() {
+	private _updatePathProgress(_scene: Scene) {
 		if (!this._ePoi) return;
 
-		if (this._routeTarget?.controller instanceof controlRaceCPU) {
-			const ctrl = this._routeTarget.controller;
-			if (ctrl.ePoiInd > this._ePoiInd + 1) {
-				this._requestRoutePoint(ctrl.ePoiInd);
-			}
+		if (this._routeTarget) {
+			this._syncRouteToTarget(this._routeTarget);
 		}
 
 		const dist = vec3.dot(this._destNorm, this.item.pos) + this._destConst;
