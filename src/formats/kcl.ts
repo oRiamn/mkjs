@@ -155,7 +155,9 @@ export class kcl {
 			if ((x & this.xMask) > 0 || (y & this.yMask) > 0 || (z & this.zMask) > 0) return []; //no collision
 
 			let index = (x >> this.coordShift) | ((y >> this.coordShift) << this.yShift) | ((z >> this.coordShift) << this.zShift);
-			return this._traverseOctree(this.octree[index], x, y, z, this.coordShift - 1);
+			const root = this.octree[index];
+			if (root == null) return [];
+			return this._traverseOctree(root, x, y, z, this.coordShift - 1);
 		}
 	}
 
@@ -164,8 +166,10 @@ export class kcl {
 		else return view.getInt32(off, this.end) / this.Fixed32Point;
 	}
 
-	private _traverseOctree(node: kcl_cube, x: number, y: number, z: number, shift: number): kcl_plane[] {
+	private _traverseOctree(node: kcl_cube | undefined, x: number, y: number, z: number, shift: number): kcl_plane[] {
+		if (node == null) return [];
 		if (node.leaf === false) {
+			if (shift < 0) return [];
 			//otherwise we're a node! find next index and traverse
 			let index = ((x >> shift) & 1) | (((y >> shift) & 1) << 1) | (((z >> shift) & 1) << 2);
 			return this._traverseOctree(node.items[index], x, y, z, shift - 1);
@@ -176,6 +180,13 @@ export class kcl {
 
 	private _decodeCube(baseoff: number, off: number, view: DataView): kcl_cube {
 		let data = view.getUint32(off, this.end);
+		if (data === 0) {
+			return {
+				leaf: true,
+				tris: [],
+				realTris: [],
+			};
+		}
 		let off2 = baseoff + (data & 0x7fffffff);
 		if (off2 >= view.byteLength) {
 			return {
