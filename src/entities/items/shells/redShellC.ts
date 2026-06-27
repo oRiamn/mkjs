@@ -91,8 +91,9 @@ export class RedShellC implements KartItemEntity {
 
 	private _paths: routePath[] = [];
 	private _points: pathPoint[] = [];
+	private _battleMode = false;
 	private _pathReady = false;
-	private _ePath!: routePath;
+	private _ePath: routePath | null = null;
 	private _ePoiInd = 0;
 	private _ePoi: pathPoint | null = null;
 	private _destPoint = vec3.create();
@@ -239,19 +240,24 @@ export class RedShellC implements KartItemEntity {
 
 	private _loadTrackPaths(scene: Scene): boolean {
 		const nkm = scene.nkm;
-		if (nkm.sections.EPAT?.entries?.length && nkm.sections.EPOI?.entries?.length) {
+		// Same battle detection as controlRaceCPU: arenas omit EPAT and use MEPA/MEPO.
+		this._battleMode = nkm.sections.EPAT == null;
+
+		if (this._battleMode) {
+			if (nkm.sections.MEPA?.entries?.length && nkm.sections.MEPO?.entries?.length) {
+				this._paths = nkm.sections.MEPA.entries;
+				this._points = nkm.sections.MEPO.entries;
+				return true;
+			}
+		} else if (nkm.sections.EPAT?.entries?.length && nkm.sections.EPOI?.entries?.length) {
 			this._paths = nkm.sections.EPAT.entries;
 			this._points = nkm.sections.EPOI.entries;
-			return true;
-		}
-		if (nkm.sections.MEPA?.entries?.length && nkm.sections.MEPO?.entries?.length) {
-			this._paths = nkm.sections.MEPA.entries;
-			this._points = nkm.sections.MEPO.entries;
 			return true;
 		}
 		if (nkm.sections.IPAT?.entries?.length && nkm.sections.IPOI?.entries?.length) {
 			this._paths = nkm.sections.IPAT.entries;
 			this._points = nkm.sections.IPOI.entries;
+			this._battleMode = false;
 			return true;
 		}
 		return false;
@@ -271,6 +277,10 @@ export class RedShellC implements KartItemEntity {
 			return;
 		}
 		this._recomputePath();
+		if (!this._ePath) {
+			this._pathReady = false;
+			return;
+		}
 		this._calcDestNorm();
 		vec3.copy(this._destPoint, this._ePoi.pos);
 		this._pathReady = true;
@@ -290,8 +300,7 @@ export class RedShellC implements KartItemEntity {
 	}
 
 	private _recomputePath() {
-		const path = this._pathForIndex(this._ePoiInd);
-		if (path) this._ePath = path;
+		this._ePath = this._pathForIndex(this._ePoiInd);
 	}
 
 	private _pathForIndex(poiInd: number): routePath | null {
@@ -305,7 +314,7 @@ export class RedShellC implements KartItemEntity {
 	}
 
 	private _skipBackwardWaypoints() {
-		if (!this._ePoi) return;
+		if (!this._ePoi || !this._ePath) return;
 		if (!this._isAheadAngle(this._angleTo(this._ePoi.pos))) {
 			this._advancePoint();
 		}
@@ -316,17 +325,48 @@ export class RedShellC implements KartItemEntity {
 		if (!this._ePoi || !this._ePath) return;
 
 		if (++this._ePoiInd < this._ePath.startInd + this._ePath.pathLen) {
-			this._ePoi = this._points[this._ePoiInd];
+			this._ePoi = this._points[this._ePoiInd] ?? null;
+		} else if (this._battleMode) {
+			this._advanceBattleFork(this._ePath);
 		} else if (this._ePath.dest.length > 0) {
 			const pathInd = this._pickForkPathIndex(this._ePath);
-			this._ePath = this._paths[pathInd];
+			const nextPath = this._paths[pathInd];
+			if (!nextPath) return;
+			this._ePath = nextPath;
 			this._ePoiInd = this._ePath.startInd;
-			this._ePoi = this._points[this._ePoiInd];
+			this._ePoi = this._points[this._ePoiInd] ?? null;
+		} else {
+			return;
 		}
 
-		if (!this._ePoi) return;
+		if (!this._ePoi || !this._ePath) return;
 		this._calcDestNorm();
 		vec3.copy(this._destPoint, this._ePoi.pos);
+	}
+
+	/** Battle arenas link MEPA forks by point index, not path index. */
+	private _advanceBattleFork(fromPath: routePath) {
+		const candidates = fromPath.source.length > 0 ? [...fromPath.source, ...fromPath.dest] : fromPath.dest;
+		if (candidates.length === 0) return;
+
+		const ref = this._lockedTarget?.pos ?? this.item.pos;
+		let bestInd = candidates[0];
+		let bestDist = Infinity;
+
+		for (let i = 0; i < candidates.length; i++) {
+			const poiInd = candidates[i];
+			const pt = this._points[poiInd];
+			if (!pt) continue;
+			const dist = vec3.squaredDistance(ref, pt.pos);
+			if (dist < bestDist) {
+				bestDist = dist;
+				bestInd = poiInd;
+			}
+		}
+
+		this._ePoiInd = bestInd;
+		this._ePoi = this._points[bestInd] ?? null;
+		if (this._ePoi) this._recomputePath();
 	}
 
 	private _pickForkPathIndex(fromPath: routePath): number {
@@ -365,7 +405,7 @@ export class RedShellC implements KartItemEntity {
 
 	/** Same plane crossing test as controlRaceCPU.fetchInput. */
 	private _updatePathProgress() {
-		if (!this._ePoi) return;
+		if (!this._ePoi || !this._ePath) return;
 
 		const dist = vec3.dot(this._destNorm, this.item.pos) + this._destConst;
 		if (dist < this._pointSize()) {
