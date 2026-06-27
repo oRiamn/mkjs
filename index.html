@@ -178,38 +178,29 @@
 				});
 				mainScene = new singleScene("mkds/" + MKDSCONST.CURRENTCOURSE, 0, res, autostart);
 
-				big();
-				render();
+				startRenderLoop();
 			}
 
 			var keysArray = new Array(255);
 			var touches = [];
 
-			var timeSync = 0;
-			var lastTime = Date.now();
-			function render() {
-				timeSync += Date.now() - lastTime;
-				lastTime = Date.now();
-				big();
+			function startRenderLoop() {
+				startGameLoop(requestAnimationFrameFnct, {
+					onUpdate: function () {
+						mainScene.update();
+						processTouches();
+						updateMobileControlsOverlay();
+					},
+					onRender: function () {
+						big();
 
-				gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+						gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+						gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
-				while (timeSync > 0) {
-					mainScene.update();
-					processTouches();
-					updateMobileControlsOverlay();
-					if (timeSync > 1000) timeSync = 1000; //don't run way too many frames.
-					timeSync -= 1000 / 60;
-				}
-
-				nitroAudio.tick();
-				//mainScene2.update();
-
-				mainScene.render();
-				//sceneDrawer.getInstance().drawWithShadow(gl, mainScene2, gl.viewportWidth/2, 0, gl.viewportWidth/2, gl.viewportHeight)
-
-				requestAnimationFrameFnct(render);
+						nitroAudio.tick();
+						mainScene.render();
+					},
+				});
 			}
 
 			function keyDown(e) {

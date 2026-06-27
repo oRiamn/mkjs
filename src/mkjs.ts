@@ -84,6 +84,7 @@ import { ObjWater } from "./entities/water";
 
 import {
 	getRequestAnimationFrameFnct,
+	startGameLoop,
 	hideMenu,
 	mobilecheck,
 	onAppStateChange,
@@ -228,6 +229,7 @@ Object.assign(window, {
 	SSEQThread,
 	setupHUD,
 	getRequestAnimationFrameFnct,
+	startGameLoop,
 	mobilecheck,
 	setupMenu,
 	showMenuScreen,

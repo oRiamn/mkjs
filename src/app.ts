@@ -26,6 +26,54 @@ export function getRequestAnimationFrameFnct(window: Window) {
 	);
 }
 
+export const TARGET_FPS = 60;
+export const FRAME_MS = 1000 / TARGET_FPS;
+const MAX_FRAME_DELTA_MS = 1000;
+
+export type GameLoopCallbacks = {
+	onUpdate: () => void;
+	onRender: () => void;
+};
+
+export function startGameLoop(
+	requestAnimationFrame: (callback: (time: number) => void) => number,
+	callbacks: GameLoopCallbacks
+) {
+	let lastTime = 0;
+	let lastRenderTime = 0;
+	let timeAccumulator = 0;
+
+	function loop(timestamp: number) {
+		requestAnimationFrame(loop);
+
+		const now = timestamp || performance.now();
+		if (lastTime === 0) {
+			lastTime = now;
+			lastRenderTime = now;
+			return;
+		}
+
+		let frameTime = now - lastTime;
+		lastTime = now;
+		if (frameTime > MAX_FRAME_DELTA_MS) {
+			frameTime = MAX_FRAME_DELTA_MS;
+		}
+
+		timeAccumulator += frameTime;
+		while (timeAccumulator >= FRAME_MS) {
+			callbacks.onUpdate();
+			timeAccumulator -= FRAME_MS;
+		}
+
+		if (now - lastRenderTime >= FRAME_MS) {
+			lastRenderTime = now;
+			callbacks.onRender();
+		}
+	}
+
+	requestAnimationFrame(loop);
+}
+
 const HUD_HIDE_DELAY_MS = 2000;
 let hudHideTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -96,12 +144,12 @@ function requestAppFullscreen() {
 	const root = document.documentElement;
 	const request =
 		root.requestFullscreen || (root as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen;
-	request?.call(root)?.catch?.(() => {});
+	request?.call(root)?.catch?.(() => { });
 }
 
 function exitAppFullscreen() {
 	const exit = document.exitFullscreen || (document as Document & { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen;
-	exit?.call(document)?.catch?.(() => {});
+	exit?.call(document)?.catch?.(() => { });
 }
 
 export function setupFullscreen() {
