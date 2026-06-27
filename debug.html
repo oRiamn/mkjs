@@ -223,15 +223,15 @@
 													? " cell"
 													: l.endsWith(".nsbtx")
 														? " btx"
-													: l.endsWith(".nkm")
-														? " nkm"
-														: l.endsWith(".spa")
-															? " spa"
-															: l.endsWith(".bin")
-																? " bin"
-																: l.endsWith(".tbl") || l.endsWith(".mtbl") || l.endsWith(".ktbl")
-																	? " tbl"
-																: "";
+														: l.endsWith(".nkm")
+															? " nkm"
+															: l.endsWith(".spa")
+																? " spa"
+																: l.endsWith(".bin")
+																	? " bin"
+																	: l.endsWith(".tbl") || l.endsWith(".mtbl") || l.endsWith(".ktbl")
+																		? " tbl"
+																		: "";
 			}
 
 			function renderFilteredList() {
@@ -920,18 +920,7 @@
 					lines.push("emblem table — " + t.emblemCount + " entries (8 bytes each)", "");
 					for (var ei = 0; ei < t.emblems.length; ei++) {
 						var em = t.emblems[ei];
-						lines.push(
-							"#" +
-								ei +
-								"  index=" +
-								em.index +
-								"  size=" +
-								em.width +
-								"×" +
-								em.height +
-								"  flags=" +
-								em.flags
-						);
+						lines.push("#" + ei + "  index=" + em.index + "  size=" + em.width + "×" + em.height + "  flags=" + em.flags);
 					}
 					return lines.join("\n");
 				}
@@ -946,8 +935,7 @@
 					var t = new tbl(buf, path.substring(path.lastIndexOf("/") + 1));
 					showTextView();
 					document.getElementById("binSummary").textContent = formatTblSummary(t, path);
-					document.getElementById("binHex").textContent =
-						t.kind === "unknown" ? formatHexDump(new Uint8Array(buf), 65536) : "";
+					document.getElementById("binHex").textContent = t.kind === "unknown" ? formatHexDump(new Uint8Array(buf), 65536) : "";
 					setSel(el);
 					setStatus(path + "  (" + t.kind + ", " + buf.byteLength + " bytes)");
 				} catch (err) {
@@ -1560,7 +1548,7 @@
 				var bounds = estimateSpaBounds(viewer.spa.particles[particleIndex]);
 				viewer.center = bounds.center;
 				viewer.radius = bounds.radius;
-				viewer.dist = bounds.radius > 0 ? (bounds.radius / Math.sin(((45 * Math.PI) / 180) / 2)) * 1.4 : 80;
+				viewer.dist = bounds.radius > 0 ? (bounds.radius / Math.sin((45 * Math.PI) / 180 / 2)) * 1.4 : 80;
 				restartSpaEmitter(viewer);
 				setStatus(spaStatusText(viewer.path, viewer.spa, particleIndex));
 			}
@@ -2339,7 +2327,11 @@
 			<div id="left">
 				<div id="romBar">
 					<button id="loadCachedRom" type="button">Load cached ROM</button>
-					<button id="openRomFile" type="button" title="Replace in-memory ROM from a local .nds file (does not update IndexedDB cache)">
+					<button
+						id="openRomFile"
+						type="button"
+						title="Replace in-memory ROM from a local .nds file (does not update IndexedDB cache)"
+					>
 						Open ROM file…
 					</button>
 					<span id="romInfo"></span>
