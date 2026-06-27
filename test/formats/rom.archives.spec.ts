@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { narc } from "../../src/formats/narc";
 import { lz77 } from "../../src/formats/lz77";
+import { narc } from "../../src/formats/narc";
 import {
 	BEACH_COURSE,
 	ROM_ALL_COURSES,

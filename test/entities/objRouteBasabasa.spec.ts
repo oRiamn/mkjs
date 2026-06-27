@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createMapObjResolver, resolveMapObj } from "../../src/engine/mapObjResolver";
 import { ObjRouteBasabasa } from "../../src/entities/platforms/objRouteBasabasa";
-import { nsbmd } from "../../src/formats/nsbmd";
 import { nkm } from "../../src/formats/nkm";
+import { nsbmd } from "../../src/formats/nsbmd";
 import { loadCourseCarc, loadLz77Narc, loadRomFS, romExists } from "../helpers/rom";
 
 describe.skipIf(!romExists)("ObjRouteBasabasa", () => {

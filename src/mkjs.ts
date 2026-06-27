@@ -1,127 +1,126 @@
 import { mat2, mat3, mat4, vec2, vec3, vec4 } from "gl-matrix";
-import setGlobalVars from "indexeddbshim";
 import { TileFlattener } from "./engine/2d/tileFlattener";
 import { IngameRes } from "./engine/ingameRes";
 
 import { cameraIngame } from "./engine/cameras/cameraIngame";
-import { cameraSpectator } from "./engine/cameras/cameraSpectator";
 import { cameraIntro } from "./engine/cameras/cameraIntro";
+import { cameraSpectator } from "./engine/cameras/cameraSpectator";
 
-import { getPlayerControls } from "./engine/controls/getPlayerControls";
 import { controlDefault } from "./engine/controls/controlDefault";
 import { controlMobile } from "./engine/controls/controlMobile";
-import { controlRaceCPU } from "./engine/controls/controlRaceCPU";
 import { controlNetwork } from "./engine/controls/controlNetwork";
+import { controlRaceCPU } from "./engine/controls/controlRaceCPU";
+import { getPlayerControls } from "./engine/controls/getPlayerControls";
 
-import { narc, narcGroup } from "./formats/narc";
-import { ndsFS } from "./formats/ndsFS";
-import { nscr } from "./formats/2d/nscr";
-import { nclr } from "./formats/2d/nclr";
-import { ncgr } from "./formats/2d/ncgr";
 import { ncer } from "./formats/2d/ncer";
-import { sseq } from "./formats/sseq";
-import { ssar } from "./formats/ssar";
-import { nsbca } from "./formats/nsbca";
-import { sbnk } from "./formats/sbnk";
-import { swav } from "./formats/swav";
-import { swar } from "./formats/swar";
-import { spa } from "./formats/spa";
-import { sdat } from "./formats/sdat";
-import { nsbtx } from "./formats/nsbtx";
-import { nsbtp } from "./formats/nsbtp";
-import { nftr } from "./formats/nftr";
-import { nitro } from "./formats/nitro";
-import { lz77 } from "./formats/lz77";
-import { nkm } from "./formats/nkm";
-import { nsbmd } from "./formats/nsbmd";
-import { nsbta } from "./formats/nsbta";
+import { ncgr } from "./formats/2d/ncgr";
+import { nclr } from "./formats/2d/nclr";
+import { nscr } from "./formats/2d/nscr";
 import { kartoffsetdata } from "./formats/kartoffsetdata";
 import { kartphysicalparam } from "./formats/kartphysicalparam";
-import { tbl } from "./formats/tbl";
 import { kcl } from "./formats/kcl";
+import { lz77 } from "./formats/lz77";
+import { narc, narcGroup } from "./formats/narc";
+import { ndsFS } from "./formats/ndsFS";
 import { netKart } from "./formats/net/netKart";
+import { nftr } from "./formats/nftr";
+import { nitro } from "./formats/nitro";
+import { nkm } from "./formats/nkm";
+import { nsbca } from "./formats/nsbca";
+import { nsbmd } from "./formats/nsbmd";
+import { nsbta } from "./formats/nsbta";
+import { nsbtp } from "./formats/nsbtp";
+import { nsbtx } from "./formats/nsbtx";
+import { sbnk } from "./formats/sbnk";
+import { sdat } from "./formats/sdat";
+import { spa } from "./formats/spa";
+import { ssar } from "./formats/ssar";
+import { sseq } from "./formats/sseq";
+import { swar } from "./formats/swar";
+import { swav } from "./formats/swav";
+import { tbl } from "./formats/tbl";
 
 import { nitroAnimator } from "./render/nitroAnimator";
-import { shadowRender } from "./render/shadowRender";
 import { nitroModel } from "./render/nitroModel";
 import { nitroRender } from "./render/nitroRender";
 import { nitroShaders } from "./render/nitroShaders";
+import { shadowRender } from "./render/shadowRender";
 
 import { CountD3DUI } from "./ui/countD3DUI";
 import { Goal3DUI } from "./ui/goal3DUI";
-import { LapCountUI } from "./ui/lapCountUI";
 import { ItemUi } from "./ui/itemUi";
-import { PlacementUI } from "./ui/placementUI";
-import { Start3DUI } from "./ui/start3DUI";
-import { fitCanvasToWindow } from "./ui/uiScale";
+import { LapCountUI } from "./ui/lapCountUI";
 import {
 	setupMobileControlsOverlay,
 	syncMobileControlsLayout,
 	syncMobileControlsVisibility,
 	updateMobileControlsOverlay,
 } from "./ui/mobileControlsOverlay";
+import { PlacementUI } from "./ui/placementUI";
+import { Start3DUI } from "./ui/start3DUI";
+import { fitCanvasToWindow } from "./ui/uiScale";
 
 import { ItemShard } from "./particles/itemboxShard";
 
-import { RedShellC } from "./entities/items/shells/redShellC";
-import { GreenShellC } from "./entities/items/shells/greenShellC";
-import { GreenShellGroup } from "./entities/items/shells/shellGroup";
-import { BananaC } from "./entities/items/droppable/bananaC";
-import { FakeBoxC } from "./entities/items/droppable/fakeBoxC";
-import { BombC } from "./entities/items/droppable/bombC";
-import { nitroAudio } from "./audio/nitroAudio";
 import { SSEQWaveCache } from "./audio/SSEQWaveCache";
+import { nitroAudio } from "./audio/nitroAudio";
 import { SSEQPlayer } from "./audio/sseqPlayer";
 import { ItemBox } from "./entities/itembox";
-import { ObjBus, ObjCar, ObjTruck } from "./entities/trafficCar";
-import { ObjWater } from "./entities/water";
-import { ObjBridge } from "./entities/platforms/objBridge";
-import { ObjRoutePlatform } from "./entities/platforms/objRoutePlatform";
-import { ObjRotaryRoom } from "./entities/platforms/objRotaryRoom";
+import { BananaC } from "./entities/items/droppable/bananaC";
+import { BombC } from "./entities/items/droppable/bombC";
+import { FakeBoxC } from "./entities/items/droppable/fakeBoxC";
+import { GreenShellC } from "./entities/items/shells/greenShellC";
+import { RedShellC } from "./entities/items/shells/redShellC";
+import { GreenShellGroup } from "./entities/items/shells/shellGroup";
+import { ObjDatabase } from "./entities/objDatabase";
 import { ObjDecor } from "./entities/objDecor";
+import { ObjBridge } from "./entities/platforms/objBridge";
+import { ObjRotaryRoom } from "./entities/platforms/objRotaryRoom";
+import { ObjRoutePlatform } from "./entities/platforms/objRoutePlatform";
 import { ObjGear } from "./entities/rotatingGear";
 import { ObjSoundMaker } from "./entities/soundMaker";
-import { ObjDatabase } from "./entities/objDatabase";
+import { ObjBus, ObjCar, ObjTruck } from "./entities/trafficCar";
+import { ObjWater } from "./entities/water";
 
+import {
+	getRequestAnimationFrameFnct,
+	hideMenu,
+	mobilecheck,
+	onAppStateChange,
+	setupFullscreen,
+	setupHUD,
+	setupHudBehavior,
+	setupMenu,
+	showMenu,
+	showMenuScreen,
+} from "./app";
+import { SSEQThread } from "./audio/sseqThread";
 import { MKDS_COLSOUNDS } from "./engine/collisionSounds";
-import { KartItems } from "./entities/kartItems";
-import { Item } from "./entities/item";
-import { fileStore } from "./engine/storage/fileStore";
+import { MKDS_COLTYPE } from "./engine/collisionTypes";
 import { ItemController } from "./engine/itemController";
-import { NitroParticle } from "./particles/nitroParticle";
-import { NitroEmitter } from "./particles/nitroEmitter";
-import { Kart } from "./entities/kart";
-import { courseScene } from "./engine/scenes/courseScene";
 import { MKDSCONST, refreshSettings } from "./engine/mkdsConst";
+import { courseScene } from "./engine/scenes/courseScene";
 import { sceneDrawer } from "./engine/scenes/sceneDrawer";
 import { singleScene } from "./engine/scenes/singleScene";
-import { BeachTree } from "./entities/objDecor/BeachTree";
-import { MKDS_COLTYPE } from "./engine/collisionTypes";
-import { SSEQThread } from "./audio/sseqThread";
+import { fileStore } from "./engine/storage/fileStore";
+import { Item } from "./entities/item";
 import {
 	BananaGroupC,
+	BlooperC,
+	BlueShellC,
+	BooC,
+	KillerC,
 	MushroomC,
 	MushroomGroupC,
 	QueenMushroomC,
 	StarC,
 	ThunderC,
-	BlooperC,
-	BooC,
-	KillerC,
-	BlueShellC,
 } from "./entities/items/placeholder";
-import {
-	mobilecheck,
-	getRequestAnimationFrameFnct,
-	setupHUD,
-	setupMenu,
-	showMenuScreen,
-	hideMenu,
-	showMenu,
-	setupHudBehavior,
-	onAppStateChange,
-	setupFullscreen,
-} from "./app";
+import { Kart } from "./entities/kart";
+import { KartItems } from "./entities/kartItems";
+import { BeachTree } from "./entities/objDecor/BeachTree";
+import { NitroEmitter } from "./particles/nitroEmitter";
+import { NitroParticle } from "./particles/nitroParticle";
 
 Object.assign(window, {
 	vec2,

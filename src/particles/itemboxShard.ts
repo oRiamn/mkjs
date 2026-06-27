@@ -4,8 +4,8 @@
 // by RHY3756547
 //
 
-import { nitroModel } from "../render/nitroModel";
 import { Kart } from "../entities/kart";
+import { nitroModel } from "../render/nitroModel";
 export class ItemShard {
 	scene: Scene;
 	time: number;

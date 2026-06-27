@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ncgr } from "../../../src/formats/2d/ncgr";
-import { buildMinimalNcgr } from "../../helpers/fixtures2d";
 import { buildNitroFile } from "../../helpers/fixtures";
+import { buildMinimalNcgr } from "../../helpers/fixtures2d";
 import { getRomFile, romExists } from "../../helpers/rom";
 
 describe("ncgr", () => {

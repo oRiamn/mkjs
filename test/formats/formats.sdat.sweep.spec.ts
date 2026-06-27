@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sbnk } from "../../src/formats/sbnk";
-import { sseq } from "../../src/formats/sseq";
 import { ssar } from "../../src/formats/ssar";
+import { sseq } from "../../src/formats/sseq";
 import { swar } from "../../src/formats/swar";
 import { loadSdat, romExists } from "../helpers/rom";
 

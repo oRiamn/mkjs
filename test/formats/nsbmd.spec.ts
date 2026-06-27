@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { narc } from "../../src/formats/narc";
 import { ndsFS } from "../../src/formats/ndsFS";
 import { nsbmd } from "../../src/formats/nsbmd";
+import { nsbtx } from "../../src/formats/nsbtx";
 import { buildNitroFile } from "../helpers/fixtures";
 import { getRomFile, loadCourseCarc, loadLz77Narc, romExists } from "../helpers/rom";
 import { ROM_CHARACTERS } from "../helpers/romCourse";
-import { nsbtx } from "../../src/formats/nsbtx";
 
 const NSMBDS_ROM = "test/nsmbds.nds";
 const nsmbdsExists = existsSync(NSMBDS_ROM);

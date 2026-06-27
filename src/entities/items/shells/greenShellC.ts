@@ -1,4 +1,4 @@
-import { nitroAudioSound, nitroAudio } from "../../../audio/nitroAudio";
+import { nitroAudio, nitroAudioSound } from "../../../audio/nitroAudio";
 import { MKDS_COLTYPE } from "../../../engine/collisionTypes";
 import { MKDSCONST } from "../../../engine/mkdsConst";
 import { Item } from "../../item";

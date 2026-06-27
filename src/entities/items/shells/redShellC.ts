@@ -54,7 +54,7 @@
 //
 //
 
-import { nitroAudioSound, nitroAudio } from "../../../audio/nitroAudio";
+import { nitroAudio, nitroAudioSound } from "../../../audio/nitroAudio";
 import { MKDS_COLTYPE } from "../../../engine/collisionTypes";
 import { MKDSCONST } from "../../../engine/mkdsConst";
 import { nkm_section_CPAT, nkm_section_EPOI, nkm_section_IPOI, nkm_section_MEPA, nkm_section_MEPO } from "../../../formats/nkm";

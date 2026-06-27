@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { kcl } from "../../src/formats/kcl";
 import { kartoffsetdata } from "../../src/formats/kartoffsetdata";
 import { kartphysicalparam } from "../../src/formats/kartphysicalparam";
+import { kcl } from "../../src/formats/kcl";
 import { lz77 } from "../../src/formats/lz77";
 import { narc } from "../../src/formats/narc";
 import { nkm } from "../../src/formats/nkm";

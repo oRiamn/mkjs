@@ -8,19 +8,19 @@
 // /formats/kcl.js
 //
 import { nitroAudio, nitroAudioSound, nitroAudioSoundProps } from "../audio/nitroAudio";
-import { NitroEmitter } from "../particles/nitroEmitter";
-import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
-import { KartItems } from "./kartItems";
-import { nkm, nkm_section_CPOI, nkm_section_KTPJ, nkm_section_KTPS, nkm_section_MEPO } from "../formats/nkm";
-import { kartphysicalparam_kart } from "../formats/kartphysicalparam";
-import { kartoffsetdata_kart } from "../formats/kartoffsetdata";
-import { MKDSCONST } from "../engine/mkdsConst";
 import { MKDS_COLTYPE } from "../engine/collisionTypes";
 import { IngameRes_character, tires } from "../engine/ingameRes";
-import { courseScene } from "../engine/scenes/courseScene";
 import { lsc } from "../engine/largeSphereCollider";
+import { MKDSCONST } from "../engine/mkdsConst";
+import { courseScene } from "../engine/scenes/courseScene";
+import { kartoffsetdata_kart } from "../formats/kartoffsetdata";
+import { kartphysicalparam_kart } from "../formats/kartphysicalparam";
+import { nkm, nkm_section_CPOI, nkm_section_KTPJ, nkm_section_KTPS, nkm_section_MEPO } from "../formats/nkm";
 import { nsbmd_modelData } from "../formats/nsbmd";
+import { NitroEmitter } from "../particles/nitroEmitter";
+import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
 import { nitroModel } from "../render/nitroModel";
+import { KartItems } from "./kartItems";
 
 type KartCollisionSounds = {
 	hit?: number;

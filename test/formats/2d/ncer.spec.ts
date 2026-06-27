@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ncer } from "../../../src/formats/2d/ncer";
-import { buildMinimalNcer } from "../../helpers/fixtures2d";
 import { buildNitroFile } from "../../helpers/fixtures";
+import { buildMinimalNcer } from "../../helpers/fixtures2d";
 import { loadLz77Narc, romExists } from "../../helpers/rom";
 
 describe("ncer", () => {
