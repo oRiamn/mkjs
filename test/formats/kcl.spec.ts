@@ -15,6 +15,11 @@ describe("kcl", () => {
 		const collision = new kcl(buildMinimalKcl(), false);
 		expect(collision.getPlanesAt(-1, 0, 0)).toEqual([]);
 	});
+
+	it("should not throw when querying inside bounds of a minimal file", () => {
+		const collision = new kcl(buildMinimalKcl(), false);
+		expect(collision.getPlanesAt(0, 0, 0)).toEqual([]);
+	});
 });
 
 describe.skipIf(!romExists)("kcl from ROM", () => {

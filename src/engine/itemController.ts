@@ -8,9 +8,9 @@
 //
 
 import { Item } from "../entities/item";
+import { Kart } from "../entities/kart";
 import { nitroRender } from "../render/nitroRender";
 import { items_IngameRes } from "./ingameRes";
-import { Kart } from "../entities/kart";
 import { courseScene } from "./scenes/courseScene";
 
 export class ItemController {

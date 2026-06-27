@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { nkm } from "../../src/formats/nkm";
-import { objectIdReportExists, loadObjectIdReport } from "../helpers/extract";
+import { loadObjectIdReport, objectIdReportExists } from "../helpers/extract";
 import { loadLz77Narc, romExists } from "../helpers/rom";
 import { ROM_ALL_COURSES } from "../helpers/romCourse";
 

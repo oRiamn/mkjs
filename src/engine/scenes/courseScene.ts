@@ -32,8 +32,8 @@ import { cameraIngame } from "../cameras/cameraIngame";
 import { cameraSpectator } from "../cameras/cameraSpectator";
 import { controlRaceCPU } from "../controls/controlRaceCPU";
 import { IngameRes } from "../ingameRes";
-import { createMapObjResolver, resolveMapObj, type MapObjResolverContext } from "../mapObjResolver";
 import { ItemController } from "../itemController";
+import { createMapObjResolver, resolveMapObj, type MapObjResolverContext } from "../mapObjResolver";
 import { MKCONST_course_obj, MKDSCONST } from "../mkdsConst";
 
 type courseScene_char = {
@@ -193,7 +193,7 @@ export class courseScene implements Scene {
 	}
 	getRoute(pathId: number): nkm_section_POIT[] {
 		if (!(pathId in this.paths)) {
-			throw Error(`This route doesnt exist: ${pathId}`)
+			throw Error(`This route doesnt exist: ${pathId}`);
 		}
 		return this.paths[pathId];
 	}

@@ -8,6 +8,7 @@
 // entities/*
 //
 import { ItemBox } from "./itembox";
+import { ObjBattleBarrier, ObjWideBarrier } from "./objBattleBarrier";
 import { Airship } from "./objDecor/Airship";
 import { Bakubaku } from "./objDecor/Bakubaku";
 import { BankEgg } from "./objDecor/BankEgg";
@@ -63,8 +64,8 @@ import { RainStar } from "./objDecor/RainStar";
 import { Rock } from "./objDecor/Rock";
 import { Rock2 } from "./objDecor/Rock2";
 import { Sanbo } from "./objDecor/Sanbo";
-import { Snowman } from "./objDecor/Snowman";
 import { SnowTree } from "./objDecor/SnowTree";
+import { Snowman } from "./objDecor/Snowman";
 import { Sun } from "./objDecor/Sun";
 import { Teresa } from "./objDecor/Teresa";
 import { TownMonte } from "./objDecor/TownMonte";
@@ -73,16 +74,15 @@ import { Wanwan } from "./objDecor/Wanwan";
 import { WanwanNoBase } from "./objDecor/WanwanNoBase";
 import { WaterEffect } from "./objDecor/WaterEffect";
 import { Woodbox } from "./objDecor/Woodbox";
-import { ObjBattleBarrier, ObjWideBarrier } from "./objBattleBarrier";
 import { ObjPost } from "./objPost";
-import { ObjRoulette } from "./platforms/objRoulette";
-import { ObjPsea } from "./psea";
 import { ObjBridge } from "./platforms/objBridge";
 import { ObjKoopaBall } from "./platforms/objKoopaBall";
 import { ObjMovingItemBox } from "./platforms/objMovingItemBox";
 import { ObjRotaryRoom } from "./platforms/objRotaryRoom";
+import { ObjRoulette } from "./platforms/objRoulette";
 import { ObjRouteBasabasa } from "./platforms/objRouteBasabasa";
 import { ObjRoutePlatform } from "./platforms/objRoutePlatform";
+import { ObjPsea } from "./psea";
 import { ObjGear } from "./rotatingGear";
 import { ObjSoundMaker } from "./soundMaker";
 import { ObjBus, ObjCar, ObjTruck } from "./trafficCar";

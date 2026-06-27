@@ -9,7 +9,7 @@
 
 import { ncer, NcerCebkImage } from "../../formats/2d/ncer";
 import { ncgr } from "../../formats/2d/ncgr";
-import { NclrPaletteColor, nclr } from "../../formats/2d/nclr";
+import { nclr, NclrPaletteColor } from "../../formats/2d/nclr";
 
 const BASE_VERTEX_SHADER = `
 attribute vec4 a_position;

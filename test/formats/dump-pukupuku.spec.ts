@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { nsbmd } from "../../src/formats/nsbmd";
 import { nitroModel } from "../../src/render/nitroModel";
-import { loadCourseCarc, BEACH_COURSE, romExists } from "../helpers/rom";
+import { BEACH_COURSE, loadCourseCarc, romExists } from "../helpers/rom";
 
 describe.skipIf(!romExists)("pukupuku model", () => {
 	it("loads geometry, textures, and nitroModel", () => {

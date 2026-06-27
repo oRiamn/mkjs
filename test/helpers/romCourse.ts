@@ -1,7 +1,7 @@
 import type { kcl } from "../../src/formats/kcl";
-import type { nkm } from "../../src/formats/nkm";
-import type { narc } from "../../src/formats/narc";
 import { kcl as KclParser } from "../../src/formats/kcl";
+import type { narc } from "../../src/formats/narc";
+import type { nkm } from "../../src/formats/nkm";
 import { nkm as NkmParser } from "../../src/formats/nkm";
 import { ROM_ALL_COURSES, ROM_COURSES, ROM_EXTRA_COURSES, loadCourseCarc, type RomCourseName } from "./rom";
 

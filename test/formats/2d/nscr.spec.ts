@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { nscr } from "../../../src/formats/2d/nscr";
-import { buildMinimalNscr } from "../../helpers/fixtures2d";
 import { buildNitroFile } from "../../helpers/fixtures";
+import { buildMinimalNscr } from "../../helpers/fixtures2d";
 import { getRomFile, romExists } from "../../helpers/rom";
 
 describe("nscr", () => {

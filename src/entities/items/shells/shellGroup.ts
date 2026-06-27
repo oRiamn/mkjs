@@ -1,4 +1,4 @@
-import { nitroAudioSound, nitroAudio } from "../../../audio/nitroAudio";
+import { nitroAudio, nitroAudioSound } from "../../../audio/nitroAudio";
 import { Item } from "../../item";
 
 class ShellGroup implements KartItemEntity {
