@@ -57,17 +57,17 @@ export class sbnk implements MKJSDataFormator {
 
 	load(input: MKJSDataInput): void {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
+		const view = new DataView(input);
 		let offset = 0;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
 			MKSUtils.asciireadChar(view, 0x2) +
 			MKSUtils.asciireadChar(view, 0x3);
 		if (stamp != "SBNK") throw `SWAV invalid. Expected SWAV, found ${stamp}`;
 		offset += 16;
-		let data =
+		const data =
 			MKSUtils.asciireadChar(view, offset) +
 			MKSUtils.asciireadChar(view, offset + 1) +
 			MKSUtils.asciireadChar(view, offset + 2) +
@@ -77,11 +77,11 @@ export class sbnk implements MKJSDataFormator {
 
 		offset += 32; //skip reserved
 
-		let numInst = view.getUint32(offset, true);
+		const numInst = view.getUint32(offset, true);
 		this.instruments = [];
 		offset += 4;
 		for (let i = 0; i < numInst; i++) {
-			let fRecord = view.getUint8(offset);
+			const fRecord = view.getUint8(offset);
 			let nOffset = view.getUint16(offset + 1, true);
 
 			if (fRecord == 0) {
@@ -96,7 +96,7 @@ export class sbnk implements MKJSDataFormator {
 				const lower = view.getUint8(nOffset++);
 				const upper = view.getUint8(nOffset++);
 				const entries = [];
-				let notes = upper - lower + 1;
+				const notes = upper - lower + 1;
 				for (let j = 0; j < notes; j++) {
 					entries.push(this._readParams(view, nOffset + 2));
 					nOffset += 12;
@@ -110,7 +110,7 @@ export class sbnk implements MKJSDataFormator {
 			} else if (fRecord == 17) {
 				const regions: number[] = [];
 				for (let j = 0; j < 8; j++) {
-					let dat = view.getUint8(nOffset + j);
+					const dat = view.getUint8(nOffset + j);
 					if (dat != 0) regions.push(dat);
 					else break;
 				}

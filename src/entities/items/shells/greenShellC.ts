@@ -70,15 +70,13 @@ export class GreenShellC implements KartItemEntity {
 	}
 
 	colResponse(pos: vec3, pvel: vec3, dat: lscraycast, ignoreList: lsc_collision_triangle[]) {
-		let plane = dat.plane;
+		const plane = dat.plane;
 		const collisionType = plane.CollisionType ?? 0;
-		let colType = (collisionType >> 8) & 31;
+		const colType = (collisionType >> 8) & 31;
 		vec3.add(pos, pos, vec3.scale(vec3.create(), pvel, dat.t));
 
-		let n = dat.normal;
+		const n = dat.normal;
 		vec3.normalize(n, n);
-		let gravS = Math.sqrt(vec3.dot(this.gravity, this.gravity));
-		let angle = Math.acos(vec3.dot(vec3.scale(vec3.create(), this.gravity, -1 / gravS), n));
 		let adjustPos = true;
 
 		if (MKDS_COLTYPE.GROUP_WALL.indexOf(colType) != -1) {
@@ -91,13 +89,13 @@ export class GreenShellC implements KartItemEntity {
 			vec3.add(this.item.vel, vec3.scale(vec3.create(), n, -2 * (vec3.dot(this.item.vel, n) / vec3.dot(n, n))), this.item.vel);
 			this.item.vel[1] = 0;
 
-			let v = this.item.vel;
+			const v = this.item.vel;
 			this.angle = Math.atan2(v[0], -v[2]);
 		} else if (colType == MKDS_COLTYPE.OOB || colType == MKDS_COLTYPE.FALL) {
 			if (this.item.deadTimer == 0) this.item.deadTimer++;
 		} else if (MKDS_COLTYPE.GROUP_ROAD.indexOf(colType) != -1) {
 			//sliding plane
-			let proj = vec3.dot(this.item.vel, n);
+			const proj = vec3.dot(this.item.vel, n);
 			vec3.sub(this.item.vel, this.item.vel, vec3.scale(vec3.create(), n, proj));
 			this.item.stuckTo = dat.object;
 		} else {
@@ -105,7 +103,7 @@ export class GreenShellC implements KartItemEntity {
 			ignoreList.push(plane);
 		}
 
-		let rVelMag = Math.sqrt(vec3.dot(this.item.vel, this.item.vel));
+		const rVelMag = Math.sqrt(vec3.dot(this.item.vel, this.item.vel));
 		vec3.scale(this.item.vel, this.item.vel, this.speed / rVelMag); //force speed to shell speed for green shells.
 
 		if (adjustPos) {

@@ -59,10 +59,10 @@ export class ItemBox implements SceneEntityObject {
 		switch (this.mode) {
 			case 0: //alive
 				for (let i = 0; i < scene.karts.length; i++) {
-					let ok = scene.karts[i];
-					let dist = vec3.dist(vec3.add([0, 0, 0], this.pos, [0, 1, 0]), ok.pos);
+					const ok = scene.karts[i];
+					const dist = vec3.dist(vec3.add([0, 0, 0], this.pos, [0, 1, 0]), ok.pos);
 					if (dist < 24) {
-						let breakSound = nitroAudio.playSound(212, {}, 0, this)!;
+						const breakSound = nitroAudio.playSound(212, {}, 0, this)!;
 						breakSound.gainN.gain.value = parseFloat("4");
 						for (let j = 0; j < 10; j++) {
 							scene.particles.push(new ItemShard(scene, ok, this._res.mdl[2]));
@@ -96,7 +96,7 @@ export class ItemBox implements SceneEntityObject {
 	draw(view: mat4, pMatrix: mat4, gl: CustomWebGLRenderingContext) {
 		if (this.mode == 0 || this.mode == 2) {
 			if (this.mode == 2) nitroRender.setColMult([1, 1, 1, this.time / 30]);
-			let mat = mat4.translate(mat4.create(), view, this.pos);
+			const mat = mat4.translate(mat4.create(), view, this.pos);
 
 			mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
 

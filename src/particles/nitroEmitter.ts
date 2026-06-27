@@ -104,18 +104,18 @@ export class NitroEmitter {
 			//should we create new particles? fractional logic for doing this
 			this.pctParticle += this._emitter.particleChance;
 			while (this.pctParticle >= 1) {
-				let attach = (this._emitter.flag & 0x8000) > 0;
+				const attach = (this._emitter.flag & 0x8000) > 0;
 
 				this.pctParticle -= 1;
 				//create a new particle
 				//TODO: make these transform with the target's world matrix
-				let pos = vec3.create();
+				const pos = vec3.create();
 				//add offset
 				vec3.add(pos, pos, this.offset);
 				//add emitter properties
 				vec3.add(pos, pos, this._emitter.position);
 				let spread = vec3.clone([Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1]);
-				let spreadMode = this._emitter.flag & 0xf;
+				const spreadMode = this._emitter.flag & 0xf;
 				if (spreadMode == 2) {
 					spread[1] = 0; //spread is only in xz direction
 				}
@@ -136,15 +136,15 @@ export class NitroEmitter {
 				}
 
 				//inherit velocity
-				let vel = attach ? vec3.create() : vec3.clone(this._targ.vel);
+				const vel = attach ? vec3.create() : vec3.clone(this._targ.vel);
 				vec3.scale(vel, vel, 1 / 32);
 
-				let vector = vec3.clone(this.vector);
+				const vector = vec3.clone(this.vector);
 				if (!attach) {
 					if (this._targ.mat != null) {
 						//tranform our vector by the target matrix
-						let mat = this._targ.mat;
-						let org: vec3 = [0, 0, 0];
+						const mat = this._targ.mat;
+						const org: vec3 = [0, 0, 0];
 						mat4.getTranslation(org, mat);
 						mat[12] = 0;
 						mat[13] = 0;
@@ -160,30 +160,30 @@ export class NitroEmitter {
 				vec3.normalize(vector, vector);
 				vec3.add(vel, vel, vec3.scale([0, 0, 0], vector, this._emitter.velocity));
 
-				let xz = vec3.clone([Math.random() * 2 - 1, 0, Math.random() * 2 - 1]);
+				const xz = vec3.clone([Math.random() * 2 - 1, 0, Math.random() * 2 - 1]);
 				vec3.normalize(xz, xz);
 				vec3.scale(xz, xz, Math.random() * this._emitter.randomxz);
 				vec3.add(vel, vel, xz);
 
-				let rotVel =
+				const rotVel =
 					((this._emitter.rotVelFrom + ((Math.random() * this._emitter.rotVelTo - this._emitter.rotVelFrom) | 0)) / 65535) *
 					Math.PI *
 					2;
-				let dir = (this._emitter.flag & 0x2000) > 0 ? Math.random() * Math.PI * 2 : 0;
-				let duration =
+				const dir = (this._emitter.flag & 0x2000) > 0 ? Math.random() * Math.PI * 2 : 0;
+				const duration =
 					this._emitter.duration + ((this._emitter.duration * this._emitter.varDuration) / 0xff) * (Math.random() * 2 - 1);
-				let scaleMod = (this._emitter.varScale / 0xff) * (Math.random() * 2 - 1) + 1;
+				const scaleMod = (this._emitter.varScale / 0xff) * (Math.random() * 2 - 1) + 1;
 
-				let scale: [number, number] = [scaleMod * this._emitter.size, scaleMod * this._emitter.size * this._emitter.aspect];
+				const scale: [number, number] = [scaleMod * this._emitter.size, scaleMod * this._emitter.size * this._emitter.aspect];
 
 				const s = attach ? this.attached : null;
-				let particle = new NitroParticle(scene, this._emitter, pos, vel, dir, rotVel, duration, scale, s);
+				const particle = new NitroParticle(scene, this._emitter, pos, vel, dir, rotVel, duration, scale, s);
 				particle.ovel = attach ? vec3.create() : vec3.scale([0, 0, 0], this._targ.vel, 1 / 32);
 
 				scene.particles.push(particle);
 			}
 
-			let pos = vec3.clone(this._targ.pos);
+			vec3.clone(this._targ.pos);
 		}
 		this.time++;
 

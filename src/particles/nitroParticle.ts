@@ -79,7 +79,7 @@ export class NitroParticle {
 	}
 
 	update(scene: Scene) {
-		let particlePct = this.time / this.duration;
+		const particlePct = this.time / this.duration;
 
 		this.pos[0] += this.vel[0] * 16;
 		this.pos[1] += this.vel[1] * (this.emitter.yOffIntensity / 128) * 16;
@@ -89,24 +89,24 @@ export class NitroParticle {
 			vec3.add(this.vel, this.vel, g);
 		}
 		if (this.emitter.colorAnim) {
-			let ca = this.emitter.colorAnim;
-			let from = this._convertCol(ca.colorFrom);
-			let to = this._convertCol(ca.colorTo);
-			let pctFloat = ca.framePct / 0xffff;
+			const ca = this.emitter.colorAnim;
+			const from = this._convertCol(ca.colorFrom);
+			const to = this._convertCol(ca.colorTo);
+			const pctFloat = ca.framePct / 0xffff;
 			vec4.lerp(this.aColor, from, to, Math.max(0, (particlePct - pctFloat) / (1 - pctFloat)));
 			this.aColor[3] = this.emitter.opacity / 0x1f;
 		} else {
 			this.aColor = vec4.clone(this.baseColor);
 		}
 		if (this.emitter.opacityAnim) {
-			let oa = this.emitter.opacityAnim;
-			let pctFade = oa.startFade / 0xffff;
-			let opaMul = 1 - Math.max(0, (particlePct - pctFade) / (1 - pctFade));
+			const oa = this.emitter.opacityAnim;
+			const pctFade = oa.startFade / 0xffff;
+			const opaMul = 1 - Math.max(0, (particlePct - pctFade) / (1 - pctFade));
 			this.aColor[3] = opaMul; // * oa.intensity/0x0FFF;
 			//vec4.scale(t.aColor, t.aColor, opaMul);
 		}
 		if (this.emitter.texAnim) {
-			let ta = this.emitter.texAnim;
+			const ta = this.emitter.texAnim;
 			if ((ta.unknown1 & 128) > 0) {
 				this.frame = ta.textures[Math.min((particlePct * ta.frames) | 0, ta.frames - 1)];
 			} else {
@@ -120,7 +120,7 @@ export class NitroParticle {
 	}
 
 	draw(view: mat4, pMatrix: mat4, gl: CustomWebGLRenderingContext) {
-		let particlePct = this.time / this.duration;
+		const particlePct = this.time / this.duration;
 
 		let pos = this.pos;
 		let vel = this.vel;
@@ -129,8 +129,8 @@ export class NitroParticle {
 			pos = vec3.transformMat4([0, 0, 0], pos, this.attached.mat);
 
 			//tranform our vector by the target matrix
-			let mats = this.attached.mat;
-			let org: vec3 = [0, 0, 0];
+			const mats = this.attached.mat;
+			const org: vec3 = [0, 0, 0];
 
 			mat4.getTranslation(org, mats);
 			mats[12] = 0;
@@ -144,9 +144,9 @@ export class NitroParticle {
 			mats[14] = org[2];
 		}
 
-		let mat = mat4.translate(mat4.create(), view, pos);
+		const mat = mat4.translate(mat4.create(), view, pos);
 
-		let bbMode = this.emitter.flag & 0xf0;
+		const bbMode = this.emitter.flag & 0xf0;
 
 		if (bbMode == 0x10) {
 			//spark, billboards towards camera
@@ -155,7 +155,7 @@ export class NitroParticle {
 			camPos = vec3.sub([0, 0, 0], camPos, pos);
 			vec3.normalize(camPos, camPos);
 
-			let n = vec3.sub([0, 0, 0], vel, this.ovel);
+			const n = vec3.sub([0, 0, 0], vel, this.ovel);
 			if (vec3.squaredLength(n) > 1e-8) {
 				vec3.normalize(n, n);
 				mat4.multiply(mat, mat, mat4.invert(mat4.create(), mat4.lookAt(mat4.create(), [0, 0, 0], camPos, n)));
@@ -170,7 +170,7 @@ export class NitroParticle {
 			camPos = vec3.sub([0, 0, 0], camPos, pos);
 			vec3.normalize(camPos, camPos);
 
-			let n = vec3.sub([0, 0, 0], vel, this.ovel);
+			const n = vec3.sub([0, 0, 0], vel, this.ovel);
 			if (vec3.squaredLength(n) > 1e-8) {
 				vec3.normalize(n, n);
 				mat4.multiply(mat, mat, mat4.invert(mat4.create(), mat4.lookAt(mat4.create(), [0, 0, 0], camPos, n)));
@@ -183,12 +183,12 @@ export class NitroParticle {
 		}
 		let finalScale = 1;
 		if (this.emitter.scaleAnim) {
-			let sa = this.emitter.scaleAnim;
+			const sa = this.emitter.scaleAnim;
 			if (particlePct < sa.fromZeroTime) {
-				let fzPct = particlePct / sa.fromZeroTime;
+				const fzPct = particlePct / sa.fromZeroTime;
 				finalScale = sa.scaleFrom * fzPct;
 			} else {
-				let rescaledPct = Math.min(
+				const rescaledPct = Math.min(
 					1,
 					(particlePct - sa.fromZeroTime) / (1 - (sa.fromZeroTime + sa.holdTime * (1 - sa.fromZeroTime)))
 				);
@@ -202,14 +202,14 @@ export class NitroParticle {
 	}
 
 	private _drawGeneric(mv: mat4, project: mat4, gl: CustomWebGLRenderingContext) {
-		let shader = nitroRender.nitroShader;
+		const shader = nitroRender.nitroShader;
 		if (!nitroRender.flagShadow) {
 			const s = <nitroShaders_shadowShader>shader;
 			gl.uniform1f(s.uniforms.shadOffUniform, 0.001);
 			gl.uniform1f(s.uniforms.lightIntensityUniform, 0);
 		}
 		if (window.VTX_PARTICLE == null) this._genGlobalVtx(gl);
-		let obj = window.VTX_PARTICLE;
+		const obj = window.VTX_PARTICLE;
 
 		nitroRender.setColMult(this.aColor as number[]);
 
@@ -218,7 +218,7 @@ export class NitroParticle {
 		//matrix stack unused, just put an identity in slot 0
 		gl.uniformMatrix4fv(shader.uniforms.matStackUniform, false, this._MAT4I);
 
-		let frame = this.emitter.parent!.getTexture(this.frame, gl);
+		const frame = this.emitter.parent!.getTexture(this.frame, gl);
 		if (frame == null) return;
 		gl.bindTexture(gl.TEXTURE_2D, frame);
 		//texture matrix not used
@@ -253,19 +253,19 @@ export class NitroParticle {
 	}
 
 	private _genGlobalVtx(gl: CustomWebGLRenderingContext) {
-		let vecPos = [-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0];
-		let vecTx = [1, 1, 0, 1, 1, 0, 0, 0];
-		let vecCol = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-		let vecMat = [0, 0, 0, 0];
-		let vecNorm = [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0];
+		const vecPos = [-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0];
+		const vecTx = [1, 1, 0, 1, 1, 0, 0, 0];
+		const vecCol = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+		const vecMat = [0, 0, 0, 0];
+		const vecNorm = [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0];
 
-		let pos = gl.createBuffer()!;
-		let col = gl.createBuffer()!;
-		let tx = gl.createBuffer()!;
-		let mat = gl.createBuffer()!;
-		let norm = gl.createBuffer()!;
+		const pos = gl.createBuffer()!;
+		const col = gl.createBuffer()!;
+		const tx = gl.createBuffer()!;
+		const mat = gl.createBuffer()!;
+		const norm = gl.createBuffer()!;
 
-		let posArray = new Float32Array(vecPos);
+		const posArray = new Float32Array(vecPos);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, pos);
 		gl.bufferData(gl.ARRAY_BUFFER, posArray, gl.STATIC_DRAW);

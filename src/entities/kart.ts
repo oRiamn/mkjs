@@ -348,8 +348,8 @@ export class Kart {
 	}
 
 	private _recalcMat(view: mat4) {
-		let mat = mat4.mul(mat4.create(), view, this.mat);
-		let xscale = 1 + Math.cos((this._kartAnim / 4) * Math.PI) * 0.015;
+		const mat = mat4.mul(mat4.create(), view, this.mat);
+		const xscale = 1 + Math.cos((this._kartAnim / 4) * Math.PI) * 0.015;
 		let yscale = 1 + Math.cos(((this._kartAnim + 4) / 4) * Math.PI) * 0.015;
 
 		if (this._groundAnim != -1) yscale *= this._hitGroundAnim[this._groundAnim];
@@ -358,12 +358,12 @@ export class Kart {
 		const stompXZ = this.damageType == MKDSCONST.DAMAGE_STOMP ? this._stompSquashXZ : 1;
 
 		mat4.translate(mat, mat, [0, -this._params.colRadius, 0]); //main part
-		let kmat = mat4.scale(this._drawMat.kart, mat, [16 * xscale * stompXZ, 16 * yscale * stompY, 16 * stompXZ]);
+		mat4.scale(this._drawMat.kart, mat, [16 * xscale * stompXZ, 16 * yscale * stompY, 16 * stompXZ]);
 
 		//wheels
 		for (let i = 0; i < 4; i++) {
-			let scale = 16 * (i < 2 ? this._offsets.frontTireSize : 1);
-			let wmat = mat4.translate(this._drawMat.wheels[i], mat, [0, 0, 0]);
+			const scale = 16 * (i < 2 ? this._offsets.frontTireSize : 1);
+			const wmat = mat4.translate(this._drawMat.wheels[i], mat, [0, 0, 0]);
 
 			if (this._groundAnim != -1) mat4.scale(wmat, wmat, [1, this._hitGroundAnim[this._groundAnim], 1]);
 			if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
@@ -388,12 +388,12 @@ export class Kart {
 			}
 		}
 
-		let scale = 16;
-		let pos = vec3.clone(this._offsets.chars[this._charN]);
+		const scale = 16;
+		const pos = vec3.clone(this._offsets.chars[this._charN]);
 
 		if (this._groundAnim != -1) pos[1] *= this._charGroundAnim[this._groundAnim];
 
-		let cmat = mat4.translate(this._drawMat.character, mat, [0, 0, 0]);
+		const cmat = mat4.translate(this._drawMat.character, mat, [0, 0, 0]);
 		if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
 			mat4.scale(cmat, cmat, [stompXZ, stompY, stompXZ]);
 		}
@@ -410,11 +410,11 @@ export class Kart {
 		this._charRes.model.draw(this._drawMat.character, pMatrix, this.animMat);
 	}
 
-	drawKart(view: mat4, pMatrix: mat4, gl: CustomWebGLRenderingContext) {
+	drawKart(view: mat4, pMatrix: mat4, _gl: CustomWebGLRenderingContext) {
 		if (this._updateMat) this._recalcMat(view);
 		//if we're in simple shadows mode, draw the kart's stencil shadow.
-
-		if (false) {
+		// Disabled stencil shadow path:
+		/*
 			//gl.enable(gl.CULL_FACE); //culling is fun!
 			gl.clear(gl.STENCIL_BUFFER_BIT);
 			//gl.cullFace(gl.FRONT);
@@ -438,6 +438,7 @@ export class Kart {
 			//gl.disable(gl.CULL_FACE);
 			gl.depthMask(true);
 		}
+		*/
 
 		for (let i = 0; i < this._kartPolys.length; i++) {
 			this._kartRes.drawPoly(this._drawMat.kart, pMatrix, 0, this._kartPolys[i], simpleMatStack);
@@ -446,7 +447,7 @@ export class Kart {
 
 	drawWheels(view: mat4, pMatrix: mat4) {
 		if (this._updateMat) this._recalcMat(view);
-		let wheelMod = this._tireRes[this._offsets.name];
+		const wheelMod = this._tireRes[this._offsets.name];
 		for (let i = 0; i < 4; i++) {
 			wheelMod.draw(this._drawMat.wheels[i], pMatrix, simpleMatStack);
 		}
@@ -469,7 +470,7 @@ export class Kart {
 			this.lastPlacement = this.placement;
 		}
 
-		let lastPos = vec3.clone(this.pos);
+		const lastPos = vec3.clone(this.pos);
 		this._updateMat = true;
 
 		if (this._groundAnim != -1) {
@@ -479,7 +480,7 @@ export class Kart {
 		this._onGround = this.airTime < 5;
 
 		this._kartAnim = (this._kartAnim + 1) % 8;
-		let input = this.controller.fetchInput();
+		const input = this.controller.fetchInput();
 		this.lastInput = input;
 		this.items.update(input);
 
@@ -523,7 +524,7 @@ export class Kart {
 			this._sounds.boost = null;
 		}
 
-		let isMoving = this._onGround && this.speed > 0.5;
+		const isMoving = this._onGround && this.speed > 0.5;
 		if (isMoving) {
 			if (this._lastCollided != this._sounds.lastTerrain || this._lastBE != this._sounds.lastBE || this._sounds.drive == null) {
 				if (this._sounds.drive != null) nitroAudio.kill(this._sounds.drive);
@@ -563,16 +564,16 @@ export class Kart {
 
 		//end sound update
 
-		if (this.preboost) {
-		} else if (this.cannon != null) {
+		if (!this.preboost) {
+		if (this.cannon != null) {
 			//when cannon is active, we fly forward at max move speed until we get to the cannon point.
 			let c = scene.nkm.sections["KTPC"].entries[this.cannon];
 
 			if (c.id1 != -1 && c.id2 != -1) {
-				let c2 = scene.nkm.sections["KTPC"].entries[c.id2];
+				const c2 = scene.nkm.sections["KTPC"].entries[c.id2];
 				c = c2;
 
-				let mat = mat4.create();
+				const mat = mat4.create();
 				mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
 				mat4.rotateX(mat, mat, c.angle[0] * (-Math.PI / 180));
 
@@ -584,21 +585,17 @@ export class Kart {
 				this.angle = this.physicalDir;
 				this.cannon = null;
 			} else {
-				let mat = mat4.create();
+				const mat = mat4.create();
 				mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
-				if (true) {
-					//vertical angle from position? airship fortress is impossible otherwise
-					//var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
-					let diff = vec3.sub([0, 0, 0], c.pos, this.pos);
-					let dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
-					let dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-					mat4.rotateX(mat, mat, (diff[1] > 0 ? -1 : 1) * Math.acos(dAdj / dHyp));
-				} else {
-					mat4.rotateX(mat, mat, c.angle[0] * (-Math.PI / 180));
-				}
+				//vertical angle from position? airship fortress is impossible otherwise
+				//var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
+				const diff = vec3.sub([0, 0, 0], c.pos, this.pos);
+				const dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
+				const dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+				mat4.rotateX(mat, mat, (diff[1] > 0 ? -1 : 1) * Math.acos(dAdj / dHyp));
 
-				let forward: vec3 = [0, 0, 1];
-				let up: vec3 = [0, 1, 0];
+				const forward: vec3 = [0, 0, 1];
+				const up: vec3 = [0, 1, 0];
 
 				this.vel = vec3.scale([0, 0, 0], vec3.transformMat4(forward, forward, mat), this._MAXSPEED);
 				this.speed = Math.min(this.speed + 1, this._MAXSPEED);
@@ -608,8 +605,8 @@ export class Kart {
 				this.kartTargetNormal = vec3.transformMat4(up, up, mat);
 				this.airTime = 0;
 
-				let planeConst = -vec3.dot(c.pos, forward);
-				let cannonDist = vec3.dot(this.pos, forward) + planeConst;
+				const planeConst = -vec3.dot(c.pos, forward);
+				const cannonDist = vec3.dot(this.pos, forward) + planeConst;
 				if (cannonDist > 0) {
 					this.cannon = null; //leaving cannon state
 					this.speed = this._params.topSpeed;
@@ -620,7 +617,7 @@ export class Kart {
 			//default kart mode
 			if (this.OOB > 0) {
 				this.playCharacterSound(0);
-				let current = this._checkpoints[this.checkPointNumber];
+				const current = this._checkpoints[this.checkPointNumber];
 				let respawn;
 				if (current == null)
 					respawn = this._respawns[(Math.random() * this._respawns.length) | 0]; //todo: deterministic
@@ -640,10 +637,10 @@ export class Kart {
 				if (groundEffect == null) groundEffect = 0;
 			}
 
-			let effect = this._params.colParam[groundEffect];
-			let top = this._params.topSpeed * effect.topSpeedMul; //if you let go of accel, drift ends anyway, so always accel in drift.
+			const effect = this._params.colParam[groundEffect];
+			const top = this._params.topSpeed * effect.topSpeedMul; //if you let go of accel, drift ends anyway, so always accel in drift.
 
-			let boosting = this.boostNorm + this.boostMT > 0;
+			const boosting = this.boostNorm + this.boostMT > 0;
 			if (this.specialControlHandler) {
 				this._damagedControls();
 			} else {
@@ -688,7 +685,7 @@ export class Kart {
 						}
 					} else {
 						if (this.driftLanded) {
-							let change = (((this.driftMode - 1.5) * Math.PI) / 1.5 - this.driftOff) * 0.05;
+							const change = (((this.driftMode - 1.5) * Math.PI) / 1.5 - this.driftOff) * 0.05;
 							this.driftOff += change;
 							this.physicalDir -= change;
 						}
@@ -723,13 +720,13 @@ export class Kart {
 								}
 							}
 
-							let turn = (this.driftMode == 1 ? input.turn - 1 : input.turn + 1) / 2;
+							const turn = (this.driftMode == 1 ? input.turn - 1 : input.turn + 1) / 2;
 
 							this.physicalDir += this._params.driftTurnRate * turn + (this.driftMode == 1 ? -1 : 1) * (50 / 32768) * Math.PI; //what is this mystery number i hear you ask? well my friend, this is the turn rate for outward drift.
 
 							//miniturbo code
 							if (input.turn != 0) {
-								let inward = input.turn > 0 == this.driftMode - 1 > 0; //if we're turning
+								const inward = input.turn > 0 == this.driftMode - 1 > 0; //if we're turning
 
 								switch (this.driftPSMode) {
 									case 0: //dpad away from direction for 10 frames
@@ -740,7 +737,7 @@ export class Kart {
 
 											//play blue spark sound, flare
 											this._setWheelParticles(126, 2); //126 = blue flare, 2 = flare priority
-											let blue = nitroAudio.playSound(210, {}, 0, this)!;
+											const blue = nitroAudio.playSound(210, {}, 0, this)!;
 											blue.gainN.gain.value = parseFloat("2");
 										} else this.driftPSTick = 0;
 										break;
@@ -774,7 +771,6 @@ export class Kart {
 
 				if (!this.drifting) {
 					if (this._onGround) {
-						let effect = this._params.colParam[groundEffect];
 						if (!boosting) {
 							if (input.accel) {
 								if (this.speed <= top) {
@@ -804,7 +800,7 @@ export class Kart {
 							this.ylock = 0;
 							this._onGround = false;
 
-							let boing = nitroAudio.playSound(207, { transpose: -4 }, 0, this)!;
+							const boing = nitroAudio.playSound(207, { transpose: -4 }, 0, this)!;
 							boing.gainN.gain.value = parseFloat("2");
 						}
 					} else {
@@ -855,7 +851,7 @@ export class Kart {
 				this.angle = this._fixDir(this.angle);
 
 				//reduce our forward speed by how much of our velocity is not going forwards
-				let factor = Math.sin(this.physicalDir) * Math.sin(this.angle) + Math.cos(this.physicalDir) * Math.cos(this.angle);
+				const factor = Math.sin(this.physicalDir) * Math.sin(this.angle) + Math.cos(this.physicalDir) * Math.cos(this.angle);
 				this.speed *= 1 - (1 - factor) * (1 - this.params.decel);
 				//var reducedSpeed = k.vel[0]*Math.sin(k.angle) + k.vel[2]*(-Math.cos(k.angle));
 				//reducedSpeed = ((reducedSpeed < 0) ? -1 : 1) * Math.sqrt(Math.abs(reducedSpeed));
@@ -909,10 +905,10 @@ export class Kart {
 				if (this.kartColTimer > 0) {
 					vec3.add(velSeg, velSeg, vec3.scale([0, 0, 0], this.kartColVel, this.kartColTimer / this._COLBOUNCE_TIME));
 				}
-				let posSeg = vec3.clone(this.pos);
-				let ignoreList: lsc_collision_triangle[] = [];
+				const posSeg = vec3.clone(this.pos);
+				const ignoreList: lsc_collision_triangle[] = [];
 				while (steps++ < 10 && remainingT > 0.01) {
-					let result = lsc.sweepEllipse(
+					const result = lsc.sweepEllipse(
 						posSeg,
 						velSeg,
 						scene,
@@ -936,9 +932,10 @@ export class Kart {
 				this.pos = posSeg;
 			}
 		}
+		}
 
 		//interpolate visual normal roughly to target
-		let rate = this._onGround ? 0.15 : 0.025;
+		const rate = this._onGround ? 0.15 : 0.025;
 		this.kartNormal[0] += (this.kartTargetNormal[0] - this.kartNormal[0]) * rate;
 		this.kartNormal[1] += (this.kartTargetNormal[1] - this.kartNormal[1]) * rate;
 		this.kartNormal[2] += (this.kartTargetNormal[2] - this.kartNormal[2]) * rate;
@@ -946,7 +943,7 @@ export class Kart {
 
 		this.basis = this._buildBasis();
 
-		let mat = mat4.create();
+		const mat = mat4.create();
 		mat4.translate(mat, mat, this.pos);
 		this.mat = mat4.mul(mat, mat, this.basis);
 		if (this.damageMat != null) mat4.mul(mat, mat, this.damageMat);
@@ -1081,7 +1078,7 @@ export class Kart {
 	private _triggerCannon(id: number) {
 		if (this.cannon != null) return;
 		this.cannon = id;
-		let c = this._scene.nkm.sections["KTPC"].entries[this.cannon];
+		const c = this._scene.nkm.sections["KTPC"].entries[this.cannon];
 		if (c.id1 != -1 && c.id2 != -1) {
 			nitroAudio.playSound(345, { volume: 2.5 }, 0, this);
 		} else {
@@ -1137,12 +1134,12 @@ export class Kart {
 
 	private _genFutureChecks() {
 		//all future points that
-		let chosen: number[] = [];
-		let current = this._checkpoints[this.checkPointNumber] as nkm_section_CPOI;
-		let expectedSection = current.nextSection;
+		const chosen: number[] = [];
+		const current = this._checkpoints[this.checkPointNumber] as nkm_section_CPOI;
+		const expectedSection = current.nextSection;
 		this._futureChecks = [];
 		for (let i = this.checkPointNumber + 1; i < this._checkpoints.length; i++) {
-			let check = this._checkpoints[i] as nkm_section_CPOI;
+			const check = this._checkpoints[i] as nkm_section_CPOI;
 			if (expectedSection != -1 && check.currentSection != expectedSection) {
 				continue;
 			}
@@ -1158,14 +1155,14 @@ export class Kart {
 		//crossed into new checkpoint?
 		if (this._checkpoints.length == 0) return;
 		for (let i = 0; i < this._futureChecks.length; i++) {
-			let check = this._checkpoints[this._futureChecks[i]] as nkm_section_CPOI;
-			let distOld = vec2.sub([0, 0], [check.x1, check.z1], [oldPos[0], oldPos[2]]);
-			let dist = vec2.sub([0, 0], [check.x1, check.z1], [pos[0], pos[2]]);
-			let dot = vec2.dot(dist, [check.sinus, check.cosinus]);
-			let dotOld = vec2.dot(distOld, [check.sinus, check.cosinus]);
+			const check = this._checkpoints[this._futureChecks[i]] as nkm_section_CPOI;
+			const distOld = vec2.sub([0, 0], [check.x1, check.z1], [oldPos[0], oldPos[2]]);
+			const dist = vec2.sub([0, 0], [check.x1, check.z1], [pos[0], pos[2]]);
+			const dot = vec2.dot(dist, [check.sinus, check.cosinus]);
+			const dotOld = vec2.dot(distOld, [check.sinus, check.cosinus]);
 
-			let lineCheck = vec2.sub([0, 0], [check.x1, check.z1], [check.x2, check.z2]);
-			let lineDot = vec2.dot(dist, lineCheck);
+			const lineCheck = vec2.sub([0, 0], [check.x1, check.z1], [check.x2, check.z2]);
+			const lineDot = vec2.dot(dist, lineCheck);
 
 			if (lineDot > 0 && lineDot < vec2.sqrLen(lineCheck) && dot < 0 && dotOld >= 0) {
 				this.checkPointNumber = this._futureChecks[i];
@@ -1191,24 +1188,24 @@ export class Kart {
 
 	getPosition() {
 		if (this._checkpoints.length == 0 || this._futureChecks.length == 0) return 0;
-		let check = this._checkpoints[this._futureChecks[0]] as nkm_section_CPOI;
-		let dist = vec2.sub([0, 0], [check.x1, check.z1], [this.pos[0], this.pos[2]]);
-		let dot = vec2.dot(dist, [check.sinus, check.cosinus]);
+		const check = this._checkpoints[this._futureChecks[0]] as nkm_section_CPOI;
+		const dist = vec2.sub([0, 0], [check.x1, check.z1], [this.pos[0], this.pos[2]]);
+		const dot = vec2.dot(dist, [check.sinus, check.cosinus]);
 
 		return this.checkPointNumber + (1 - Math.abs(dot) / 0xffff) + this.lapNumber * this._checkpoints.length;
 	}
 
 	private _forwardCrossedKTP(ktp: nkm_section_KTPS, oldPos: vec3, pos: vec3) {
-		let distOld = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [oldPos[0], oldPos[2]]);
-		let dist = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [pos[0], pos[2]]);
+		const distOld = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [oldPos[0], oldPos[2]]);
+		const dist = vec2.sub([0, 0], [ktp.pos[0], ktp.pos[2]], [pos[0], pos[2]]);
 
-		let ang = (ktp.angle[1] / 180) * Math.PI;
+		const ang = (ktp.angle[1] / 180) * Math.PI;
 
-		let sinus = Math.sin(ang);
-		let cosinus = Math.cos(ang);
+		const sinus = Math.sin(ang);
+		const cosinus = Math.cos(ang);
 
-		let dot = vec2.dot(dist, [sinus, cosinus]);
-		let dotOld = vec2.dot(distOld, [sinus, cosinus]);
+		const dot = vec2.dot(dist, [sinus, cosinus]);
+		const dotOld = vec2.dot(distOld, [sinus, cosinus]);
 
 		return dot < 0 && dotOld >= 0;
 	}
@@ -1216,10 +1213,10 @@ export class Kart {
 	private _checkKartCollision(scene: Scene) {
 		//check collision with other karts. Really simple.
 		for (let i = 0; i < scene.karts.length; i++) {
-			let ok = scene.karts[i];
+			const ok = scene.karts[i];
 			if (!ok.active) continue;
 			if (this != ok) {
-				let dist = vec3.dist(this.pos, ok.pos);
+				const dist = vec3.dist(this.pos, ok.pos);
 				if (dist < 16) {
 					this.kartBounce(ok);
 					ok.kartBounce(this);
@@ -1237,7 +1234,7 @@ export class Kart {
 		}
 
 		this.kartColTimer = this._COLBOUNCE_TIME;
-		let weightMul =
+		const weightMul =
 			this._COLBOUNCE_STRENGTH *
 			(1.5 + (ok.weight - this.weight)) *
 			(ok.boostNorm > 0 || ok.boostMT > 0 ? 2 : 1) *
@@ -1259,7 +1256,7 @@ export class Kart {
 	}
 
 	private _dirDiff(dir1: number, dir2: number) {
-		let d = this._fixDir(dir1 - dir2);
+		const d = this._fixDir(dir1 - dir2);
 		return d > Math.PI ? -2 * Math.PI + d : d;
 	}
 
@@ -1269,8 +1266,8 @@ export class Kart {
 
 	private _updateKartSound(mode: number, input: InputData) {
 		if (!this.local) return; //for now, don't play kart sounds from other racers.
-		let turn = this._onGround && !this.drifting ? 1 - Math.abs(input.turn) / 11 : 1;
-		let transpose = mode == 0 ? 0 : 22 * turn * Math.min(1.3, this.speed / this._params.topSpeed);
+		const turn = this._onGround && !this.drifting ? 1 - Math.abs(input.turn) / 11 : 1;
+		const transpose = mode == 0 ? 0 : 22 * turn * Math.min(1.3, this.speed / this._params.topSpeed);
 
 		if (this._sounds.transpose) {
 			this._sounds.transpose += (transpose - this._sounds.transpose) / 15;
@@ -1293,18 +1290,18 @@ export class Kart {
 
 	private _buildBasis(): mat4 {
 		//order y, x, z
-		let dir =
+		const dir =
 			this.physicalDir +
 			this.driftOff +
 			Math.sin((this._COLBOUNCE_TIME - this.kartColTimer) / 3) * (Math.PI / 6) * (this.kartColTimer / this._COLBOUNCE_TIME);
-		let forward: vec3 = [Math.sin(dir), 0, -Math.cos(dir)];
-		let side: vec3 = [-Math.cos(dir), 0, -Math.sin(dir)];
+		const forward: vec3 = [Math.sin(dir), 0, -Math.cos(dir)];
+		const side: vec3 = [-Math.cos(dir), 0, -Math.sin(dir)];
 		if (this.physBasis != null) {
 			vec3.transformMat4(forward, forward, this.physBasis.mat);
 			vec3.transformMat4(side, side, this.physBasis.mat);
 		}
-		let basis = this._gramShmidt(this.kartNormal, side, forward);
-		let temp = basis[0];
+		const basis = this._gramShmidt(this.kartNormal, side, forward);
+		const temp = basis[0];
 		basis[0] = basis[1];
 		basis[1] = temp; //todo: cleanup
 		return [
@@ -1333,7 +1330,7 @@ export class Kart {
 
 		//first let's get the forward direction in our current basis
 
-		let dir = this.angle;
+		const dir = this.angle;
 		let forward: vec3, side: vec3;
 		if (this.physBasis != null) {
 			forward = vec3.transformMat4([0, 0, 0], [-Math.sin(dir), 0, Math.cos(dir)], this.physBasis.mat);
@@ -1343,11 +1340,11 @@ export class Kart {
 			side = [Math.cos(dir), 0, Math.sin(dir)];
 		}
 
-		let basis = this._gramShmidt(normal, side, forward);
-		let temp = basis[0];
+		const basis = this._gramShmidt(normal, side, forward);
+		const temp = basis[0];
 		basis[0] = basis[1];
 		basis[1] = temp; //todo: cleanup
-		let m4 = mat4.clone([
+		const m4 = mat4.clone([
 			basis[0][0],
 			basis[0][1],
 			basis[0][2],
@@ -1385,7 +1382,7 @@ export class Kart {
 
 		const physBasis = this.physBasis;
 		if (physBasis == null) return;
-		let v = vec3.transformMat4([0, 0, 0], this.vel, physBasis.mat);
+		const v = vec3.transformMat4([0, 0, 0], this.vel, physBasis.mat);
 		this.physicalDir = this._dirDiff(this.physicalDir, this.angle);
 		this.angle = Math.atan2(v[0], -v[2]);
 		this.physicalDir += this.angle;
@@ -1393,7 +1390,7 @@ export class Kart {
 		this.physBasis = null;
 	}
 
-	sndUpdate(view: mat4) {
+	sndUpdate(_view: mat4) {
 		/*
 		k.soundProps.pos = vec3.transformMat4([], k.pos, view);
 		if (k.soundProps.lastPos != null) k.soundProps.vel = vec3.sub([], k.soundProps.pos, k.soundProps.lastPos);
@@ -1404,18 +1401,12 @@ export class Kart {
 
 		this.soundProps.refDistance = 192;
 		this.soundProps.rolloffFactor = 1;
-
-		let calcVol =
-			this.soundProps.refDistance /
-			(this.soundProps.refDistance +
-				this.soundProps.rolloffFactor *
-					(Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance));
 	}
 
 	private _gramShmidt(v1: vec3, v2: vec3, v3: vec3) {
-		let u1 = v1;
-		let u2 = vec3.sub([0, 0, 0], v2, this._project(u1, v2));
-		let u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this._project(u1, v3)), this._project(u2, v3));
+		const u1 = v1;
+		const u2 = vec3.sub([0, 0, 0], v2, this._project(u1, v2));
+		const u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this._project(u1, v3)), this._project(u2, v3));
 		return [vec3.normalize(u1, u1), vec3.normalize(u2, u2), vec3.normalize(u3, u3)];
 	}
 
@@ -1434,23 +1425,21 @@ export class Kart {
 	}
 
 	private _colResponse(pos: vec3, pvel: vec3, dat: lscsweepellipse, ignoreList: lsc_collision_triangle[]) {
-		let plane = dat.plane;
+		const plane = dat.plane;
 		const collisionType = plane.CollisionType ?? 0;
-		let colType = (collisionType >> 8) & 31;
-		let colBE = (collisionType >> 5) & 7;
+		const colType = (collisionType >> 8) & 31;
+		const colBE = (collisionType >> 5) & 7;
 
-		let change = colType != this._lastCollided;
+		const change = colType != this._lastCollided;
 		this._lastCollided = colType;
 		this._lastBE = colBE;
 		this._lastColSounds = this._colSound(this._lastCollided, colBE);
 
-		let n = vec3.normalize([0, 0, 0], dat.normal);
+		const n = vec3.normalize([0, 0, 0], dat.normal);
 		let an = n;
 		if (this.physBasis != null) {
 			an = vec3.transformMat4([0, 0, 0], n, this.physBasis.inv);
 		}
-		let gravS = Math.sqrt(vec3.dot(this.gravity, this.gravity));
-		let angle = Math.acos(vec3.dot(vec3.scale(vec3.create(), this.gravity, -1 / gravS), n));
 		let adjustPos = true;
 
 		if (MKDS_COLTYPE.GROUP_OOB.indexOf(colType) != -1) {
@@ -1460,19 +1449,19 @@ export class Kart {
 		if (MKDS_COLTYPE.GROUP_WALL.indexOf(colType) != -1) {
 			//wall
 			//sliding plane, except normal is transformed to be entirely on the xz plane (cannot ride on top of wall, treated as vertical)
-			let xz = Math.sqrt(an[0] * an[0] + an[2] * an[2]);
+			const xz = Math.sqrt(an[0] * an[0] + an[2] * an[2]);
 			let adjN: vec3;
 			if (xz > 0.001) {
 				adjN = [an[0] / xz, 0, an[2] / xz];
 			} else {
 				adjN = [0, 0, 0];
 			}
-			let proj = vec3.dot(this.vel, adjN);
+			const proj = vec3.dot(this.vel, adjN);
 
 			if (proj < -1) {
 				if (this.kartWallTimer == 0) {
 					if (this._lastColSounds.hit != null) nitroAudio.playSound(this._lastColSounds.hit, { volume: 1 }, 0, this);
-					let colObj = {
+					const colObj = {
 						pos: pos,
 						vel: vec3.clone([0, 0, 0]),
 						mat: mat4.fromTranslation(mat4.create(), pos),
@@ -1507,7 +1496,7 @@ export class Kart {
 
 			//convert back to angle + speed to keep change to kart vel
 
-			let v = this.vel;
+			const v = this.vel;
 			this.speed = Math.sqrt(v[0] * v[0] + v[2] * v[2]);
 			this.angle = Math.atan2(v[0], -v[2]);
 			this._stuckTo = dat.object;
@@ -1517,7 +1506,7 @@ export class Kart {
 				this.boostNorm = this._BOOSTTIME;
 			}
 
-			let stick = colType == MKDS_COLTYPE.STICKY || colType == MKDS_COLTYPE.LOOP;
+			const stick = colType == MKDS_COLTYPE.STICKY || colType == MKDS_COLTYPE.LOOP;
 
 			if (this.vel[1] > 0) this.vel[1] = 0;
 			let proj = vec3.dot(this.vel, an);
@@ -1537,7 +1526,7 @@ export class Kart {
 			this.kartTargetNormal = dat.pNormal;
 
 			if (change) {
-				let particle = this._colParticle(this._lastCollided, colBE);
+				const particle = this._colParticle(this._lastCollided, colBE);
 				if (particle == null) this._clearWheelParticles(0);
 				else this._setWheelParticles(particle, 0);
 			}

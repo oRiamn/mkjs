@@ -64,7 +64,7 @@ export class KartItems {
 	}
 
 	update(input: InputData) {
-		let pressed = input.item && !this._lastItemState;
+		const pressed = input.item && !this._lastItemState;
 		const released = this._lastItemState && !input.item;
 		if (pressed) {
 			this._itemButtonHoldFrames = 0;
@@ -108,7 +108,6 @@ export class KartItems {
 					} else {
 						this._release(input);
 					}
-					pressed = false;
 				}
 			}
 		}
@@ -158,7 +157,7 @@ export class KartItems {
 	}
 
 	private _createItem(): Item {
-		let item = this.scene.items.createItem(this.currentItem!, this.kart);
+		const item = this.scene.items.createItem(this.currentItem!, this.kart);
 		return item;
 	}
 

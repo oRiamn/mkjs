@@ -37,9 +37,9 @@ export class CountD3DUI implements SceneEntity {
 		this.lastViewHeight = 0;
 		this.buildOrtho(nitroRender.getViewWidth(), nitroRender.getViewHeight());
 
-		let bmdFile = this.scene.gameRes.Race.getFile("count.nsbmd")!;
-		let bcaFile = this.scene.gameRes.Race.getFile("count.nsbca")!;
-		let btpFile = this.scene.gameRes.Race.getFile("count.nsbtp")!;
+		const bmdFile = this.scene.gameRes.Race.getFile("count.nsbmd")!;
+		const bcaFile = this.scene.gameRes.Race.getFile("count.nsbca")!;
+		const btpFile = this.scene.gameRes.Race.getFile("count.nsbtp")!;
 
 		this.bmd = new nsbmd(bmdFile);
 		this.bca = new nsbca(bcaFile);

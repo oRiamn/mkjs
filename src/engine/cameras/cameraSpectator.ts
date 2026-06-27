@@ -51,7 +51,7 @@ export class cameraSpectator implements Camera {
 	}
 
 	private initDashCam(_scene: Scene, came: nkm_section_CAME) {
-		let mat = mat4.create();
+		const mat = mat4.create();
 		mat4.rotateY(mat, mat, (180 - came.pos2[0]) * (Math.PI / 180));
 		mat4.rotateX(mat, mat, -came.pos2[1] * (Math.PI / 180));
 
@@ -62,7 +62,7 @@ export class cameraSpectator implements Camera {
 	}
 
 	private initCam1(scene: Scene, came: nkm_section_CAME) {
-		let routes = scene.paths;
+		const routes = scene.paths;
 		this.route = routes[came.camRoute];
 		this.routePos = 0;
 		this.routeProg = 0;
@@ -70,7 +70,7 @@ export class cameraSpectator implements Camera {
 	}
 
 	private initPointCam(scene: Scene, came: nkm_section_CAME) {
-		let routes = scene.paths;
+		const routes = scene.paths;
 		this.route = routes[came.camRoute];
 		this.routePos = 0;
 		this.routeProg = 0;
@@ -79,15 +79,15 @@ export class cameraSpectator implements Camera {
 
 	private pointCamFunc(_scene: Scene, came: nkm_section_CAME): CamView {
 		//point cam
-		let camPos = vec3.clone(came.pos1);
+		const camPos = vec3.clone(came.pos1);
 
-		let lookAtPos = vec3.transformMat4([0, 0, 0], [0, 4, 0], this.kart.mat);
+		const lookAtPos = vec3.transformMat4([0, 0, 0], [0, 4, 0], this.kart.mat);
 
 		vec3.scale(camPos, camPos, 1 / 1024);
 		vec3.scale(lookAtPos, lookAtPos, 1 / 1024);
 
-		let mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
-		let p = mat4.perspective(
+		const mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
+		const p = mat4.perspective(
 			mat4.create(),
 			((this.zoomLevel * this.normalFOV) / 180) * Math.PI,
 			this.viewW / this.viewH,
@@ -101,7 +101,7 @@ export class cameraSpectator implements Camera {
 	}
 
 	private camFunc1(_scene: Scene, _came: nkm_section_CAME): CamView {
-		let camPos = vec3.lerp(
+		const camPos = vec3.lerp(
 			[0, 0, 0],
 			this.route[this.routePos].pos,
 			this.route[(this.routePos + 1) % this.route.length].pos,
@@ -114,13 +114,13 @@ export class cameraSpectator implements Camera {
 			this.recalcRouteSpeed();
 		}
 
-		let lookAtPos = vec3.transformMat4([0, 0, 0], [0, 4, 0], this.kart.mat);
+		const lookAtPos = vec3.transformMat4([0, 0, 0], [0, 4, 0], this.kart.mat);
 
 		vec3.scale(camPos, camPos, 1 / 1024);
 		vec3.scale(lookAtPos, lookAtPos, 1 / 1024);
 
-		let mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
-		let p = mat4.perspective(
+		const mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
+		const p = mat4.perspective(
 			mat4.create(),
 			((this.zoomLevel * this.normalFOV) / 180) * Math.PI,
 			this.viewW / this.viewH,
@@ -134,24 +134,24 @@ export class cameraSpectator implements Camera {
 	}
 
 	private dashCamFunc(_scene: Scene, came: nkm_section_CAME): CamView {
-		let basis = this.kart.basis;
-		let camPos = vec3.transformMat4([0, 0, 0], this.relPos, basis);
-		let lookAtPos = vec3.transformMat4([0, 0, 0], [0, 0, 0], basis);
+		const basis = this.kart.basis;
+		const camPos = vec3.transformMat4([0, 0, 0], this.relPos, basis);
+		const lookAtPos = vec3.transformMat4([0, 0, 0], [0, 0, 0], basis);
 
 		vec3.scale(camPos, camPos, 1 / 1024);
 		vec3.scale(lookAtPos, lookAtPos, 1 / 1024);
 
-		let mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
+		const mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
 
-		let off = mat4.create();
+		const off = mat4.create();
 		mat4.translate(off, off, [-came.pos3[0] / 1024, came.pos3[1] / 1024, -came.pos3[2] / 1024]);
 		mat4.mul(mat, off, mat);
 
-		let kpos = vec3.clone(this.kart.pos);
+		const kpos = vec3.clone(this.kart.pos);
 		if (this.kart.drifting && !this.kart.driftLanded && this.kart.ylock > 0) kpos[1] -= this.kart.ylock;
 		mat4.translate(mat, mat, vec3.scale([0, 0, 0], kpos, -1 / 1024));
 
-		let p = mat4.perspective(
+		const p = mat4.perspective(
 			mat4.create(),
 			((this.zoomLevel * this.normalFOV) / 180) * Math.PI,
 			this.viewW / this.viewH,
@@ -168,8 +168,8 @@ export class cameraSpectator implements Camera {
 		this.viewW = width;
 		this.viewH = height;
 
-		let cams = scene.nkm.sections["CAME"].entries;
-		let tArea = this.getNearestArea(scene.nkm.sections["AREA"].entries, this.kart.pos);
+		const cams = scene.nkm.sections["CAME"].entries;
+		const tArea = this.getNearestArea(scene.nkm.sections["AREA"].entries, this.kart.pos);
 		if (tArea.came != this.curCamNum) {
 			//restart camera.
 			this.curCamNum = tArea.came;
@@ -232,10 +232,10 @@ export class cameraSpectator implements Camera {
 		let smallestDist = Infinity;
 		let closestArea: nkm_section_AREA | null = null;
 		for (let i = 0; i < areas.length; i++) {
-			let a = areas[i];
-			let sub = vec3.sub([0, 0, 0], a.pos, pos);
+			const a = areas[i];
+			const sub = vec3.sub([0, 0, 0], a.pos, pos);
 			vec3.divide(sub, sub, a.dimensions);
-			let dist = Math.sqrt(sub[0] * sub[0] + sub[1] * sub[1] + sub[2] * sub[2]);
+			const dist = Math.sqrt(sub[0] * sub[0] + sub[1] * sub[1] + sub[2] * sub[2]);
 			if (dist < smallestDist && a.came != 255) {
 				smallestDist = dist;
 				closestArea = a;
@@ -246,12 +246,12 @@ export class cameraSpectator implements Camera {
 
 	buildBasis(): number[] {
 		//order y, x, z
-		let basis = this.gramShmidt(
+		const basis = this.gramShmidt(
 			this.camNormal,
 			[Math.cos(this.camAngle), 0, Math.sin(this.camAngle)],
 			[Math.sin(this.camAngle), 0, -Math.cos(this.camAngle)]
 		);
-		let temp = basis[0];
+		const temp = basis[0];
 		basis[0] = basis[1];
 		basis[1] = temp; //todo: cleanup
 		// prettier-ignore
@@ -264,9 +264,9 @@ export class cameraSpectator implements Camera {
 	}
 
 	private gramShmidt(v1: vec3, v2: vec3, v3: vec3): [vec3, vec3, vec3] {
-		let u1 = v1;
-		let u2 = vec3.sub([0, 0, 0], v2, this.project(u1, v2));
-		let u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this.project(u1, v3)), this.project(u2, v3));
+		const u1 = v1;
+		const u2 = vec3.sub([0, 0, 0], v2, this.project(u1, v2));
+		const u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this.project(u1, v3)), this.project(u2, v3));
 		return [vec3.normalize(u1, u1), vec3.normalize(u2, u2), vec3.normalize(u3, u3)];
 	}
 
@@ -279,7 +279,7 @@ export class cameraSpectator implements Camera {
 	}
 
 	dirDiff(dir1: number, dir2: number): number {
-		let d = this.fixDir(dir1 - dir2);
+		const d = this.fixDir(dir1 - dir2);
 		return d > Math.PI ? -2 * Math.PI + d : d;
 	}
 

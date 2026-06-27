@@ -139,7 +139,7 @@ export class nitroRender {
 
 		nitroRender._instructions[0x20] = function (view: DataView, off: number) {
 			//color
-			let dat = view.getUint16(off, true);
+			const dat = view.getUint16(off, true);
 			nitroRender._color[0] = (dat & 31) / 31;
 			nitroRender._color[1] = ((dat >> 5) & 31) / 31;
 			nitroRender._color[2] = ((dat >> 10) & 31) / 31;
@@ -147,7 +147,7 @@ export class nitroRender {
 
 		nitroRender._instructions[0x21] = function (view: DataView, off: number) {
 			//normal
-			let dat = view.getUint32(off, true);
+			const dat = view.getUint32(off, true);
 			nitroRender._norm[0] = nitroRender._tenBitSign(dat);
 			nitroRender._norm[1] = nitroRender._tenBitSign(dat >> 10);
 			nitroRender._norm[2] = nitroRender._tenBitSign(dat >> 20);
@@ -169,7 +169,7 @@ export class nitroRender {
 
 		nitroRender._instructions[0x24] = function (view: DataView, off: number) {
 			//xyz 10 bit
-			let dat = view.getUint32(off, true);
+			const dat = view.getUint32(off, true);
 			nitroRender._cVec[0] = nitroRender._tenBitSign(dat);
 			nitroRender._cVec[1] = nitroRender._tenBitSign(dat >> 10);
 			nitroRender._cVec[2] = nitroRender._tenBitSign(dat >> 20);
@@ -199,7 +199,7 @@ export class nitroRender {
 
 		nitroRender._instructions[0x28] = function (view: DataView, off: number) {
 			//xyz 10 bit relative
-			let dat = view.getUint32(off, true);
+			const dat = view.getUint32(off, true);
 			nitroRender._cVec[0] += nitroRender._relativeSign(dat);
 			nitroRender._cVec[1] += nitroRender._relativeSign(dat >> 10);
 			nitroRender._cVec[2] += nitroRender._relativeSign(dat >> 20);
@@ -208,7 +208,7 @@ export class nitroRender {
 
 		nitroRender._instructions[0x40] = function (view: DataView, off: number) {
 			//begin vtx
-			let dat = view.getUint32(off, true);
+			const dat = view.getUint32(off, true);
 			nitroRender._vecMode = dat;
 
 			if (!nitroRender._optimiseTriangles) {
@@ -222,7 +222,7 @@ export class nitroRender {
 			nitroRender._stripAlt = 0;
 		};
 
-		nitroRender._instructions[0x41] = function (view: DataView, off: number) {
+		nitroRender._instructions[0x41] = function (_view: DataView, _off: number) {
 			//end vtx
 			if (!nitroRender._optimiseTriangles) nitroRender._pushStrip();
 		};
@@ -239,7 +239,7 @@ export class nitroRender {
 
 	static setShadowMode(sTex: CustomWebGLTexture, fsTex: CustomWebGLTexture, sMat: Float32List, fsMat: Float32List, dir: vec3) {
 		nitroRender.nitroShader = nitroRender._shadowShader;
-		let shader = nitroRender._shadowShader;
+		const shader = nitroRender._shadowShader;
 		nitroRender._gl.useProgram(shader.program);
 
 		vec3.normalize(dir, dir);
@@ -263,27 +263,27 @@ export class nitroRender {
 	}
 
 	static setLightIntensities(intensity: number, shadIntensity: number) {
-		let shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
+		const shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
 		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
 		nitroRender._gl.uniform1f(shader.uniforms.lightIntensityUniform, intensity);
 		nitroRender._gl.uniform1f(shader.uniforms.shadLightenUniform, 1 - shadIntensity);
 	}
 
 	static setShadBias(bias: number) {
-		let shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
+		const shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
 		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
 		nitroRender._gl.uniform1f(shader.uniforms.shadOffUniform, bias);
 		nitroRender._gl.uniform1f(shader.uniforms.farShadOffUniform, bias);
 	}
 
 	static setNormalFlip(flip: number) {
-		let shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
+		const shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
 		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
 		nitroRender._gl.uniform1f(shader.uniforms.normalFlipUniform, flip);
 	}
 
 	static resetShadOff() {
-		let shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
+		const shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
 		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
 		nitroRender._gl.uniform1f(shader.uniforms.shadOffUniform, 0.0005);
 		nitroRender._gl.uniform1f(shader.uniforms.farShadOffUniform, 0.002);
@@ -325,11 +325,11 @@ export class nitroRender {
 	static updateBillboards(view: mat4) {
 		nitroRender.billboardID = (nitroRender.billboardID + 1) % 0xffffff;
 
-		let nv = mat4.clone(view);
+		const nv = mat4.clone(view);
 		nv[12] = 0;
 		nv[13] = 0;
 		nv[14] = 0; //nullify translation
-		let nv2 = mat4.clone(nv);
+		const nv2 = mat4.clone(nv);
 		nitroRender.billboardMat = mat4.invert(nv, nv);
 		nv2[4] = 0;
 		nv2[5] = 1; //do not invert y axis view
@@ -353,7 +353,7 @@ export class nitroRender {
 
 		nitroRender._curMat = startStack; //start on root bone
 		let off = 0;
-		let view = new DataView(disp);
+		const view = new DataView(disp);
 
 		nitroRender._texWidth = tex.width;
 		nitroRender._texHeight = tex.height;
@@ -377,13 +377,13 @@ export class nitroRender {
 			let ioff = off;
 			off += 4;
 			for (let i = 0; i < 4; i++) {
-				let inst = view.getUint8(ioff++);
+				const inst = view.getUint8(ioff++);
 				if (nitroRender._instructions[inst] != null) {
 					nitroRender._instructions[inst](view, off);
 				} else {
 					if (inst != 0) alert(`invalid instruction 0x${inst.toString(16)}`);
 				}
-				let temp = nitroRender._parameters[inst];
+				const temp = nitroRender._parameters[inst];
 				off += temp == null ? 0 : temp * 4;
 			}
 		}
@@ -408,26 +408,26 @@ export class nitroRender {
 
 	private static _pushStrip() {
 		//push the last group of triangles to the buffer. Should do this on matrix change... details fourthcoming
-		let modes = nitroRender._optimiseTriangles
+		const modes = nitroRender._optimiseTriangles
 			? [nitroRender._gl.TRIANGLES, nitroRender._gl.TRIANGLES, nitroRender._gl.TRIANGLES, nitroRender._gl.TRIANGLES]
 			: [nitroRender._gl.TRIANGLES, nitroRender._gl.TRIANGLES, nitroRender._gl.TRIANGLE_STRIP, nitroRender._gl.TRIANGLE_STRIP];
-		let pos = nitroRender._gl.createBuffer()!;
-		let col = nitroRender._gl.createBuffer()!;
-		let tx = nitroRender._gl.createBuffer()!;
-		let mat = nitroRender._gl.createBuffer()!;
-		let norm = nitroRender._gl.createBuffer()!;
+		const pos = nitroRender._gl.createBuffer()!;
+		const col = nitroRender._gl.createBuffer()!;
+		const tx = nitroRender._gl.createBuffer()!;
+		const mat = nitroRender._gl.createBuffer()!;
+		const norm = nitroRender._gl.createBuffer()!;
 
-		let posArray = new Float32Array(nitroRender._vecPos);
+		const posArray = new Float32Array(nitroRender._vecPos);
 		if (nitroRender.forceFlatNormals && modes[nitroRender._vecMode] == nitroRender._gl.TRIANGLES) {
 			//calculate new flat normals for each triangle
 			for (let i = 0; i < nitroRender._vecPos.length; i += 9) {
-				let v1: vec3 = [nitroRender._vecPos[i], nitroRender._vecPos[i + 1], nitroRender._vecPos[i + 2]];
-				let v2: vec3 = [nitroRender._vecPos[i + 3], nitroRender._vecPos[i + 4], nitroRender._vecPos[i + 5]];
-				let v3: vec3 = [nitroRender._vecPos[i + 6], nitroRender._vecPos[i + 7], nitroRender._vecPos[i + 8]];
+				const v1: vec3 = [nitroRender._vecPos[i], nitroRender._vecPos[i + 1], nitroRender._vecPos[i + 2]];
+				const v2: vec3 = [nitroRender._vecPos[i + 3], nitroRender._vecPos[i + 4], nitroRender._vecPos[i + 5]];
+				const v3: vec3 = [nitroRender._vecPos[i + 6], nitroRender._vecPos[i + 7], nitroRender._vecPos[i + 8]];
 
 				vec3.sub(v2, v2, v1);
 				vec3.sub(v3, v3, v1);
-				let newNorm = vec3.cross([0, 0, 0], v2, v3);
+				const newNorm = vec3.cross([0, 0, 0], v2, v3);
 				vec3.normalize(newNorm, newNorm);
 				for (let j = 0; j < 3; j++) {
 					for (let k = 0; k < 3; k++) {
@@ -487,8 +487,8 @@ export class nitroRender {
 
 		if (nitroRender._optimiseTriangles && nitroRender._vecMode > 1 && nitroRender._vecNum > 2) {
 			//convert tri strips to individual triangles so we get one buffer per polygon
-			let b = nitroRender._vecMat.length - (nitroRender._stripAlt % 2 == 0 ? 1 : 3);
-			let s2 = nitroRender._vecMat.length - (nitroRender._stripAlt % 2 == 0 ? 2 : 1);
+			const b = nitroRender._vecMat.length - (nitroRender._stripAlt % 2 == 0 ? 1 : 3);
+			const s2 = nitroRender._vecMat.length - (nitroRender._stripAlt % 2 == 0 ? 2 : 1);
 			nitroRender._vecPos = nitroRender._vecPos
 				.concat(nitroRender._vecPos.slice(b * 3, b * 3 + 3))
 				.concat(nitroRender._vecPos.slice(s2 * 3, s2 * 3 + 3));

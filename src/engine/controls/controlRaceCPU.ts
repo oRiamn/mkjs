@@ -73,10 +73,10 @@ export class controlRaceCPU implements Controls {
 		//battle mode AI is a lot more complex, but since we're only going in one direction it can be kept simple.
 
 		const item = this.kart.local && !!window.keysArray[65];
-		let accel = true; //currently always driving forward. should change for sharp turns and when we get stuck on a wall
+		const accel = true; //currently always driving forward. should change for sharp turns and when we get stuck on a wall
 		//(drive in direction of wall? we may need to reverse, "if stuck for too long we can just call lakitu and the players won't even notice" - Nintendo)
 
-		let dist = vec3.dot(this.destNorm, this.kart.pos) + this.destConst;
+		const dist = vec3.dot(this.destNorm, this.kart.pos) + this.destConst;
 		if (dist < this.ePoi.pointSize) this.advancePoint();
 		// if (this.ePath.loop) debugger;
 
@@ -85,7 +85,7 @@ export class controlRaceCPU implements Controls {
 			this.ePoi.pos,
 			vec3.scale([0, 0, 0], vec3.lerp([0, 0, 0], this.posOffset, this.destOff, this.offTrans), this.ePoi.pointSize)
 		);
-		let dirToPt = Math.atan2(this.destPoint[0] - this.kart.pos[0], this.kart.pos[2] - this.destPoint[2]);
+		const dirToPt = Math.atan2(this.destPoint[0] - this.kart.pos[0], this.kart.pos[2] - this.destPoint[2]);
 
 		let physDir = this.kart.physicalDir;
 		if (this.kart.physBasis) {
@@ -101,13 +101,13 @@ export class controlRaceCPU implements Controls {
 					airTurn: 0, //air excitebike turn, doesn't really have much function
 				};
 			}
-			let forward = [Math.sin(physDir), 0, -Math.cos(physDir)] as vec3;
+			const forward = [Math.sin(physDir), 0, -Math.cos(physDir)] as vec3;
 
 			vec3.transformMat4(forward, forward, this.kart.physBasis.mat);
 			physDir = Math.atan2(forward[0], -forward[2]);
 		}
-		let diff = this.dirDiff(dirToPt, physDir);
-		let turn = Math.min(Math.max(-1, diff * 3), 1);
+		const diff = this.dirDiff(dirToPt, physDir);
+		const turn = Math.min(Math.max(-1, diff * 3), 1);
 
 		this.offTrans += 1 / 240;
 
@@ -128,14 +128,14 @@ export class controlRaceCPU implements Controls {
 
 	private chooseNewOff() {
 		this.posOffset = this.destOff;
-		let ang = Math.random() * Math.PI * 2;
-		let strength = Math.random();
+		const ang = Math.random() * Math.PI * 2;
+		const strength = Math.random();
 		this.destOff = [Math.sin(ang) * strength, 0, Math.cos(ang) * strength];
 		this.offTrans = 0;
 	}
 
 	private calcDestNorm() {
-		let norm = vec3.sub([0, 0, 0], this.kart.pos, this.ePoi.pos);
+		const norm = vec3.sub([0, 0, 0], this.kart.pos, this.ePoi.pos);
 		vec3.normalize(norm, norm);
 
 		this.destNorm = norm;
@@ -155,16 +155,16 @@ export class controlRaceCPU implements Controls {
 			//advance to one of next possible paths
 
 			if (this.battleMode) {
-				let loc = Math.random() > 0.5 && this.ePath.source.length > 0 ? this.ePath.source : this.ePath.dest;
-				let pathInd = loc[Math.floor(Math.random() * loc.length)];
+				const loc = Math.random() > 0.5 && this.ePath.source.length > 0 ? this.ePath.source : this.ePath.dest;
+				const pathInd = loc[Math.floor(Math.random() * loc.length)];
 				this.ePoiInd = pathInd;
-				let pt = this.points[this.ePoiInd];
+				const pt = this.points[this.ePoiInd];
 				if (pt != null) {
 					this.ePoi = pt;
 					this.recomputePath();
 				}
 			} else {
-				let pathInd = this.ePath.dest[Math.floor(Math.random() * this.ePath.dest.length)];
+				const pathInd = this.ePath.dest[Math.floor(Math.random() * this.ePath.dest.length)];
 				this.ePath = this.paths[pathInd];
 				this.ePoi = this.points[this.ePath.startInd];
 				this.ePoiInd = this.ePath.startInd;
@@ -176,7 +176,7 @@ export class controlRaceCPU implements Controls {
 	private recomputePath() {
 		//use if point is set by anything but the path system, eg. respawn
 		for (let i = 0; i < this.paths.length; i++) {
-			let rel = this.ePoiInd - this.paths[i].startInd;
+			const rel = this.ePoiInd - this.paths[i].startInd;
 			if (rel >= 0 && rel < this.paths[i].pathLen) {
 				this.ePath = this.paths[i];
 			}
@@ -188,7 +188,7 @@ export class controlRaceCPU implements Controls {
 	}
 
 	private dirDiff(dir1: number, dir2: number) {
-		let d = this.fixDir(dir1 - dir2);
+		const d = this.fixDir(dir1 - dir2);
 		return d > Math.PI ? -2 * Math.PI + d : d;
 	}
 

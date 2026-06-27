@@ -21,17 +21,17 @@ export class sseq implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
+		const view = new DataView(input);
 		let offset = 0;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
 			MKSUtils.asciireadChar(view, 0x2) +
 			MKSUtils.asciireadChar(view, 0x3);
 		if (stamp != "SSEQ") throw `SSEQ invalid. Expected SSEQ, found ${stamp}`;
 		offset += 16;
-		let data =
+		const data =
 			MKSUtils.asciireadChar(view, offset) +
 			MKSUtils.asciireadChar(view, offset + 1) +
 			MKSUtils.asciireadChar(view, offset + 2) +

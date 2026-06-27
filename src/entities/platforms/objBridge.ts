@@ -67,7 +67,7 @@ export class ObjBridge implements SceneEntityObject, lsc_taget {
 
 	private _setMat() {
 		this._prevMat = this._curMat;
-		let mat = mat4.create();
+		const mat = mat4.create();
 		mat4.translate(mat, mat, this.pos);
 
 		if (this.angle[2] != 0) mat4.rotateZ(mat, mat, this.angle[2] * (Math.PI / 180));
@@ -80,7 +80,7 @@ export class ObjBridge implements SceneEntityObject, lsc_taget {
 		this._curMat = mat;
 	}
 
-	update(scene: Scene) {
+	update(_scene: Scene) {
 		let angle = 0;
 		this._frame++;
 		switch (this._mode) {
@@ -118,7 +118,7 @@ export class ObjBridge implements SceneEntityObject, lsc_taget {
 	}
 
 	draw(view: mat4, pMatrix: mat4) {
-		let mat = mat4.create();
+		const mat = mat4.create();
 		mat4.mul(mat, view, this._curMat);
 
 		this._res.mdl[0].draw(mat, pMatrix, this._animMat);
@@ -131,8 +131,8 @@ export class ObjBridge implements SceneEntityObject, lsc_taget {
 
 	provideRes(r: ProvidedRes) {
 		this._res = r; //...and gives them to us. :)
-		let inf = this._res.mdl[0].getCollisionModel(0, 1, 7 << 8); //dash
-		let inf2 = this._res.mdl[0].getCollisionModel(0, 0, 0); //regular
+		const inf = this._res.mdl[0].getCollisionModel(0, 1, 7 << 8); //dash
+		const inf2 = this._res.mdl[0].getCollisionModel(0, 0, 0); //regular
 
 		const bca = <nsbca>r.other[1];
 		const bmd = r.mdl[0].bmd;

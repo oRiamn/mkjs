@@ -66,12 +66,12 @@ export class singleScene {
 
 	private updateServer() {
 		if (!this.raceStarted) return;
-		let m = this.mode;
+		const m = this.mode;
 		m.frameDiv++;
 		if (m.frameDiv == 60) {
 			m.frameDiv -= 60;
 			m.time++;
-			let timeAd = this.advanceTimes[m.id];
+			const timeAd = this.advanceTimes[m.id];
 			if (timeAd != -1 && m.time >= timeAd) {
 				m.id++;
 				m.time = 0;
@@ -90,17 +90,17 @@ export class singleScene {
 
 	private begin(courseId: string, autostart: boolean) {
 		if (courseId.substr(0, 5) == "mkds/") {
-			let cnum = Number(courseId.substr(5));
-			let course = MKDSCONST.COURSES[cnum];
-			let cDir = MKDSCONST.COURSEDIR + course.name;
-			let mainNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}.carc`)!));
-			let texNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}Tex.carc`)!));
+			const cnum = Number(courseId.substr(5));
+			const course = MKDSCONST.COURSES[cnum];
+			const cDir = MKDSCONST.COURSEDIR + course.name;
+			const mainNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}.carc`)!));
+			const texNarc = new narc(lz77.decompress(gameROM.getFile(`${cDir}Tex.carc`)!));
 			this.setUpCourse(mainNarc, texNarc, course, autostart);
 		} else throw "custom tracks are not implemented yet!";
 	}
 
 	private setUpCourse(mainNarc: narc, texNarc: narc, course: MKCONST_course_obj, autostart: boolean) {
-		let chars = [];
+		const chars = [];
 		chars.push({
 			charN: this.mchar,
 			kartN: this.mkart,
@@ -113,8 +113,8 @@ export class singleScene {
 		});
 
 		for (let i = 0; i < 7; i++) {
-			let tchar = Math.floor(Math.random() * 12);
-			let tkart = Math.floor(Math.random() * 0x24);
+			const tchar = Math.floor(Math.random() * 12);
+			const tkart = Math.floor(Math.random() * 0x24);
 
 			chars.push({
 				charN: tchar,

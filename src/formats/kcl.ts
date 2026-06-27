@@ -72,7 +72,7 @@ export class kcl {
 		if (this.input != null) {
 			//handle input, load kcl from data
 			if (typeof this.input == "string") {
-				let xml = new XMLHttpRequest();
+				const xml = new XMLHttpRequest();
 				xml.responseType = "arraybuffer";
 				xml.open("GET", this.input, true);
 				xml.onload = () => {
@@ -90,15 +90,14 @@ export class kcl {
 		this.end = !mkwii;
 		this.mkwiiMode = mkwii;
 		buffer = MKSUtils.prepareInput(buffer);
-		let time = Date.now();
 		//loads kcl from an array buffer.
-		let view = new DataView(buffer);
+		const view = new DataView(buffer);
 		this.vertexOffset = view.getUint32(0x00, this.end);
 		this.normalOffset = view.getUint32(0x04, this.end);
 		this.planeOffset = view.getUint32(0x08, this.end);
 		this.octreeOffset = view.getUint32(0x0c, this.end);
 		this.unknown1 = this._readBigDec(view, 0x10, mkwii);
-		let vec = vec3.create();
+		const vec = vec3.create();
 		vec[0] = this._readBigDec(view, 0x14, mkwii);
 		vec[1] = this._readBigDec(view, 0x18, mkwii);
 		vec[2] = this._readBigDec(view, 0x1c, mkwii);
@@ -122,7 +121,7 @@ export class kcl {
 			const p = this._readPlane(view, offset);
 			this.planes.push(p);
 			offset += 0x10;
-			let vert = this.planes[this.planes.length - 1].Vertices[0];
+			const vert = this.planes[this.planes.length - 1].Vertices[0];
 			if (vert[0] < minx) minx = vert[0];
 			if (vert[0] > maxx) maxx = vert[0];
 			if (vert[2] < minz) minz = vert[2];
@@ -131,11 +130,11 @@ export class kcl {
 
 		this.octree = [];
 
-		let rootNodes =
+		const rootNodes =
 			((~this.xMask >> this.coordShift) + 1) * ((~this.yMask >> this.coordShift) + 1) * ((~this.zMask >> this.coordShift) + 1);
 
 		for (let i = 0; i < rootNodes; i++) {
-			let off = this.octreeOffset + i * 4;
+			const off = this.octreeOffset + i * 4;
 			this.octree.push(this._decodeCube(this.octreeOffset, off, view));
 		}
 		this.loaded = true;
@@ -154,7 +153,7 @@ export class kcl {
 			z = Math.floor(z);
 			if ((x & this.xMask) > 0 || (y & this.yMask) > 0 || (z & this.zMask) > 0) return []; //no collision
 
-			let index = (x >> this.coordShift) | ((y >> this.coordShift) << this.yShift) | ((z >> this.coordShift) << this.zShift);
+			const index = (x >> this.coordShift) | ((y >> this.coordShift) << this.yShift) | ((z >> this.coordShift) << this.zShift);
 			const root = this.octree[index];
 			if (root == null) return [];
 			return this._traverseOctree(root, x, y, z, this.coordShift - 1);
@@ -171,7 +170,7 @@ export class kcl {
 		if (node.leaf === false) {
 			if (shift < 0) return [];
 			//otherwise we're a node! find next index and traverse
-			let index = ((x >> shift) & 1) | (((y >> shift) & 1) << 1) | (((z >> shift) & 1) << 2);
+			const index = ((x >> shift) & 1) | (((y >> shift) & 1) << 1) | (((z >> shift) & 1) << 2);
 			return this._traverseOctree(node.items[index], x, y, z, shift - 1);
 		} else {
 			return node.realTris;
@@ -179,7 +178,7 @@ export class kcl {
 	}
 
 	private _decodeCube(baseoff: number, off: number, view: DataView): kcl_cube {
-		let data = view.getUint32(off, this.end);
+		const data = view.getUint32(off, this.end);
 		if (data === 0) {
 			return {
 				leaf: true,
@@ -198,10 +197,10 @@ export class kcl {
 		if (data & 0x80000000) {
 			//is a leaf.
 			off2 += 2;
-			let tris = [];
-			let realTris = [];
+			const tris = [];
+			const realTris = [];
 			while (true) {
-				let read = view.getUint16(off2, this.end);
+				const read = view.getUint16(off2, this.end);
 				if (read == 0) break; //zero terminated
 				tris.push(read);
 				realTris.push(this.planes[read]);
@@ -215,8 +214,8 @@ export class kcl {
 			};
 		} else {
 			//contains 8 more cubes
-			let cubes = [];
-			let boff = off2;
+			const cubes = [];
+			const boff = off2;
 			for (let i = 0; i < 8; i++) {
 				cubes.push(this._decodeCube(boff, off2, view));
 				off2 += 4;
@@ -237,8 +236,8 @@ export class kcl {
 		const NormalC = this._readNormal(view.getUint16(offset + 0xc, this.end), view);
 		const CollisionType = view.getUint16(offset + 0xe, this.end);
 
-		let crossA = vec3.cross(vec3.create(), NormalA, Normal);
-		let crossB = vec3.cross(vec3.create(), NormalB, Normal);
+		const crossA = vec3.cross(vec3.create(), NormalA, Normal);
+		const crossB = vec3.cross(vec3.create(), NormalB, Normal);
 
 		const v0 = this._readVert(view.getUint16(offset + 0x4, this.end), view);
 
@@ -260,8 +259,8 @@ export class kcl {
 	}
 
 	private _readVert(num: number, view: DataView): vec3 {
-		let vec = vec3.create();
-		let loc = this.vertexOffset + num * 0xc;
+		const vec = vec3.create();
+		const loc = this.vertexOffset + num * 0xc;
 		vec[0] = this._readBigDec(view, loc, this.mkwiiMode);
 		vec[1] = this._readBigDec(view, loc + 0x4, this.mkwiiMode);
 		vec[2] = this._readBigDec(view, loc + 0x8, this.mkwiiMode);
@@ -269,15 +268,15 @@ export class kcl {
 	}
 
 	private _readNormal(num: number, view: DataView): vec3 {
-		let mkwii = this.mkwiiMode;
-		let vec = vec3.create();
+		const mkwii = this.mkwiiMode;
+		const vec = vec3.create();
 		if (mkwii) {
-			let loc = this.normalOffset + num * 0xc;
+			const loc = this.normalOffset + num * 0xc;
 			vec[0] = view.getFloat32(loc);
 			vec[1] = view.getFloat32(loc + 0x4);
 			vec[2] = view.getFloat32(loc + 0x8);
 		} else {
-			let loc = this.normalOffset + num * 0x6;
+			const loc = this.normalOffset + num * 0x6;
 			vec[0] = view.getInt16(loc, this.end) / 4096; //fixed point
 			vec[1] = view.getInt16(loc + 0x2, this.end) / 4096;
 			vec[2] = view.getInt16(loc + 0x4, this.end) / 4096;

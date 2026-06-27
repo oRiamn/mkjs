@@ -34,9 +34,9 @@ export class PlacementUI implements SceneEntity {
 		this.lastViewWidth = 0;
 		this.lastViewHeight = 0;
 
-		let ncgrFile = this.scene.gameRes.RaceLoc.getFile("race_m_o.NCGR")!;
-		let nclrFile = this.scene.gameRes.Race.getFile("race_m_o.NCLR")!;
-		let ncerFile = this.scene.gameRes.Race.getFile("race_m.NCER")!;
+		const ncgrFile = this.scene.gameRes.RaceLoc.getFile("race_m_o.NCGR")!;
+		const nclrFile = this.scene.gameRes.Race.getFile("race_m_o.NCLR")!;
+		const ncerFile = this.scene.gameRes.Race.getFile("race_m.NCER")!;
 
 		this.ncgr = new ncgr(ncgrFile);
 		this.nclr = new nclr(nclrFile);
@@ -69,7 +69,7 @@ export class PlacementUI implements SceneEntity {
 	}
 
 	update() {
-		let place = this.kart.placement < 8 ? this.kart.placement : 8;
+		const place = this.kart.placement < 8 ? this.kart.placement : 8;
 		if (place != this.place) {
 			this.place = place;
 			this.flattener.loadTextue(this.place - 1);

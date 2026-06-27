@@ -109,7 +109,7 @@ class NPCVehicle implements lsc_taget {
 
 	private setMat() {
 		this.prevMat = this.curMat;
-		let mat = mat4.create();
+		const mat = mat4.create();
 		mat4.translate(mat, mat, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
@@ -142,12 +142,12 @@ class NPCVehicle implements lsc_taget {
 		//simple behaviour, just follow the path! piece of cake.
 
 		//recalculate our route speed using a target real world speed.
-		let nextTime = this.elapsedTime + this.routeSpeed;
+		const nextTime = this.elapsedTime + this.routeSpeed;
 		for (let i = 0; i < (this.elapsedTime == 0 ? 3 : 1); i++) {
 			if (nextTime < 1) {
-				let targSpeed = 2;
-				let estimate = this._cubic3D(this.nodes, nextTime);
-				let estDistance = vec3.dist(estimate, this.pos);
+				const targSpeed = 2;
+				const estimate = this._cubic3D(this.nodes, nextTime);
+				const estDistance = vec3.dist(estimate, this.pos);
 				this.routeSpeed *= targSpeed / estDistance; //correct
 				if (this.routeSpeed > 0.2) this.routeSpeed = 0.2;
 			}
@@ -155,9 +155,9 @@ class NPCVehicle implements lsc_taget {
 		if (this.routeSpeed <= 0) this.routeSpeed = 0.01;
 
 		this.elapsedTime += this.routeSpeed;
-		let i = this.elapsedTime;
+		const i = this.elapsedTime;
 
-		let newPos = this._cubic3D(this.nodes, i); //vec3.lerp([], t.prevPos, t.nextNode.pos, i);
+		const newPos = this._cubic3D(this.nodes, i); //vec3.lerp([], t.prevPos, t.nextNode.pos, i);
 		vec3.sub(this.vel, newPos, this.pos);
 		this.pos = newPos;
 
@@ -176,16 +176,16 @@ class NPCVehicle implements lsc_taget {
 		vec3.normalize(this.curNormal, this.curNormal);
 		if (isNaN(this.curNormal[0])) this.curNormal = [0, 0, 1];
 
-		let spos = vec3.clone(this.pos);
+		const spos = vec3.clone(this.pos);
 		spos[1] += 32;
-		let result = lsc.raycast(spos, [0, -100, 0], scene, 0.05, []);
+		const result = lsc.raycast(spos, [0, -100, 0], scene, 0.05, []);
 		if (result != null) {
 			this.floorNormal = result.normal;
 		} else {
 			this.floorNormal = [0, 1, 0];
 		}
 
-		let rate = 0.025;
+		const rate = 0.025;
 		this.curFloorNormal[0] += (this.floorNormal[0] - this.curFloorNormal[0]) * rate;
 		this.curFloorNormal[1] += (this.floorNormal[1] - this.curFloorNormal[1]) * rate;
 		this.curFloorNormal[2] += (this.floorNormal[2] - this.curFloorNormal[2]) * rate;
@@ -194,7 +194,7 @@ class NPCVehicle implements lsc_taget {
 	}
 
 	draw(view: mat4, pMatrix: mat4) {
-		let mat = mat4.translate(mat4.create(), view, this.pos);
+		const mat = mat4.translate(mat4.create(), view, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
 
@@ -206,23 +206,20 @@ class NPCVehicle implements lsc_taget {
 	//end collision stuff
 
 	private _cubic1D(y0: number, y1: number, y2: number, y3: number, i: number) {
-		let a0, a1, a2, a3, i2;
-
-		i2 = i * i;
-		a0 = -0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3;
-		a1 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3;
-		a2 = -0.5 * y0 + 0.5 * y2;
-		a3 = y1;
-
+		const i2 = i * i;
+		const a0 = -0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3;
+		const a1 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3;
+		const a2 = -0.5 * y0 + 0.5 * y2;
+		const a3 = y1;
 		return a0 * i * i2 + a1 * i2 + a2 * i + a3;
 	}
 
 	private _cubic3D(points: vec3[], i: number): vec3 {
 		//note: i is 0-1 between point 1 and 2. (0 and 3 are used to better define the curve)
-		let p0 = points[0];
-		let p1 = points[1];
-		let p2 = points[2];
-		let p3 = points[3];
+		const p0 = points[0];
+		const p1 = points[1];
+		const p2 = points[2];
+		const p3 = points[3];
 		return [
 			this._cubic1D(p0[0], p1[0], p2[0], p3[0], i),
 			this._cubic1D(p0[1], p1[1], p2[1], p3[1], i),

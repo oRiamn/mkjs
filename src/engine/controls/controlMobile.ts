@@ -34,11 +34,11 @@ export class controlMobile implements Controls {
 	private searchForTouch(rect: [number, number, number, number]): MKJSTouchInput | null {
 		const touches = window.touches;
 		for (let i = 0; i < touches.length; i++) {
-			let touch = touches[i];
-			let inNow = touch.x > rect[0] && touch.y > rect[1] && touch.x < rect[2] && touch.y < rect[3];
-			let inBefore = touch.lastx > rect[0] && touch.lasty > rect[1] && touch.lastx < rect[2] && touch.lasty < rect[3];
+			const touch = touches[i];
+			const inNow = touch.x > rect[0] && touch.y > rect[1] && touch.x < rect[2] && touch.y < rect[3];
+			const inBefore = touch.lastx > rect[0] && touch.lasty > rect[1] && touch.lastx < rect[2] && touch.lasty < rect[3];
 
-			let active = inNow && !touch.released;
+			const active = inNow && !touch.released;
 
 			if (inNow == inBefore && inNow) {
 				return { touch: touch, enterLeave: 0, active: active };
@@ -61,12 +61,12 @@ export class controlMobile implements Controls {
 		const itemZone = getZoneById("item").rect;
 		const steerZone = getZoneById("steer").rect;
 
-		let search = this.searchForTouch(accelZone);
+		const search = this.searchForTouch(accelZone);
 		const reverse = search != null && search.active;
 
-		let driftTouch = this.searchForTouch(driftZone);
-		let itemTouch = this.searchForTouch(itemZone);
-		let dPadTouch = this.searchForTouch(steerZone);
+		const driftTouch = this.searchForTouch(driftZone);
+		const itemTouch = this.searchForTouch(itemZone);
+		const dPadTouch = this.searchForTouch(steerZone);
 
 		let turn = 0;
 		if (dPadTouch != null && dPadTouch.active) {
@@ -82,7 +82,7 @@ export class controlMobile implements Controls {
 		} else {
 			if (dPadTouch == null || !dPadTouch.active) {
 				if (dPadTouch != null) {
-					let vel = dPadTouch.touch.lasty - dPadTouch.touch.y;
+					const vel = dPadTouch.touch.lasty - dPadTouch.touch.y;
 					if (vel > 2 / MOBILE_REF_HEIGHT) itemDir = -1;
 					if (vel < -2 / MOBILE_REF_HEIGHT) itemDir = 1;
 				}

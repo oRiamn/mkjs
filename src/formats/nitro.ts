@@ -37,12 +37,12 @@ export type nitro_read3dInfo_dataHandler<Type extends nitro_nextoff> = (view: Da
 export class nitro {
 	static readHeader(view: DataView): nitro_nitroHeader {
 		//input: DataView with base offset at header position
-		let stamp = nitro.readChar(view, 0x0) + nitro.readChar(view, 0x1) + nitro.readChar(view, 0x2) + nitro.readChar(view, 0x3);
-		let unknown1 = view.getUint32(0x4, true);
-		let filesize = view.getUint32(0x8, true);
-		let headsize = view.getUint16(0xc, true);
-		let numSections = view.getUint16(0xe, true);
-		let sectionOffsets: number[] = [];
+		const stamp = nitro.readChar(view, 0x0) + nitro.readChar(view, 0x1) + nitro.readChar(view, 0x2) + nitro.readChar(view, 0x3);
+		const unknown1 = view.getUint32(0x4, true);
+		const filesize = view.getUint32(0x8, true);
+		const headsize = view.getUint16(0xc, true);
+		const numSections = view.getUint16(0xe, true);
+		const sectionOffsets: number[] = [];
 		for (let i = 0; i < numSections; i++) {
 			sectionOffsets.push(view.getUint32(0x10 + i * 4, true));
 		}
@@ -61,38 +61,38 @@ export class nitro {
 		offset: number,
 		dataHandler: nitro_read3dInfo_dataHandler<Type>
 	): nitro_nitroInfos<Type> {
-		let baseOff = offset;
+		const baseOff = offset;
 		offset += 1; //skip dummy
-		let numObjects = view.getUint8(offset++);
-		let secSize = view.getUint16(offset, true);
+		const numObjects = view.getUint8(offset++);
+		view.getUint16(offset, true);
 		offset += 2;
 		//unknown block. documentation out of 10
-		let uhdSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
-		let usecSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
-		let unknown = view.getUint32(offset, true); //usually 0x0000017F
+		const unknown = view.getUint32(offset, true); //usually 0x0000017F
 		offset += 4;
-		let objectUnk = [];
+		const objectUnk = [];
 		for (let i = 0; i < numObjects; i++) {
-			let uk1 = view.getUint16(offset, true);
-			let uk2 = view.getUint16(offset + 2, true);
+			const uk1 = view.getUint16(offset, true);
+			const uk2 = view.getUint16(offset + 2, true);
 			objectUnk.push({ uk1: uk1, uk2: uk2 });
 			offset += 4;
 		}
 		//info block
-		let ihdSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
-		let isecSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
-		let objectData: Type[] = [];
+		const objectData: Type[] = [];
 		for (let i = 0; i < numObjects; i++) {
-			let data = dataHandler(view, offset, baseOff, i); //must return object with "nextoff" as offset after reading data
+			const data = dataHandler(view, offset, baseOff, i); //must return object with "nextoff" as offset after reading data
 			objectData.push(data);
 			offset = data.nextoff;
 		}
 
-		let names = [];
+		const names = [];
 		for (let i = 0; i < numObjects; i++) {
 			let name = "";
 			for (let j = 0; j < 16; j++) {

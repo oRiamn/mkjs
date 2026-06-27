@@ -155,10 +155,10 @@ export class spa implements MKJSDataFormator {
 
 	load(input: MKJSDataInput): void {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
+		const view = new DataView(input);
 		let offset = 0;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
 			MKSUtils.asciireadChar(view, 0x2) +
@@ -166,21 +166,21 @@ export class spa implements MKJSDataFormator {
 		if (stamp != " APS") throw `SPA invalid. Expected 'APS', found ${stamp}`;
 		offset += 4;
 
-		let version =
+		const version =
 			MKSUtils.asciireadChar(view, offset) +
 			MKSUtils.asciireadChar(view, offset + 1) +
 			MKSUtils.asciireadChar(view, offset + 2) +
 			MKSUtils.asciireadChar(view, offset + 3);
 		offset += 4;
 
-		let particleCount = view.getUint16(offset, true);
-		let particleTexCount = view.getUint16(offset + 2, true);
-		let unknown = view.getUint32(offset + 4, true);
-		let unknown2 = view.getUint32(offset + 8, true);
-		let unknown3 = view.getUint32(offset + 12, true);
+		const particleCount = view.getUint16(offset, true);
+		const particleTexCount = view.getUint16(offset + 2, true);
+		view.getUint32(offset + 4, true);
+		view.getUint32(offset + 8, true);
+		view.getUint32(offset + 12, true);
 
-		let firstTexOffset = view.getUint32(offset + 16, true);
-		let pad = view.getUint32(offset + 20, true);
+		const firstTexOffset = view.getUint32(offset + 16, true);
+		view.getUint32(offset + 20, true);
 
 		offset += 24;
 		if (version == "12_1") {
@@ -202,8 +202,8 @@ export class spa implements MKJSDataFormator {
 		//window.debugParticle = true;
 		if (window.debugParticle) {
 			for (let i = 0; i < particleCount; i++) {
-				let text = document.createElement("textarea");
-				let p = this.particles[i];
+				const text = document.createElement("textarea");
+				const p = this.particles[i];
 				p.parent = null;
 				text.value = JSON.stringify(p);
 				p.parent = this;
@@ -215,7 +215,7 @@ export class spa implements MKJSDataFormator {
 				if (obj == null) {
 					continue;
 				}
-				let test = this._readTexWithPal(obj.info, obj);
+				const test = this._readTexWithPal(obj.info, obj);
 				document.body.appendChild(document.createElement("br"));
 				document.body.appendChild(document.createTextNode(`${i}:`));
 				document.body.appendChild(test);
@@ -225,17 +225,17 @@ export class spa implements MKJSDataFormator {
 	}
 
 	getTexture(id: number, gl: WebGLRenderingContext): CustomWebGLTexture | null {
-		let obj = this.particleTextures[id];
+		const obj = this.particleTextures[id];
 		if (obj == null) {
 			return null;
 		}
 		if (obj.glTex == null) {
 			try {
-				let canvas = this._readTexWithPal(obj.info, obj);
-				let m = obj.info;
+				const canvas = this._readTexWithPal(obj.info, obj);
+				const m = obj.info;
 				if (m.flipX || m.flipY) {
-					let fC = document.createElement("canvas");
-					let ctx = fC.getContext("2d")!;
+					const fC = document.createElement("canvas");
+					const ctx = fC.getContext("2d")!;
 					fC.width = m.flipX ? canvas.width * 2 : canvas.width;
 					fC.height = m.flipY ? canvas.height * 2 : canvas.height;
 					ctx.drawImage(canvas, 0, 0);
@@ -253,17 +253,17 @@ export class spa implements MKJSDataFormator {
 						ctx.drawImage(fC, 0, 0);
 						ctx.restore();
 					}
-					let t = this._loadTex(fC, gl, !m.repeatX, !m.repeatY);
+					const t = this._loadTex(fC, gl, !m.repeatX, !m.repeatY);
 					t.realWidth = canvas.width;
 					t.realHeight = canvas.height;
 					obj.glTex = t;
 				} else {
-					let t = this._loadTex(canvas, gl, !m.repeatX, !m.repeatY);
+					const t = this._loadTex(canvas, gl, !m.repeatX, !m.repeatY);
 					t.realWidth = canvas.width;
 					t.realHeight = canvas.height;
 					obj.glTex = t;
 				}
-			} catch (_e) {
+			} catch {
 				return null;
 			}
 		}
@@ -272,7 +272,7 @@ export class spa implements MKJSDataFormator {
 
 	private _loadTex(img: HTMLCanvasElement, gl: WebGLRenderingContext, clampx: boolean, clampy: boolean): CustomWebGLTexture {
 		//general purpose function for loading an image into a texture.
-		let texture = gl.createTexture() as CustomWebGLTexture;
+		const texture = gl.createTexture() as CustomWebGLTexture;
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 
@@ -289,7 +289,7 @@ export class spa implements MKJSDataFormator {
 	}
 
 	private _readParticle(view: DataView, off: number): spa_particule {
-		let ParticleFlags = {
+		const ParticleFlags = {
 			Type0: 0,
 			//1: random sphere
 			//2: random ground
@@ -426,7 +426,7 @@ export class spa implements MKJSDataFormator {
 		}
 		let texAnim = undefined;
 		if ((flag & ParticleFlags.TextureAnimation) != 0) {
-			let textures = [];
+			const textures = [];
 			for (let i = 0; i < 8; i++) textures[i] = view.getUint8(off + i);
 			texAnim = {
 				textures: textures,
@@ -550,7 +550,7 @@ export class spa implements MKJSDataFormator {
 			MKSUtils.asciireadChar(view, off + 0x3);
 		if (stamp != " TPS") throw `SPT invalid (particle texture in SPA). Expected ' TPS', found ${stamp}`;
 
-		let flags = view.getUint16(off + 4, true);
+		const flags = view.getUint16(off + 4, true);
 		const info = {
 			pal0trans: true, //z(flags>>3)&1, //weirdly different format
 			format: flags & 7,
@@ -603,29 +603,29 @@ export class spa implements MKJSDataFormator {
 	//modified from NSBTX.js - should probably refactor to use be generic between both
 
 	private _readTexWithPal(tex: spa_particuletexture_infos, data: spa_particuletexture): HTMLCanvasElement {
-		let format = tex.format;
-		let trans = tex.pal0trans;
+		const format = tex.format;
+		const trans = tex.pal0trans;
 
 		if (format == 5) return this._readCompressedTex(tex); //compressed 4x4 texture, different processing entirely
 
 		let off = 0; //tex.texOffset;
-		let palView = new DataView(data.palData);
-		let texView = new DataView(data.texData);
-		let palOff = 0; //pal.palOffset;
+		const palView = new DataView(data.palData);
+		const texView = new DataView(data.texData);
+		const palOff = 0; //pal.palOffset;
 
-		let canvas = document.createElement("canvas");
+		const canvas = document.createElement("canvas");
 		canvas.width = tex.width;
 		canvas.height = tex.height;
-		let ctx = canvas.getContext("2d")!;
-		let img = ctx.getImageData(0, 0, tex.width, tex.height);
+		const ctx = canvas.getContext("2d")!;
+		const img = ctx.getImageData(0, 0, tex.width, tex.height);
 
-		let total = tex.width * tex.height;
+		const total = tex.width * tex.height;
 		let databuf: number = undefined!;
 		for (let i = 0; i < total; i++) {
 			let col;
 			if (format == 1) {
 				//A3I5 encoding. 3 bits alpha 5 bits pal index
-				let dat = texView.getUint8(off++);
+				const dat = texView.getUint8(off++);
 				col = this._readPalColour(palView, palOff, dat & 31, trans);
 				col[3] = (dat >> 5) * (255 / 7);
 				this._premultiply(col);
@@ -646,7 +646,7 @@ export class spa implements MKJSDataFormator {
 				col = this._readPalColour(palView, palOff, texView.getUint8(off++), trans);
 			} else if (format == 6) {
 				//A5I3 encoding. 5 bits alpha 3 bits pal index
-				let dat = texView.getUint8(off++);
+				const dat = texView.getUint8(off++);
 				col = this._readPalColour(palView, palOff, dat & 7, trans);
 				col[3] = (dat >> 3) * (255 / 31);
 				this._premultiply(col);
@@ -676,14 +676,14 @@ export class spa implements MKJSDataFormator {
 		col[2] *= col[3] / 255;
 	}
 
-	private _readCompressedTex(tex: spa_particuletexture_infos): HTMLCanvasElement {
+	private _readCompressedTex(_tex: spa_particuletexture_infos): HTMLCanvasElement {
 		//format 5, 4x4 texels. I'll keep this well documented so it's easy to understand.
 		throw "compressed tex not supported for particles! (unknowns for tex data offsets and lengths?)";
 	}
 
 	private _readPalColour(view: DataView, palOff: number, ind: number, pal0trans: boolean): Uint32Array {
-		let col = view.getUint16(palOff + ind * 2, true);
-		let f = 255 / 31;
+		const col = view.getUint16(palOff + ind * 2, true);
+		const f = 255 / 31;
 		this.colourBuffer[0] = Math.round((col & 31) * f);
 		this.colourBuffer[1] = Math.round(((col >> 5) & 31) * f);
 		this.colourBuffer[2] = Math.round(((col >> 10) & 31) * f);
@@ -692,10 +692,10 @@ export class spa implements MKJSDataFormator {
 	}
 
 	private _readFractionalPal(view: DataView, palOff: number, i: number): Uint32Array {
-		let col = view.getUint16(palOff, true);
-		let col2 = view.getUint16(palOff + 2, true);
-		let ni = 1 - i;
-		let f = 255 / 31;
+		const col = view.getUint16(palOff, true);
+		const col2 = view.getUint16(palOff + 2, true);
+		const ni = 1 - i;
+		const f = 255 / 31;
 		this.colourBuffer[0] = Math.round((col & 31) * f * i + (col2 & 31) * f * ni);
 		this.colourBuffer[1] = Math.round(((col >> 5) & 31) * f * i + ((col2 >> 5) & 31) * f * ni);
 		this.colourBuffer[2] = Math.round(((col >> 10) & 31) * f * i + ((col2 >> 10) & 31) * f * ni);

@@ -99,7 +99,7 @@ export class Crab extends ObjDecor {
 		vec3.add(obj.pos, obj.pos, this.vel);
 	}
 
-	update(scene?: Scene) {
+	update(_scene?: Scene) {
 		const wasPausing = this._pauseLeft > 0;
 		if (this._route.length >= 2) {
 			this._stepRoute();

@@ -253,7 +253,7 @@ export class nitroShaders {
 	`;
 
 	static compileDefaultShader(): nitroShaders_defaultShader {
-		let conf = {
+		const conf = {
 			frag: nitroShaders._defaultFrag,
 			vert: nitroShaders._defaultVert,
 			attributes: {
@@ -278,7 +278,7 @@ export class nitroShaders {
 	}
 
 	static compileShadowShader(): nitroShaders_shadowShader {
-		let conf = {
+		const conf = {
 			frag: nitroShaders._shadFrag,
 			vert: nitroShaders._shadVert,
 			attributes: {

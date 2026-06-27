@@ -49,8 +49,8 @@ export class FakeBoxC implements KartItemEntity {
 			if (this.item.colRadius > 8) this.item.colRadius = 8;
 		}
 		if (this.item.groundTime < 20) {
-			let linear = 1 - this.item.groundTime / 19;
-			let s = Math.sin((this.item.groundTime * Math.PI) / 8);
+			const linear = 1 - this.item.groundTime / 19;
+			const s = Math.sin((this.item.groundTime * Math.PI) / 8);
 
 			this.xyScale = [1 + s * 0.25 * linear, 1 - s * 0.25 * linear];
 		} else {
@@ -59,20 +59,20 @@ export class FakeBoxC implements KartItemEntity {
 	}
 
 	draw(mvMatrix: mat4, pMatrix: mat4) {
-		let mat = mat4.translate(
+		const mat = mat4.translate(
 			mat4.create(),
 			mvMatrix,
 			vec3.add(vec3.create(), this.item.pos, [0, this.item.colRadius * 1.5 * this.xyScale[1], 0])
 		);
 
-		let scale = 2 * this.item.colRadius * (1 - this.item.holdTime / 7);
+		const scale = 2 * this.item.colRadius * (1 - this.item.holdTime / 7);
 		mat4.scale(mat, mat, [scale * this.xyScale[0], scale * this.xyScale[1], scale * this.xyScale[0]]);
 		mat4.rotateY(mat, mat, this.dir);
 		mat4.rotateZ(mat, mat, Math.PI / -6);
 		mat4.rotateY(mat, mat, Math.PI / 6);
 		mat4.rotateX(mat, mat, Math.PI / -6);
 
-		let mdl = this.scene.gameRes.items.fakeBox;
+		const mdl = this.scene.gameRes.items.fakeBox;
 		mdl.draw(mat, pMatrix);
 	}
 }

@@ -22,17 +22,17 @@ export class swar implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
+		const view = new DataView(input);
 		let offset = 0;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
 			MKSUtils.asciireadChar(view, 0x2) +
 			MKSUtils.asciireadChar(view, 0x3);
 		if (stamp != "SWAR") throw `SWAR invalid. Expected SWAR, found ${stamp}`;
 		offset += 16; //skip magic number, size and number of blocks
-		let data =
+		const data =
 			MKSUtils.asciireadChar(view, offset) +
 			MKSUtils.asciireadChar(view, offset + 1) +
 			MKSUtils.asciireadChar(view, offset + 2) +
@@ -40,7 +40,7 @@ export class swar implements MKJSDataFormator {
 		if (data != "DATA") throw `SWAV invalid, expected DATA, found ${data}`;
 		offset += 40; //skip reserved 0s and size
 
-		let nSamples = view.getUint32(offset, true);
+		const nSamples = view.getUint32(offset, true);
 		offset += 4;
 
 		this.samples = [];

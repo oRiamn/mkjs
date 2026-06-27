@@ -122,22 +122,20 @@ export class nsbmd implements MKJSDataFormator {
 	load(input: MKJSDataInput) {
 		this.hasBillboards = false;
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
-		let header = null;
-		let offset = 0;
-		let tex;
+		const view = new DataView(input);
 
 		//nitro 3d header
-		header = nitro.readHeader(view);
+		const header = nitro.readHeader(view);
 		if (header.stamp != "BMD0") throw `NSBMD invalid. Expected BMD0, found ${header.stamp}`;
 		if (header.numSections > 2) throw "NSBMD invalid. Too many sections - should have 2 maximum.";
+		let tex: nsbtx | undefined;
 		if (header.numSections == 2) tex = new nsbtx(input.slice(header.sectionOffsets[1]), true);
-		offset = header.sectionOffsets[0];
+		const offset = header.sectionOffsets[0];
 		//end nitro
 
 		this._mainOff = offset;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, offset + 0x0) +
 			MKSUtils.asciireadChar(view, offset + 0x1) +
 			MKSUtils.asciireadChar(view, offset + 0x2) +
@@ -150,8 +148,8 @@ export class nsbmd implements MKJSDataFormator {
 	}
 
 	private _modelInfoHandler(view: DataView, offset: number): nsbmd_modelData {
-		let mdlOff = view.getUint32(offset, true);
-		let off = this._mainOff + mdlOff;
+		const mdlOff = view.getUint32(offset, true);
+		const off = this._mainOff + mdlOff;
 		const nextoff = offset + 4;
 
 		const head = this._parseHeadModelData(view, off);
@@ -159,21 +157,21 @@ export class nsbmd implements MKJSDataFormator {
 		//head.runtimeData = view.getUint64(offset+0x38, true);
 		this._texPalOff = head.materialsOffset; //leak into local scope so it can be used by tex and pal bindings
 
-		let objects: nitro_nitroInfos<nsbmd_objects> = nitro.read3dInfo(view, off + 0x40, (...args) =>
+		const objects: nitro_nitroInfos<nsbmd_objects> = nitro.read3dInfo(view, off + 0x40, (...args) =>
 			this._objInfoHandler(args[0], args[1], args[2])
 		);
-		let polys: nitro_nitroInfos<nsbmd_poly> = nitro.read3dInfo(view, head.polyStartOffset, (...args) =>
+		const polys: nitro_nitroInfos<nsbmd_poly> = nitro.read3dInfo(view, head.polyStartOffset, (...args) =>
 			this._polyInfoHandler(args[0], args[1], args[2])
 		);
 
 		this._materials = nitro.read3dInfo(view, head.materialsOffset + 4, (...args) => this._matInfoHandler(args[0], args[1], args[2]));
 
-		let tex: nitro_nitroInfos<nsbmd_textInfos> = nitro.read3dInfo(
+		const tex: nitro_nitroInfos<nsbmd_textInfos> = nitro.read3dInfo(
 			view,
 			head.materialsOffset + view.getUint16(head.materialsOffset, true),
 			(...args) => this._texInfoHandler(args[0], args[1], args[2], args[3])
 		);
-		let palt: nitro_nitroInfos<nsbmd_palInfos> = nitro.read3dInfo(
+		const palt: nitro_nitroInfos<nsbmd_palInfos> = nitro.read3dInfo(
 			view,
 			head.materialsOffset + view.getUint16(head.materialsOffset + 2, true),
 			(...args) => this._palInfoHandler(args[0], args[1], args[2], args[3])
@@ -189,7 +187,7 @@ export class nsbmd implements MKJSDataFormator {
 			objectData.palName = palName;
 		}
 
-		let commands = this._parseBones(head.bonesOffset, view, polys, objects, head.maxStack);
+		const commands = this._parseBones(head.bonesOffset, view, polys, objects, head.maxStack);
 
 		return {
 			head,
@@ -259,8 +257,8 @@ export class nsbmd implements MKJSDataFormator {
 		maxStack: number
 	): nsbmd_commands[] {
 		let last;
-		let commands: nsbmd_commands[] = [];
-		let debug = false;
+		const commands: nsbmd_commands[] = [];
+		const debug = false;
 		if (debug) {
 			console.log("== Begin Parse Bones ==");
 		}
@@ -268,9 +266,7 @@ export class nsbmd implements MKJSDataFormator {
 		let freeStack = maxStack;
 		let forceID: number | null = null;
 		let lastMat: number | null = null;
-		let bound: boolean[] = [];
-
-		let matMap = [];
+		const bound: boolean[] = [];
 
 		while (offset < this._texPalOff) {
 			//bones
@@ -280,7 +276,7 @@ export class nsbmd implements MKJSDataFormator {
 					//bind object transforms to parent. bone exists but is not placed in the stack
 					const obj = view.getUint8(offset++);
 					const parent = view.getUint8(offset++);
-					const zero = view.getUint8(offset++);
+					view.getUint8(offset++);
 
 					const object = objects.objectData[obj];
 					object.parent = parent;
@@ -298,7 +294,7 @@ export class nsbmd implements MKJSDataFormator {
 				case 0x66: {
 					const obj = view.getUint8(offset++);
 					const parent = view.getUint8(offset++);
-					const zero = view.getUint8(offset++);
+					view.getUint8(offset++);
 					let stackID = view.getUint8(offset++);
 					let restoreID = null;
 					if (last == 0x66) restoreID = view.getUint8(offset++);
@@ -358,7 +354,7 @@ export class nsbmd implements MKJSDataFormator {
 					//bind material to polygon: matID, 5, polyID
 					const mat = view.getUint8(offset++);
 					lastMat = mat;
-					const five = view.getUint8(offset++); //???
+					view.getUint8(offset++); //???
 					const polyId = view.getUint8(offset++);
 					const bindID = forceID == null ? commands[commands.length - 1].stackID! : forceID;
 					bound[bindID] = true;
@@ -388,6 +384,7 @@ export class nsbmd implements MKJSDataFormator {
 				case 3: //stack id for poly (wit)
 					forceID = view.getUint8(offset++);
 					if (debug) console.log(`[0x${last.toString(16)}] Force stack id to ${forceID}`);
+					break;
 				case 0:
 					break;
 				case 5: {
@@ -418,7 +415,6 @@ export class nsbmd implements MKJSDataFormator {
 				}
 				case 9: //skinning equ. not used?
 					if (debug) console.log(`[0x${last.toString(16)}] Skinning Equation (UNIMPLEMENTED)`);
-					debugger;
 					break;
 				case 0x0b:
 					if (debug) console.log(`[0x${last.toString(16)}] BEGIN PAIRING.`);
@@ -438,19 +434,18 @@ export class nsbmd implements MKJSDataFormator {
 		return commands;
 	}
 
-	private _matInfoHandler(view: DataView, off: number, base: number): nsbmd_MatInfos {
+	private _matInfoHandler(view: DataView, off: number, _base: number): nsbmd_MatInfos {
 		let offset = this._texPalOff + view.getUint32(off, true);
 
-		let rel = 0;
 		/*while (rel < 40) {
 			var flags = view.getUint16(offset+rel, true);
 			if ((flags&15)==15) console.log(`rel at ${rel}`);
 			rel += 2;
 		}*/
 
-		let polyAttrib = view.getUint16(offset + 12, true);
+		const polyAttrib = view.getUint16(offset + 12, true);
 
-		let flags = view.getUint16(offset + 22, true); //other info in here is specular data etc.
+		const flags = view.getUint16(offset + 22, true); //other info in here is specular data etc.
 
 		//scale starts at 44;
 
@@ -479,7 +474,7 @@ export class nsbmd implements MKJSDataFormator {
 				}
 		}
 
-		let cullMode = (polyAttrib >> 6) & 3;
+		const cullMode = (polyAttrib >> 6) & 3;
 
 		let alpha = ((polyAttrib >> 16) & 31) / 31;
 		if (alpha == 0) alpha = 1;
@@ -505,10 +500,10 @@ export class nsbmd implements MKJSDataFormator {
 
 	private _texInfoHandler(view: DataView, off: number, base: number, ind: number): nsbmd_textInfos {
 		let oDat = this._texPalOff + view.getUint16(off, true); //contains offset to array of materials to bind to
-		let num = view.getUint8(off + 2);
-		let mats = [];
+		const num = view.getUint8(off + 2);
+		const mats = [];
 		for (let i = 0; i < num; i++) {
-			let mat = view.getUint8(oDat++);
+			const mat = view.getUint8(oDat++);
 			this._materials.objectData[mat].tex = ind; //bind to this material
 			mats.push(mat);
 		}
@@ -520,10 +515,10 @@ export class nsbmd implements MKJSDataFormator {
 
 	private _palInfoHandler(view: DataView, off: number, base: number, ind: number): nsbmd_palInfos {
 		let oDat = this._texPalOff + view.getUint16(off, true); //contains offset to array of materials to bind to
-		let num = view.getUint8(off + 2);
-		let mats = [];
+		const num = view.getUint8(off + 2);
+		const mats = [];
 		for (let i = 0; i < num; i++) {
-			let mat = view.getUint8(oDat++);
+			const mat = view.getUint8(oDat++);
 			this._materials.objectData[mat].pal = ind; //bind to this material
 			mats.push(mat);
 		}
@@ -534,9 +529,9 @@ export class nsbmd implements MKJSDataFormator {
 	}
 
 	private _polyInfoHandler(view: DataView, off: number, base: number): nsbmd_poly {
-		let offset = base + view.getUint32(off, true);
-		let dlStart = offset + view.getUint32(offset + 8, true);
-		let displayList = view.buffer.slice(dlStart, dlStart + view.getUint32(offset + 0xc, true));
+		const offset = base + view.getUint32(off, true);
+		const dlStart = offset + view.getUint32(offset + 8, true);
+		const displayList = view.buffer.slice(dlStart, dlStart + view.getUint32(offset + 0xc, true));
 		return {
 			stackID: undefined!,
 			mat: undefined!,
@@ -548,9 +543,9 @@ export class nsbmd implements MKJSDataFormator {
 	private _objInfoHandler(view: DataView, off: number, base: number): nsbmd_objects {
 		let offset = base + view.getUint32(off, true);
 
-		let flag = view.getUint16(offset, true); //flag format nnnn psrt
-		let rotTerm1 = view.getInt16(offset + 0x2, true) / 4096; //first term of rotate mat if present
-		let translate = vec3.create();
+		const flag = view.getUint16(offset, true); //flag format nnnn psrt
+		const rotTerm1 = view.getInt16(offset + 0x2, true) / 4096; //first term of rotate mat if present
+		const translate = vec3.create();
 		if (!(flag & 1)) {
 			//translate (t) flag is 0
 			translate[0] = view.getInt32(offset + 0x4, true) / 4096;
@@ -572,12 +567,12 @@ export class nsbmd implements MKJSDataFormator {
 			B = view.getInt16(offset + 0x6, true) / 4096;
 
 			pivot[mode] = neg & 1 ? -1 : 1;
-			let horiz = mode % 3;
-			let vert = Math.floor(mode / 3);
-			let left = horiz == 0 ? 1 : 0;
-			let top = (vert == 0 ? 1 : 0) * 3;
-			let right = horiz == 2 ? 1 : 2;
-			let btm = (vert == 2 ? 1 : 2) * 3;
+			const horiz = mode % 3;
+			const vert = Math.floor(mode / 3);
+			const left = horiz == 0 ? 1 : 0;
+			const top = (vert == 0 ? 1 : 0) * 3;
+			const right = horiz == 2 ? 1 : 2;
+			const btm = (vert == 2 ? 1 : 2) * 3;
 			pivot[left + top] = A;
 			pivot[right + top] = B;
 			pivot[left + btm] = neg & 2 ? -B : B;
@@ -587,7 +582,7 @@ export class nsbmd implements MKJSDataFormator {
 		} else {
 			pivot = mat3.create();
 		}
-		let scale = vec3.create();
+		const scale = vec3.create();
 		if (!(flag & 4)) {
 			scale[0] = view.getInt32(offset + 0x4, true) / 4096;
 			scale[1] = view.getInt32(offset + 0x8, true) / 4096;
@@ -609,9 +604,8 @@ export class nsbmd implements MKJSDataFormator {
 			pivot[6] = view.getInt16(offset + 0xe, true) / 4096;
 			pivot[7] = view.getInt16(offset + 0x10, true) / 4096;
 			pivot[8] = view.getInt16(offset + 0x12, true) / 4096;
-			offset += 16;
 		}
-		let mat = mat4.create();
+		const mat = mat4.create();
 		mat4.translate(mat, mat, translate);
 		mat4.multiply(mat, mat, this._mat4FromMat3(pivot));
 		mat4.scale(mat, mat, scale);

@@ -52,21 +52,18 @@ export class nsbta implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
-		let header = null;
-		let offset = 0;
-		let tex;
+		const view = new DataView(input);
 
 		//nitro 3d header
-		header = nitro.readHeader(view);
+		const header = nitro.readHeader(view);
 		if (header.stamp != "BTA0") throw `NSBTA invalid. Expected BTA0, found ${header.stamp}`;
 		if (header.numSections > 1) throw "NSBTA invalid. Too many sections - should have 1 maximum.";
-		offset = header.sectionOffsets[0];
+		const offset = header.sectionOffsets[0];
 		//end nitro
 
 		this.mainOff = offset;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, offset + 0x0) +
 			MKSUtils.asciireadChar(view, offset + 0x1) +
 			MKSUtils.asciireadChar(view, offset + 0x2) +
@@ -77,23 +74,24 @@ export class nsbta implements MKJSDataFormator {
 	}
 
 	private _animInfoHandler(view: DataView, offset: number): nsbta_anim_data {
-		let animOff = view.getUint32(offset, true);
-		let off = this.mainOff + animOff;
-		let obj = this._readAnimData(view, off);
+		const animOff = view.getUint32(offset, true);
+		const off = this.mainOff + animOff;
+		const obj = this._readAnimData(view, off);
 		obj.nextoff = offset + 4;
 		return obj;
 	}
 
 	private _readAnimData(view: DataView, offset: number): nsbta_anim_data {
-		let stamp =
+		void (
 			MKSUtils.asciireadChar(view, offset + 0x0) +
 			MKSUtils.asciireadChar(view, offset + 0x1) +
 			MKSUtils.asciireadChar(view, offset + 0x2) +
-			MKSUtils.asciireadChar(view, offset + 0x3); //should be M_AT, where _ is a 0 character
-		let unknown1 = view.getUint16(offset + 4, true);
-		let unknown2 = view.getUint8(offset + 6);
-		let unknown3 = view.getUint8(offset + 7);
-		let data = nitro.read3dInfo(view, offset + 8, (...args) => this._matInfoHandler(args[0], args[1], args[2]));
+			MKSUtils.asciireadChar(view, offset + 0x3)
+		); //should be M_AT, where _ is a 0 character
+		view.getUint16(offset + 4, true);
+		view.getUint8(offset + 6);
+		view.getUint8(offset + 7);
+		const data = nitro.read3dInfo(view, offset + 8, (...args) => this._matInfoHandler(args[0], args[1], args[2]));
 		return { data: data, nextoff: data.nextoff };
 	}
 
@@ -138,9 +136,9 @@ export class nsbta implements MKJSDataFormator {
 		let i = 0;
 		for (const p in frameStep) {
 			let cframes = view.getUint16(offset, true);
-			let cflags = view.getUint16(offset + 2, true);
+			const cflags = view.getUint16(offset + 2, true);
 			let cvalue = view.getUint16(offset + 4, true);
-			let cdata2 = view.getInt16(offset + 6, true) / 4096;
+			const cdata2 = view.getInt16(offset + 6, true) / 4096;
 
 			//flags research so far:
 			//bit 13 (8196) - set if inline single frame data, unset if multiple frame data at offset
@@ -168,8 +166,7 @@ export class nsbta implements MKJSDataFormator {
 				let off = base + cvalue - 8;
 				const t = cframes * (i == 2 ? 2 : 1);
 				for (let j = 0; j < t; j++) {
-					let prevvalue = view.getInt16(off - 2, true) / 4096;
-					//debugger;
+					view.getInt16(off - 2, true);
 					obj[p].push(view.getInt16(off, true) / 4096);
 					off += 2;
 				}

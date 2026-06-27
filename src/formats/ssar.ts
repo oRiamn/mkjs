@@ -37,17 +37,17 @@ export class ssar implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
+		const view = new DataView(input);
 		let offset = 0;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
 			MKSUtils.asciireadChar(view, 0x2) +
 			MKSUtils.asciireadChar(view, 0x3);
 		if (stamp != "SSAR") throw `SSAR invalid. Expected SSAR, found ${stamp}`;
 		offset += 16;
-		let data =
+		const data =
 			MKSUtils.asciireadChar(view, offset) +
 			MKSUtils.asciireadChar(view, offset + 1) +
 			MKSUtils.asciireadChar(view, offset + 2) +
@@ -57,7 +57,7 @@ export class ssar implements MKJSDataFormator {
 
 		this.dataOff = view.getUint32(offset, true);
 		this.data = new Uint8Array(view.buffer.slice(this.dataOff));
-		let count = view.getUint32(offset + 4, true);
+		const count = view.getUint32(offset + 4, true);
 		this.entries = [];
 
 		offset += 8;

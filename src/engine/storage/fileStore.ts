@@ -85,29 +85,29 @@ export class fileStore {
 	}
 
 	private loadGameFiles(callback: GameFileCallback) {
-		let transaction = this.db.transaction(["files"]);
+		const transaction = this.db.transaction(["files"]);
 		transaction.oncomplete = function () {
 			console.log("Success transaction");
 		};
-		let objectStore = transaction.objectStore("files");
+		const objectStore = transaction.objectStore("files");
 
-		let request = objectStore.get("mkds.nds");
-		request.onerror = function (event) {
+		const request = objectStore.get("mkds.nds");
+		request.onerror = function (_event) {
 			alert("Fatal database error!");
 		};
-		request.onsuccess = (event) => {
+		request.onsuccess = (_event) => {
 			if (request.result == null) callback(null!);
 			else callback(request.result.data);
 		};
 	}
 
 	private validateFiles() {
-		let transaction = this.db.transaction(["files"]);
+		const transaction = this.db.transaction(["files"]);
 		transaction.oncomplete = function () {
 			console.log("Success transaction");
 		};
-		let objectStore = transaction.objectStore("files");
-		let request = objectStore.get("mkds.nds");
+		const objectStore = transaction.objectStore("files");
+		const request = objectStore.get("mkds.nds");
 		request.onerror = () => {
 			alert("Fatal database error!");
 		};
@@ -117,8 +117,8 @@ export class fileStore {
 	}
 
 	private fileInChange(e: Event) {
-		let bFile = (e.target as HTMLInputElement).files![0];
-		let bReader = new FileReader();
+		const bFile = (e.target as HTMLInputElement).files![0];
+		const bReader = new FileReader();
 		bReader.onload = (e) => {
 			this.waitForROM = false; //todo: verify
 			this.storeGame(e.target!.result, (data) => this.fileCallback?.(data));
@@ -127,12 +127,12 @@ export class fileStore {
 	}
 
 	private storeGame(dat: StoredGameData, callback: GameFileCallback) {
-		let transaction = this.db.transaction(["files"], "readwrite");
+		const transaction = this.db.transaction(["files"], "readwrite");
 		transaction.oncomplete = function () {
 			console.log("Success transaction");
 		};
-		let objectStore = transaction.objectStore("files");
-		let request = objectStore.put({ filename: "mkds.nds", data: dat });
+		const objectStore = transaction.objectStore("files");
+		const request = objectStore.put({ filename: "mkds.nds", data: dat });
 
 		request.onerror = () => {
 			alert("Failed to store game locally!");

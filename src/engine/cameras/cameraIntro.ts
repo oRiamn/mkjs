@@ -47,7 +47,7 @@ export class cameraIntro implements Camera {
 	}
 
 	private camFunc(_scene: Scene, _came: nkm_section_CAME): CamView {
-		let camPos = vec3.lerp(
+		const camPos = vec3.lerp(
 			[0, 0, 0],
 			this.route[this.routePos].pos,
 			this.route[(this.routePos + 1) % this.route.length].pos,
@@ -63,13 +63,13 @@ export class cameraIntro implements Camera {
 		this.pointInterp += _came.pointSpeed / 100 / 60;
 		if (this.pointInterp > 1) this.pointInterp = 1;
 
-		let lookAtPos = vec3.lerp([0, 0, 0], _came.pos2, _came.pos3, this.pointInterp);
+		const lookAtPos = vec3.lerp([0, 0, 0], _came.pos2, _came.pos3, this.pointInterp);
 
 		vec3.scale(camPos, camPos, 1 / 1024);
 		vec3.scale(lookAtPos, lookAtPos, 1 / 1024);
 
-		let mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
-		let p = mat4.perspective(
+		const mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, [0, 1, 0]);
+		const p = mat4.perspective(
 			mat4.create(),
 			((this.zoomLevel * this.normalFOV) / 180) * Math.PI,
 			this.viewW / this.viewH,
@@ -87,7 +87,7 @@ export class cameraIntro implements Camera {
 	}
 
 	private initCam(scene: Scene, came: nkm_section_CAME) {
-		let routes = scene.paths;
+		const routes = scene.paths;
 		this.route = routes[came.camRoute];
 		this.routePos = 0;
 		this.routeProg = 0;
@@ -111,7 +111,7 @@ export class cameraIntro implements Camera {
 		if (this.zoomLevel > this.curCam.zoomEnd) this.zoomLevel = this.curCam.zoomEnd;
 
 		if (this.duration-- < 0) {
-			let cams = scene.nkm.sections["CAME"].entries;
+			const cams = scene.nkm.sections["CAME"].entries;
 			if (this.curCam.nextCam != -1) {
 				this.curCamNum = this.curCam.nextCam;
 				this.curCam = cams[this.curCamNum];
@@ -128,7 +128,7 @@ export class cameraIntro implements Camera {
 	}
 
 	private restartCam(scene: Scene) {
-		let cams = scene.nkm.sections["CAME"].entries;
+		const cams = scene.nkm.sections["CAME"].entries;
 		for (let i = 0; i < cams.length; i++) {
 			if (cams[i].firstCam == 2) {
 				this.curCamNum = i;

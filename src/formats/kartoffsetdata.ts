@@ -31,18 +31,18 @@ export class kartoffsetdata implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
+		const view = new DataView(input);
 		let off = 0;
-		let karts: kartoffsetdata_kart[] = [];
+		const karts: kartoffsetdata_kart[] = [];
 		for (let i = 0; i < 37; i++) {
 			const name = this.readString(view, off, 0x10);
 			off += 0x10;
 			const frontTireSize = view.getInt32(off, true) / 4096;
 			off += 4;
 
-			let wheels = [];
+			const wheels = [];
 			for (let j = 0; j < 4; j++) {
-				let pos = vec3.create();
+				const pos = vec3.create();
 				pos[0] = view.getInt32(off, true) / 4096;
 				pos[1] = view.getInt32(off + 4, true) / 4096;
 				pos[2] = view.getInt32(off + 8, true) / 4096;
@@ -50,18 +50,15 @@ export class kartoffsetdata implements MKJSDataFormator {
 				wheels.push(pos);
 			}
 
-			let chars = [];
+			const chars = [];
 			for (let j = 0; j < 13; j++) {
-				let pos = vec3.create();
+				const pos = vec3.create();
 				pos[0] = view.getInt32(off, true) / 4096;
 				pos[1] = view.getInt32(off + 4, true) / 4096;
 				pos[2] = view.getInt32(off + 8, true) / 4096;
 				off += 12;
 				chars.push(pos);
 			}
-
-			wheels = wheels;
-			chars = chars;
 
 			karts.push({
 				name: name as kartoffsetdata_tire_name,
@@ -76,7 +73,7 @@ export class kartoffsetdata implements MKJSDataFormator {
 	private readString(view: DataView, offset: number, length: number) {
 		let str = "";
 		for (let i = 0; i < length; i++) {
-			let b = view.getUint8(offset++);
+			const b = view.getUint8(offset++);
 			if (b != 0) str += MKSUtils.asciiFromCharCode(b);
 		}
 		return str;

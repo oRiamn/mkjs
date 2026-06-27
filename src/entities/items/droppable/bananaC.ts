@@ -36,10 +36,10 @@ export class BananaC implements KartItemEntity {
 			if (this.item.colRadius > 6) this.item.colRadius = 6;
 		}
 		if (this.item.groundTime < 30) {
-			let t = 1 - this.item.groundTime / 29;
-			let s = Math.sin((this.item.groundTime * Math.PI) / 14);
+			const t = 1 - this.item.groundTime / 29;
+			const s = Math.sin((this.item.groundTime * Math.PI) / 14);
 
-			let sprMat = mat4.create();
+			const sprMat = mat4.create();
 			mat4.translate(sprMat, sprMat, [0, -1 / 6, 0]);
 			mat4.scale(sprMat, sprMat, [1 + s * 0.6 * t, 1 - s * 0.6 * t, 1]);
 			mat4.translate(sprMat, sprMat, [0, 1 / 6, 0]);

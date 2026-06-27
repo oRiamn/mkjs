@@ -121,15 +121,15 @@ export class sdat implements MKJSDataFormator {
 		this.sectionFunc = {};
 
 		this.sectionFunc["$INFO"] = (view, off): sdat_sections["$INFO"] => {
-			let obj: sdat_section[][] = [];
+			const obj: sdat_section[][] = [];
 			for (let i = 0; i < 8; i++) {
 				let relOff = off + view.getUint32(off + i * 4, true) - 8;
-				let count = view.getUint32(relOff, true);
+				const count = view.getUint32(relOff, true);
 				obj[i] = [];
 				relOff += 4;
 				let last: sdat_section;
 				for (let j = 0; j < count; j++) {
-					let infoOff = view.getUint32(relOff, true);
+					const infoOff = view.getUint32(relOff, true);
 					//WRONG
 					last = this.recordInfoFunc[i](view, off + infoOff - 8); //(infoOff == 0 && last != null)?last.nextOff:(off+infoOff-8));
 					obj[i][j] = last;
@@ -140,8 +140,8 @@ export class sdat implements MKJSDataFormator {
 		};
 
 		this.sectionFunc["$FAT "] = (view: DataView, off: number): sdat_fat[] => {
-			let a = [];
-			let count = view.getUint32(off, true);
+			const a = [];
+			const count = view.getUint32(off, true);
 			off += 4;
 			for (let i = 0; i < count; i++) {
 				a.push({
@@ -153,7 +153,7 @@ export class sdat implements MKJSDataFormator {
 			return a;
 		};
 
-		this.sectionFunc["$FILE"] = (view: DataView, off: number) => {
+		this.sectionFunc["$FILE"] = (_view: DataView, _off: number) => {
 			// console.log("file");
 			return undefined;
 		};
@@ -228,9 +228,9 @@ export class sdat implements MKJSDataFormator {
 			};
 		};
 
-		this.recordInfoFunc[4] = (view: DataView, off: number) => undefined;
-		this.recordInfoFunc[5] = (view: DataView, off: number) => undefined;
-		this.recordInfoFunc[6] = (view: DataView, off: number) => undefined;
+		this.recordInfoFunc[4] = (_view: DataView, _off: number) => undefined;
+		this.recordInfoFunc[5] = (_view: DataView, _off: number) => undefined;
+		this.recordInfoFunc[6] = (_view: DataView, _off: number) => undefined;
 
 		this.recordInfoFunc[7] = (view: DataView, off: number): sdat_section_7 => {
 			const fileID = view.getUint16(off, true);
@@ -257,32 +257,29 @@ export class sdat implements MKJSDataFormator {
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
 		this.buffer = input;
-		let view = new DataView(input);
-		let offset = 0;
+		const view = new DataView(input);
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
 			MKSUtils.asciireadChar(view, 0x2) +
 			MKSUtils.asciireadChar(view, 0x3);
 		if (stamp != "SDAT") throw `SDAT invalid. Expected SDAT, found ${stamp}`;
 
-		let unknown1 = view.getUint32(0x4, true);
-		let filesize = view.getUint32(0x8, true);
-		let headsize = view.getUint16(0xc, true);
-		let numSections = view.getUint16(0xe, true);
-		let sectionOffsets = [];
-		let sectionSizes = [];
+		view.getUint32(0x4, true);
+		view.getUint32(0x8, true);
+		view.getUint16(0xc, true);
+		view.getUint16(0xe, true);
 		for (let i = 3; i > -1; i--) {
 			//reverse order so we can process files into js objects
-			let off = view.getUint32(0x10 + i * 8, true);
-			let size = view.getUint32(0x14 + i * 8, true);
+			const off = view.getUint32(0x10 + i * 8, true);
+			const size = view.getUint32(0x14 + i * 8, true);
 			if (size != 0) this._readSection(view, off);
 		}
 	}
 
 	private _readSection(view: DataView, off: number) {
-		let stamp = `$${MKSUtils.asciireadChar(view, off)}${MKSUtils.asciireadChar(view, off + 1)}${MKSUtils.asciireadChar(view, off + 2)}${MKSUtils.asciireadChar(view, off + 3)}`;
+		const stamp = `$${MKSUtils.asciireadChar(view, off)}${MKSUtils.asciireadChar(view, off + 1)}${MKSUtils.asciireadChar(view, off + 2)}${MKSUtils.asciireadChar(view, off + 3)}`;
 		const sectionHandler = this.sectionFunc[stamp];
 		if (sectionHandler != null) {
 			const section = sectionHandler(view, off + 8);
@@ -301,7 +298,7 @@ export class sdat implements MKJSDataFormator {
 	}
 
 	private _getFile(fid: number): ArrayBuffer {
-		let file = this.sections["$FAT "][fid];
+		const file = this.sections["$FAT "][fid];
 		if (file == null) throw new Error(`SDAT file ID invalid: ${fid}`);
 		return (this.buffer as ArrayBuffer).slice(file.off, file.off + file.size);
 	}

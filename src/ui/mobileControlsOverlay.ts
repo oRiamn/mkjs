@@ -1,7 +1,7 @@
 import { getMobileControlVisualState, MOBILE_CONTROL_ZONES, type MobileControlId } from "./mobileControlLayout";
 
 let overlayEl: HTMLElement | null = null;
-let controlEls: Partial<Record<MobileControlId, HTMLElement>> = {};
+const controlEls: Partial<Record<MobileControlId, HTMLElement>> = {};
 let steerLeftEl: HTMLElement | null = null;
 let steerRightEl: HTMLElement | null = null;
 let visible = false;

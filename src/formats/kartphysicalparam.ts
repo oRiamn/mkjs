@@ -45,16 +45,16 @@ export class kartphysicalparam implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
+		const view = new DataView(input);
 		let off = 0;
 		this.karts = [];
 		for (let i = 0; i < 50; i++) {
-			let colParam = [];
+			const colParam = [];
 			let off1 = off + 0x38;
 			let off2 = off + 0x68;
 			for (let j = 0; j < 12; j++) {
-				let handling = view.getInt32(off1, true) / 4096;
-				let topSpeed = view.getInt32(off2, true) / 4096;
+				const handling = view.getInt32(off1, true) / 4096;
+				const topSpeed = view.getInt32(off2, true) / 4096;
 				colParam.push({
 					handling: handling,
 					topSpeedMul: topSpeed,

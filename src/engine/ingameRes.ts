@@ -146,16 +146,16 @@ export class IngameRes {
 	}
 
 	private testFont(font: nftr, off: number, name: string) {
-		let all = Object.keys(font.charMap).join("");
-		let split = document.createElement("h3");
+		const all = Object.keys(font.charMap).join("");
+		const split = document.createElement("h3");
 		split.innerText = name;
 		document.body.appendChild(split);
 
 		for (let i = 0; i < 4; i++) {
-			let sliceF = Math.floor((all.length * i) / 4);
-			let sliceT = Math.floor((all.length * (i + 1)) / 4);
+			const sliceF = Math.floor((all.length * i) / 4);
+			const sliceT = Math.floor((all.length * (i + 1)) / 4);
 
-			let canvas = font.drawToCanvas(
+			const canvas = font.drawToCanvas(
 				all.substring(sliceF, sliceT),
 				[
 					[0, 0, 0, 0],
@@ -179,9 +179,9 @@ export class IngameRes {
 
 	private listRecursive(resource: narc, path: string) {
 		path = path || "";
-		let files = resource.list();
+		const files = resource.list();
 		for (let i = 0; i < files.length; i++) {
-			let file = files[i];
+			const file = files[i];
 			// console.log(path + file);
 			if (file.toLowerCase().endsWith(".carc")) {
 				this.listRecursive(new narc(lz77.decompress(resource.getFile(file)!)), path + file);
@@ -211,7 +211,7 @@ export class IngameRes {
 			"f_box",
 			"killer",
 		] as const;
-		let t = {} as Pick<items_IngameRes, (typeof itemModelNames)[number]>;
+		const t = {} as Pick<items_IngameRes, (typeof itemModelNames)[number]>;
 
 		for (const n of itemModelNames) {
 			t[n] = new nitroModel(new nsbmd(this.MainRace.getFile(`/Item/it_${n}.nsbmd`)!), null);
@@ -241,9 +241,9 @@ export class IngameRes {
 	}
 
 	private _loadTires() {
-		let path = "/data/KartModelMenu/kart/tire/";
+		const path = "/data/KartModelMenu/kart/tire/";
 
-		let tires: { [x: string]: nitroModel } = {
+		const tires: { [x: string]: nitroModel } = {
 			kart_tire_L: undefined!,
 			kart_tire_M: undefined!,
 			kart_tire_S: undefined!,
@@ -262,9 +262,9 @@ export class IngameRes {
 	}
 
 	private _loadPlayerThumb() {
-		let ncgrFile = this.Main2DLoc.getFile("player_character_L.nce.ncgr")!;
-		let nclrFile = this.Main2DLoc.getFile("player_character_L_o.NCLR")!;
-		let ncerFile = this.Main2DLoc.getFile("player_character_L.nce.ncer")!;
+		const ncgrFile = this.Main2DLoc.getFile("player_character_L.nce.ncgr")!;
+		const nclrFile = this.Main2DLoc.getFile("player_character_L_o.NCLR")!;
+		const ncerFile = this.Main2DLoc.getFile("player_character_L.nce.ncer")!;
 
 		const ncgrF = new ncgr(ncgrFile);
 		const nclrF = new nclr(nclrFile);
@@ -281,11 +281,11 @@ export class IngameRes {
 		const emblembtxFile = this.rom.getFile(`/data/KartModelMenu/emblem/${this.charAbbrv[ind]}_emblem.nsbtx`)!;
 		const thumb = this.playerThumb.toTexture(true, ind);
 
-		let base = `/character/${this.charNames[ind]}/P_${this.charAbbrv[ind]}`;
+		const base = `/character/${this.charNames[ind]}/P_${this.charAbbrv[ind]}`;
 		const bmd = new nsbmd(this.KartModelSub.getFile(`${base}.nsbmd`)!);
 		const btx = new nsbtx(this.KartModelSub.getFile(`${base}.nsbtx`)!, false);
 		const texMap = { tex: { 1: 2 }, pal: { 1: 2 } };
-		let obj = {
+		const obj = {
 			model: new nitroModel(bmd, btx, texMap),
 			driveA: new nsbca(this.KartModelSub.getFile(`${base}_drive.nsbca`)!),
 			loseA: new nsbca(this.KartModelSub.getFile(`${base}_lose.nsbca`)!),
@@ -306,15 +306,15 @@ export class IngameRes {
 		}
 
 		let c = Math.floor(ind / 3);
-		let t = ind % 3;
+		const t = ind % 3;
 		if (t == 0) {
 			c = 0; //only mario has standard kart
 		}
 
-		let name = `${this.charAbbrv[c]}_${this.letters[t]}`;
-		let path = `/data/KartModelMenu/kart/${this.charNames[c]}/kart_${name}`;
+		const name = `${this.charAbbrv[c]}_${this.letters[t]}`;
+		const path = `/data/KartModelMenu/kart/${this.charNames[c]}/kart_${name}`;
 
-		let model = new nitroModel(new nsbmd(this.rom.getFile(`${path}.nsbmd`)!), new nsbtx(this.rom.getFile(`${path}.nsbtx`)!, false));
+		const model = new nitroModel(new nsbmd(this.rom.getFile(`${path}.nsbmd`)!), new nsbtx(this.rom.getFile(`${path}.nsbtx`)!, false));
 		model.shadVol = new nitroModel(new nsbmd(this.rom.getFile(`/data/KartModelMenu/kart/shadow/sh_${name}.nsbmd`)!), null);
 		//todo, assign special pallete for A karts
 

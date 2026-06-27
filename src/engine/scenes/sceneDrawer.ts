@@ -36,10 +36,10 @@ export class sceneDrawer {
 			scn.renderTarg = this.createRenderTarget(gl, width, height, true);
 		}
 
-		let view = scn.camera.getView(scn, width, height);
-		let viewProj = mat4.mul(view.p, view.p, view.mv);
+		const view = scn.camera.getView(scn, width, height);
+		const viewProj = mat4.mul(view.p, view.p, view.mv);
 
-		let shadMat = scn.shadMat;
+		const shadMat = scn.shadMat;
 
 		if (scn.farShad == null) {
 			scn.farShad = this.createRenderTarget(gl, this.shadowRes * 2, this.shadowRes * 2, true);
@@ -79,9 +79,9 @@ export class sceneDrawer {
 	}
 
 	drawTest(gl: CustomWebGLRenderingContext, scn: courseScene, x: number, y: number, width: number, height: number) {
-		let shadMat = scn.shadMat;
-		let viewProj = mat4.mul(mat4.create(), scn.camera.view.p, scn.camera.view.mv);
-		let view = {
+		const shadMat = scn.shadMat;
+		const viewProj = mat4.mul(mat4.create(), scn.camera.view.p, scn.camera.view.mv);
+		const view = {
 			p: viewProj,
 			mv: scn.camera.view.mv,
 		};
@@ -119,11 +119,11 @@ export class sceneDrawer {
 	}
 
 	private createRenderTarget(gl: CustomWebGLRenderingContext, xsize: number, ysize: number, _depth: boolean): RenderTarget {
-		let depthTextureExt = gl.getExtension("WEBGL_depth_texture");
+		const depthTextureExt = gl.getExtension("WEBGL_depth_texture");
 		if (!depthTextureExt)
 			alert("depth texture not supported! we're DOOMED! jk we'll just have to add a fallback for people with potato gfx");
 
-		let colorTexture = gl.createTexture() as CustomWebGLTexture;
+		const colorTexture = gl.createTexture() as CustomWebGLTexture;
 		gl.bindTexture(gl.TEXTURE_2D, colorTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -131,7 +131,7 @@ export class sceneDrawer {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, xsize, ysize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
-		let depthTexture = gl.createTexture() as CustomWebGLTexture;
+		const depthTexture = gl.createTexture() as CustomWebGLTexture;
 		gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -139,7 +139,7 @@ export class sceneDrawer {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, xsize, ysize, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
 
-		let framebuffer = gl.createFramebuffer();
+		const framebuffer = gl.createFramebuffer();
 		gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);

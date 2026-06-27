@@ -35,7 +35,7 @@ export class ObjGear implements SceneEntityObject, lsc_taget {
 	private _prevMat: mat4;
 	private _curMat: mat4;
 	private _colMat: mat4;
-	constructor(obji: nkm_section_OBJI, scene: Scene) {
+	constructor(obji: nkm_section_OBJI, _scene: Scene) {
 		console.log("rotatingGear");
 
 		this._obji = obji;
@@ -75,7 +75,7 @@ export class ObjGear implements SceneEntityObject, lsc_taget {
 
 	private _setMat() {
 		this._prevMat = this._curMat;
-		let mat = mat4.create();
+		const mat = mat4.create();
 		mat4.translate(mat, mat, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
@@ -127,7 +127,7 @@ export class ObjGear implements SceneEntityObject, lsc_taget {
 	}
 
 	draw(view: mat4, pMatrix: mat4) {
-		let mat = mat4.translate(mat4.create(), view, this.pos);
+		const mat = mat4.translate(mat4.create(), view, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
 

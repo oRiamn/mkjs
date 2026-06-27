@@ -83,7 +83,7 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 	}
 
 	draw(view: mat4, pMatrix: mat4) {
-		let mat = mat4.translate(mat4.create(), view, this.pos);
+		const mat = mat4.translate(mat4.create(), view, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
 
@@ -124,10 +124,10 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 	}
 
 	getCollision() {
-		let inf = this._genCol; //res.mdl[0].getCollisionModel(0, 0);
+		const inf = this._genCol; //res.mdl[0].getCollisionModel(0, 0);
 		const tris = inf.dat;
 
-		let mat = mat4.translate(mat4.create(), mat4.create(), this.pos);
+		const mat = mat4.translate(mat4.create(), mat4.create(), this.pos);
 		mat4.scale(mat, mat, vec3.mul([0, 0, 0], [16 * inf.scale, 16 * inf.scale, 16 * inf.scale], this.scale));
 
 		const frame = this.colFrame;

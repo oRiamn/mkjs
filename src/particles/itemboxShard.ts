@@ -37,8 +37,8 @@ export class ItemShard {
 		}
 	}
 
-	draw(view: mat4, pMatrix: mat4, gl: CustomWebGLRenderingContext) {
-		let mat = mat4.translate(mat4.create(), view, this.pos);
+	draw(view: mat4, pMatrix: mat4, _gl: CustomWebGLRenderingContext) {
+		const mat = mat4.translate(mat4.create(), view, this.pos);
 
 		mat4.rotateZ(mat, mat, this.dir[2]);
 		mat4.rotateY(mat, mat, this.dir[1]);

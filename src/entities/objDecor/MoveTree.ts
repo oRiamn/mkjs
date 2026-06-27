@@ -88,7 +88,7 @@ export class MoveTree extends ObjDecor {
 		vec3.add(obj.pos, obj.pos, this.vel);
 	}
 
-	update(scn?: Scene) {
+	update(_scn?: Scene) {
 		if (this._route.length >= 2) {
 			this._stepRoute();
 		}

@@ -101,7 +101,7 @@ PHYS_MAP[LOOP] = 11;
 //26 is blue water, 30 is white
 //28 and 15 might be sand/dirt
 
-let waterRoad = {
+const waterRoad = {
 	drift: MKDS_COLSOUNDS.DRIFT_WATER,
 	brake: MKDS_COLSOUNDS.BRAKE_WATER,
 	land: MKDS_COLSOUNDS.LAND_WATER,

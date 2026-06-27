@@ -9,7 +9,7 @@ export class BombC implements KartItemEntity {
 	explodeTime: number;
 	isSolid!: boolean;
 
-	constructor(item: Item, scene: Scene, _type: string) {
+	constructor(item: Item, _scene: Scene, _type: string) {
 		this.item = item;
 		this.canBeHeld = true;
 		this.canBeDropped = true;

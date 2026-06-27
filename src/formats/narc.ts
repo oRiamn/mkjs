@@ -73,16 +73,16 @@ export class narc implements MKJSDataFormator {
 
 		this._handlers["BTNF"] = (view: DataView, off: number, obj: HandlerObj) => {
 			//filename table - includes directories and filenames.
-			let soff = off;
+			const soff = off;
 			obj.directories = [];
 			//read root dir, then we know number of directories to read.
 
-			let dirOff = soff + view.getUint32(off, true);
-			let firstFile = view.getUint16(off + 4, true);
+			const dirOff = soff + view.getUint32(off, true);
+			const firstFile = view.getUint16(off + 4, true);
 
-			let numDir = view.getUint16(off + 6, true);
+			const numDir = view.getUint16(off + 6, true);
 
-			let root: NarcDirectory = {
+			const root: NarcDirectory = {
 				firstFile,
 				numDir,
 				entries: [],
@@ -93,13 +93,13 @@ export class narc implements MKJSDataFormator {
 			off += 8;
 			obj.directories.push(root);
 
-			let n = numDir - 1;
+			const n = numDir - 1;
 			for (let i = 0; i < n; i++) {
-				let dirOff = soff + view.getUint32(off, true);
-				let firstFile = view.getUint16(off + 4, true);
-				let parent = view.getUint16(off + 6, true);
+				const dirOff = soff + view.getUint32(off, true);
+				const firstFile = view.getUint16(off + 4, true);
+				const parent = view.getUint16(off + 6, true);
 
-				let dir: NarcDirectory = {
+				const dir: NarcDirectory = {
 					firstFile,
 					parent,
 					entries: [],
@@ -118,7 +118,7 @@ export class narc implements MKJSDataFormator {
 
 		if (input != null) {
 			if (typeof input == "string") {
-				let xml = new XMLHttpRequest();
+				const xml = new XMLHttpRequest();
 				xml.responseType = "arraybuffer";
 				xml.open("GET", input, true);
 				xml.onload = () => {
@@ -135,7 +135,7 @@ export class narc implements MKJSDataFormator {
 		buffer = MKSUtils.prepareInput(buffer);
 		this.input = buffer; //we will use this data in the future.
 
-		let view = new DataView(buffer);
+		const view = new DataView(buffer);
 		this.stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
@@ -153,7 +153,7 @@ export class narc implements MKJSDataFormator {
 
 		this.sections = {};
 		for (let i = 0; i < this.numBlocks; i++) {
-			let section = this._readSection({ view, off });
+			const section = this._readSection({ view, off });
 			this.sections[section.type] = section;
 			off = 4 * Math.ceil(section.nextOff / 4);
 		}
@@ -187,10 +187,10 @@ export class narc implements MKJSDataFormator {
 	tryGetFile(name: string): ArrayBuffer | null {
 		this._assertLoaded();
 
-		let path = name.split("/");
-		let start = path[0] == "" ? 1 : 0; //fix dirs relative to root (eg "/hi/test.bin")
+		const path = name.split("/");
+		const start = path[0] == "" ? 1 : 0; //fix dirs relative to root (eg "/hi/test.bin")
 
-		let table = this.sections["BTNF"].directories!;
+		const table = this.sections["BTNF"].directories!;
 		let curDir = table[0].entries; //root
 		for (let i = start; i < path.length; i++) {
 			let found = false;
@@ -213,7 +213,7 @@ export class narc implements MKJSDataFormator {
 	list(files: string[] = [], curDir?: NarcEntry[], path = "/"): string[] {
 		this._assertLoaded();
 
-		let table = this.sections["BTNF"].directories!;
+		const table = this.sections["BTNF"].directories!;
 		const dir = curDir || table[0].entries!; //root
 
 		for (let i = 0; i < dir.length; i++) {
@@ -229,9 +229,9 @@ export class narc implements MKJSDataFormator {
 	private _readFileWithID(id: number): ArrayBuffer | null {
 		this._assertLoaded();
 
-		let table = this.sections["BTAF"].files!;
-		let file = table[id];
-		let off = this.sections["GMIF"].baseOff!;
+		const table = this.sections["BTAF"].files!;
+		const file = table[id];
+		const off = this.sections["GMIF"].baseOff!;
 		if (file == null) {
 			console.error(`File ID invalid: ${id}`);
 			return null;
@@ -243,8 +243,8 @@ export class narc implements MKJSDataFormator {
 		let curFile = dir.firstFile;
 		dir.entries = [];
 		while (true) {
-			let flag = view.getUint8(off++);
-			let len = flag & 127;
+			const flag = view.getUint8(off++);
+			const len = flag & 127;
 			if (!(flag & 128)) {
 				//file or end of dir
 				if (len == 0) return;
@@ -257,7 +257,7 @@ export class narc implements MKJSDataFormator {
 					off += len;
 				}
 			} else {
-				let dirID = view.getUint16(off + len, true);
+				const dirID = view.getUint16(off + len, true);
 				dir.entries.push({
 					dir: true,
 					id: dirID,
@@ -292,7 +292,7 @@ export class narcGroup {
 
 	tryGetFile(name: string): ArrayBuffer | null {
 		for (let i = 0; i < this.files.length; i++) {
-			let file = this.files[i].tryGetFile(name);
+			const file = this.files[i].tryGetFile(name);
 			if (file != null) return file;
 		}
 		return null;
@@ -305,7 +305,7 @@ export class narcGroup {
 	}
 
 	list(): string[] {
-		let result: string[] = [];
+		const result: string[] = [];
 		for (let i = 0; i < this.files.length; i++) {
 			this.files[i].list(result);
 		}
