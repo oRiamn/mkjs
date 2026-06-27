@@ -4,15 +4,15 @@ type SSEQInstruction = (this: SSEQThread, inst: number) => void;
 type SSEQArgumentReader = (last: number) => number;
 
 export class SSEQThread {
-	private _VOLMUL: number;
-	private _pc: number;
-	private _prog: Uint8Array;
-	private _player: SSEQPlayer;
-	private _comparisonResult: boolean;
-	private _force: boolean;
-	private _forceCommand: number;
-	private _forceValue: number;
-	private _forceSpecial: number;
+	_VOLMUL: number;
+	_pc: number;
+	_prog: Uint8Array;
+	_player: SSEQPlayer;
+	_comparisonResult: boolean;
+	_force: boolean;
+	_forceCommand: number;
+	_forceValue: number;
+	_forceSpecial: number;
 	decay: number | null;
 	buffer: number;
 	wait: number;
@@ -32,19 +32,20 @@ export class SSEQThread {
 	noteWait: boolean;
 	loopPtr: number;
 	loopTimes: number;
-	private _ctx: AudioContext;
-	private _gainL: GainNode;
-	private _gainR: GainNode;
-	private _merger: ChannelMergerNode;
+	_ctx: AudioContext;
+	_gainL: GainNode;
+	_gainR: GainNode;
+	_merger: ChannelMergerNode;
+	_splitter: ChannelSplitterNode;
 	pan: number;
 	gain: GainNode;
 	lastNote: ThreadM | null;
 	dead: boolean;
 	stack: number[];
-	private _InstArgs: SSEQArgumentReader[][];
-	private _Instructions: SSEQInstruction[];
-	private _varFunc: ((a: number, b: number) => void)[];
-	private _boolFunc: ((a: number, b: number) => boolean)[];
+	_InstArgs: SSEQArgumentReader[][];
+	_Instructions: SSEQInstruction[];
+	_varFunc: ((a: number, b: number) => void)[];
+	_boolFunc: ((a: number, b: number) => boolean)[];
 
 	constructor(prog: Uint8Array, pc: number, player: SSEQPlayer) {
 		this._VOLMUL = 1 / 4;
@@ -92,6 +93,7 @@ export class SSEQThread {
 		this._gainL.gain.value = parseFloat("1");
 		this._gainR.gain.value = parseFloat("1");
 		this._merger = this._ctx.createChannelMerger(2);
+		this._splitter = this._ctx.createChannelSplitter(2);
 
 		this.pan = 0;
 
@@ -113,17 +115,137 @@ export class SSEQThread {
 
 		this.stack = [];
 
-		// prettier-ignore
-		this._InstArgs = [ //starts at 0x80
-			[this._readVariableLength], [this._readVariableLength], [], [], [], [], [], [], [], [], [], [], [], [], [], [], //0x80-0x8F
-			[], [], [], [this._read8, this._read24], [this._read24], [this._read24], [], [], [], [], [], [], [], [], [], [], //0x90-0x9F
-			[this._read8, this._readSpecial, this._read16, this._read16], [this._read8, this._readSpecial], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
-			[this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [this._read8, this._read8], [], [], //0xB0-0xBF
-			[this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8],
-			[this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [this._read8], [], [], [], [], [], [], [], [], [],
-			[this._read16], [this._read16], [this._read16], [], [], [], [], [], [], [], [], [], [], [], [], [],
-			[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
-		]
+		this._InstArgs = [
+			//starts at 0x80
+			[this._readVariableLength],
+			[this._readVariableLength],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[], //0x80-0x8F
+			[],
+			[],
+			[],
+			[this._read8, this._read24],
+			[this._read24],
+			[this._read24],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[], //0x90-0x9F
+			[this._read8, this._readSpecial, this._read16, this._read16],
+			[this._read8, this._readSpecial],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[this._read8, this._read8],
+			[],
+			[], //0xB0-0xBF
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[this._read8],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[this._read16],
+			[this._read16],
+			[this._read16],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+		];
 
 		this._Instructions = [];
 
@@ -179,11 +301,8 @@ export class SSEQThread {
 
 		this._Instructions[0xfd] = () => {
 			//RETURN
-			if (this.stack.length == 0) {
-				this._Instructions[0xff].call(this, 0xff);
-				return;
-			}
-			this._pc = this.stack.pop()!;
+			if (this.stack.length == 0) this._Instructions[0xff].bind(this)(0xff);
+			this._pc = this.stack.pop() ?? this._pc;
 		};
 
 		//LOGIC INSTRUCTIONS
@@ -297,11 +416,11 @@ export class SSEQThread {
 		}; //pan
 		this._Instructions[0xc1] = () => {
 			const value = this._forcableValue();
-			this.gain.gain.setValueAtTime((value / 0x7f) * this._VOLMUL, this._scheduleTime(this.calculateCurrentTime()));
+			this.gain.gain.setValueAtTime((value / 0x7f) * this._VOLMUL, this.calculateCurrentTime());
 		}; //volume
 		this._Instructions[0xc2] = () => {
 			const value = this._forcableValue();
-			this._player.masterGain.gain.setValueAtTime(value / 0x7f, this._scheduleTime(this.calculateCurrentTime()));
+			this._player.masterGain.gain.setValueAtTime(value / 0x7f, this.calculateCurrentTime());
 		}; //master volume
 		this._Instructions[0xc3] = () => {
 			this.transpose = this._forcableValue();
@@ -318,7 +437,9 @@ export class SSEQThread {
 		this._Instructions[0xc5] = () => {
 			this.pitchBendRange = this._prog[this._pc++];
 		}; //pitch bend range
-		this._Instructions[0xc6] = () => {}; //track priority
+		this._Instructions[0xc6] = () => {
+			void this._prog[this._pc++];
+		}; //track priority
 
 		this._Instructions[0xc7] = () => {
 			this.noteWait = this._prog[this._pc++] > 0;
@@ -332,10 +453,18 @@ export class SSEQThread {
 		this._Instructions[0xc9] = () => {
 			this.portaKey = this._prog[this._pc++];
 		}; //portamento control
-		this._Instructions[0xca] = () => {}; //modulation depth
-		this._Instructions[0xcb] = () => {}; //modulation speed
-		this._Instructions[0xcc] = () => {}; //modulation type
-		this._Instructions[0xcd] = () => {}; //modulation range
+		this._Instructions[0xca] = () => {
+			this._forcableValue();
+		}; //modulation depth
+		this._Instructions[0xcb] = () => {
+			this._forcableValue();
+		}; //modulation speed
+		this._Instructions[0xcc] = () => {
+			void this._prog[this._pc++];
+		}; //modulation type
+		this._Instructions[0xcd] = () => {
+			void this._prog[this._pc++];
+		}; //modulation range
 		this._Instructions[0xce] = () => {
 			this.portaKey = (this.portaKey & 0x7f) | (+!this._prog[this._pc++] << 7); //portamento on/off
 		};
@@ -363,11 +492,15 @@ export class SSEQThread {
 			if (this.loopTimes-- > 0) this._pc = this.loopPtr;
 		}; //loop end
 
-		this._Instructions[0xd5] = () => {}; //expression
-		this._Instructions[0xd6] = () => {}; //print variable
+		this._Instructions[0xd5] = () => {
+			this._forcableValue();
+		}; //expression
+		this._Instructions[0xd6] = () => {
+			void this._prog[this._pc++];
+		}; //print variable
 		this._Instructions[0xe0] = () => {
-			this._pc++;
-			this._pc++;
+			void this._prog[this._pc++];
+			void this._prog[this._pc++];
 		}; //modulation delay
 
 		this._Instructions[0xe1] = () => {
@@ -387,14 +520,14 @@ export class SSEQThread {
 		}; //end of track
 	}
 
-	private _boolInst(inst: number) {
+	_boolInst(inst: number) {
 		const varNum = this._forcableValue(true);
 		let arg = this._forcableValue();
 		if (arg & 0x80) arg -= 256;
 		this._comparisonResult = this._boolFunc[inst - 0xb8].bind(this)(varNum, arg);
 	}
 
-	private _varInst(inst: number) {
+	_varInst(inst: number) {
 		const varNum = this._forcableValue(true);
 		let arg = this._forcableValue();
 		if (arg & 0x80) arg -= 256;
@@ -416,15 +549,15 @@ export class SSEQThread {
 			if (this._force && inst != 0xa0 && inst != 0xa1) this._force = false;
 
 			if (++insts > 10000) {
-				this._Instructions[0xff].call(this, 0xff);
+				this._Instructions[0xff].bind(this)(0xff);
 				console.error("audio thread locked up");
 			}
 		}
 
-		if (this.wait == Infinity && this.lastNote != null && this.lastNote.note.ended) this._Instructions[0xff].call(this, 0xff);
+		if (this.wait == Infinity && this.lastNote != null && this.lastNote.note.ended) this._Instructions[0xff].bind(this)(0xff);
 	}
 
-	private _noteOn(num: number) {
+	_noteOn(num: number) {
 		if (num == 0) return; //NOP
 		const velocity = this._forcableValue(true);
 		let length = this._forcableValueFunc(false, this._readVariableLength.bind(this));
@@ -433,11 +566,11 @@ export class SSEQThread {
 		if (this.noteWait) this.wait += length;
 	}
 
-	private _ticksToMs(ticks: number) {
+	_ticksToMs(ticks: number) {
 		return (ticks / 48) * (60000 / this._player.properties.bpm);
 	}
 
-	private _readVariableLength() {
+	_readVariableLength() {
 		let read = this._prog[this._pc++];
 		let value = read & 0x7f;
 		while (read & 0x80) {
@@ -448,54 +581,48 @@ export class SSEQThread {
 	}
 
 	calculateCurrentTime() {
-		const time = this._player.baseAudioTime + this._ticksToMs(this.wait - this._player.remainder) / 1000;
-		return this._scheduleTime(time);
+		return this._player.baseAudioTime + this._ticksToMs(this.wait - this._player.remainder) / 1000;
 	}
 
-	private _scheduleTime(time: number) {
-		if (!Number.isFinite(time)) return this._ctx.currentTime;
-		return Math.max(time, this._ctx.currentTime);
-	}
-
-	private _read16() {
+	_read16() {
 		let value = this._prog[this._pc++];
 		value |= this._prog[this._pc++] << 8;
 		return value;
 	}
 
-	private _reads16() {
+	_reads16() {
 		let value = this._read16();
 		if (value & 0x8000) value -= 0x10000;
 		return value;
 	}
 
-	private _read8() {
+	_read8() {
 		return this._prog[this._pc++];
 	}
 
-	private _readSpecial(last: number) {
+	_readSpecial(last: number) {
 		if (last < 0x80 || (last >= 0xb0 && last < 0xbd)) return this._prog[this._pc++];
 		else return 0;
 	}
 
-	private _read24() {
+	_read24() {
 		let value = this._prog[this._pc++];
 		value |= this._prog[this._pc++] << 8;
 		value |= this._prog[this._pc++] << 16;
 		return value;
 	}
 
-	private _forcableValueFunc(special: boolean, func: () => number) {
+	_forcableValueFunc(special: boolean, func: () => number) {
 		if (this._force) return special ? this._forceSpecial : this._forceValue;
 		else return func();
 	}
 
-	private _forcableValue(special?: boolean) {
+	_forcableValue(special?: boolean) {
 		if (this._force) return special ? this._forceSpecial : this._forceValue;
 		else return this._prog[this._pc++];
 	}
 
-	private _setPan(value: number) {
+	_setPan(value: number) {
 		this.pan = value;
 		if (value > 0) {
 			this._gainR.gain.value = parseFloat("1");
@@ -504,5 +631,9 @@ export class SSEQThread {
 			this._gainR.gain.value = parseFloat(`${1 + value}`);
 			this._gainL.gain.value = parseFloat("1");
 		}
+	}
+
+	_noteToFreq(n: number) {
+		return Math.pow(2, (n - 49) / 12) * 440;
 	}
 }

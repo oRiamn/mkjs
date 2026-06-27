@@ -9,16 +9,12 @@ export type SSEQWaveCache_wave = {
 
 export class SSEQWaveCache {
 	static cache: SSEQWaveCache_wave[][] = [];
-	static sdat: sdat | undefined = undefined;
-	static ctx: AudioContext | undefined = undefined;
+	static sdat: sdat;
+	static ctx: AudioContext;
 
 	static cacheWaveArc(num: number) {
-		const sdatFile = SSEQWaveCache.sdat;
-		const ctx = SSEQWaveCache.ctx;
-		if (sdatFile == null || ctx == null) return;
-
 		if (SSEQWaveCache.cache[num] == null) {
-			const warinfo = sdatFile.sections["$INFO"][3];
+			const warinfo = SSEQWaveCache.sdat.sections["$INFO"][3];
 			if (warinfo[num] == null) return;
 			const swar: swar = warinfo[num].arc;
 			const arc = swar.samples;
@@ -27,7 +23,7 @@ export class SSEQWaveCache {
 			for (let i = 0; i < arc.length; i++) {
 				const cacheentry: SSEQWaveCache_wave = {
 					info: arc[i],
-					buf: arc[i].getAudioBuffer(ctx),
+					buf: arc[i].getAudioBuffer(SSEQWaveCache.ctx),
 				};
 				SSEQWaveCache.cache[num].push(cacheentry);
 			}

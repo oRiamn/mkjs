@@ -34,9 +34,13 @@ type KartCollisionSounds = {
 type KartRuntimeSounds = {
 	kart?: nitroAudioSound | null;
 	drift?: nitroAudioSound | null;
-	lastTerrain?: number;
-	lastBE?: number;
 	drive?: nitroAudioSound | null;
+	driveId?: number | null;
+	driftId?: number | null;
+	pendingDriveId?: number | null;
+	pendingDriftId?: number | null;
+	driveStable?: number;
+	driftStable?: number;
 	boost?: nitroAudioSound | null;
 	powerslide?: nitroAudioSound | null;
 	boostSoundTrig?: boolean; //true if a new boost sound can be played
@@ -52,6 +56,9 @@ type KartPhysicsBasis = {
 };
 
 type kart_checkpoint = nkm_section_CPOI | (nkm_section_MEPO & { respawn: 1 });
+
+const REMOTE_KART_SFX_MUL = 0.35;
+const LOOP_SOUND_GAIN = 2;
 
 export class Kart {
 	pos: vec3;
@@ -325,9 +332,13 @@ export class Kart {
 			//sounds that can be simultaneous
 			kart: null,
 			drift: null,
-			lastTerrain: -1,
-			lastBE: -1,
 			drive: null,
+			driveId: null,
+			driftId: null,
+			pendingDriveId: null,
+			pendingDriftId: null,
+			driveStable: 0,
+			driftStable: 0,
 			boost: null,
 			powerslide: null,
 			boostSoundTrig: true, //true if a new boost sound can be played
@@ -496,442 +507,487 @@ export class Kart {
 		}
 
 		//update sounds
+		const isMoving = this._onGround && this.speed > 0.5;
 		let newSoundMode = this._soundMode;
-		if (input.accel) {
-			if (this._soundMode == 0 || this._soundMode == 6) newSoundMode = 2;
-			if (this._soundMode == 4) newSoundMode = 3;
+		if (!this.local) {
+			this._clearKartLoopSounds();
 		} else {
-			if (this._soundMode != 0) {
-				if (this._soundMode == 2 || this._soundMode == 3) newSoundMode = 4;
-				if (newSoundMode == 4 && this.speed < 0.5) newSoundMode = 0;
+			if (input.accel) {
+				if (this._soundMode == 0 || this._soundMode == 6) newSoundMode = 2;
+				if (this._soundMode == 4) newSoundMode = 3;
+			} else {
+				if (this._soundMode != 0) {
+					if (this._soundMode == 2 || this._soundMode == 3) newSoundMode = 4;
+					if (newSoundMode == 4 && this.speed < 0.5) newSoundMode = 0;
+				}
 			}
-		}
 
-		if (this.boostMT + this.boostNorm > 0) {
-			if (this.boostNorm == this._BOOSTTIME || this.boostMT == this._params.miniTurbo) {
-				if (this._sounds.boostSoundTrig) {
-					if (this._sounds.boost != null) nitroAudio.instaKill(this._sounds.boost);
-					const boostSound = nitroAudio.playSound(160, {}, 0, this);
-					this._sounds.boost = boostSound;
-					if (boostSound != null) boostSound.gainN.gain.value = parseFloat("2");
-					this._sounds.boostSoundTrig = false;
+			if (this.boostMT + this.boostNorm > 0) {
+				if (this.boostNorm == this._BOOSTTIME || this.boostMT == this._params.miniTurbo) {
+					if (this._sounds.boostSoundTrig) {
+						if (this._sounds.boost != null) nitroAudio.instaKill(this._sounds.boost);
+						const boostSound = nitroAudio.playSound(160, {}, 0, this);
+						this._sounds.boost = boostSound;
+						if (boostSound != null) boostSound.gainN.gain.value = this._loopSoundGain();
+						this._sounds.boostSoundTrig = false;
+					}
+				} else {
+					this._sounds.boostSoundTrig = true;
+				}
+			} else if (this._sounds.boost != null) {
+				nitroAudio.kill(this._sounds.boost);
+				this._sounds.boost = null;
+			}
+
+			if (isMoving) {
+				const driveId = this._lastColSounds.drive ?? null;
+				if (driveId !== this._sounds.pendingDriveId) {
+					this._sounds.pendingDriveId = driveId;
+					this._sounds.driveStable = 0;
+				} else {
+					this._sounds.driveStable = (this._sounds.driveStable ?? 0) + 1;
+				}
+				if (
+					(((this._sounds.driveStable ?? 0) >= 4 || this._sounds.drive == null) && driveId !== this._sounds.driveId) ||
+					(driveId != null && this._sounds.drive == null)
+				) {
+					if (this._sounds.drive != null) nitroAudio.kill(this._sounds.drive);
+					if (driveId != null) {
+						const driveSound = nitroAudio.playSound(driveId, {}, 0, this);
+						this._sounds.drive = driveSound;
+						if (driveSound != null) driveSound.gainN.gain.value = this._loopSoundGain();
+					} else {
+						this._sounds.drive = null;
+					}
+					this._sounds.driveId = driveId;
+				}
+
+				if (this.drifting && this.driftLanded) {
+					const driftId = this._lastColSounds.drift ?? null;
+					if (driftId !== this._sounds.pendingDriftId) {
+						this._sounds.pendingDriftId = driftId;
+						this._sounds.driftStable = 0;
+					} else {
+						this._sounds.driftStable = (this._sounds.driftStable ?? 0) + 1;
+					}
+					if (
+						(((this._sounds.driftStable ?? 0) >= 4 || this._sounds.drift == null) && driftId !== this._sounds.driftId) ||
+						(driftId != null && this._sounds.drift == null)
+					) {
+						if (this._sounds.drift != null) nitroAudio.kill(this._sounds.drift);
+						if (driftId != null) {
+							this._sounds.drift = nitroAudio.playSound(driftId, {}, 0, this);
+						} else {
+							this._sounds.drift = null;
+						}
+						this._sounds.driftId = driftId;
+					}
+				} else if (this._sounds.drift != null) {
+					nitroAudio.kill(this._sounds.drift);
+					this._sounds.drift = null;
+					this._sounds.driftId = null;
+					this._sounds.pendingDriftId = null;
+					this._sounds.driftStable = 0;
 				}
 			} else {
-				this._sounds.boostSoundTrig = true;
-			}
-		} else if (this._sounds.boost != null) {
-			nitroAudio.kill(this._sounds.boost);
-			this._sounds.boost = null;
-		}
-
-		const isMoving = this._onGround && this.speed > 0.5;
-		if (isMoving) {
-			if (this._lastCollided != this._sounds.lastTerrain || this._lastBE != this._sounds.lastBE || this._sounds.drive == null) {
-				if (this._sounds.drive != null) nitroAudio.kill(this._sounds.drive);
-				if (this._lastColSounds.drive != null) {
-					const driveSound = nitroAudio.playSound(this._lastColSounds.drive, {}, 0, this);
-					this._sounds.drive = driveSound;
-					if (driveSound != null) driveSound.gainN.gain.value = parseFloat("2");
+				if (this._sounds.drift != null) {
+					nitroAudio.kill(this._sounds.drift);
+					this._sounds.drift = null;
+					this._sounds.driftId = null;
+					this._sounds.pendingDriftId = null;
+					this._sounds.driftStable = 0;
+				}
+				if (this._sounds.drive != null) {
+					nitroAudio.kill(this._sounds.drive);
+					this._sounds.drive = null;
+					this._sounds.driveId = null;
+					this._sounds.pendingDriveId = null;
+					this._sounds.driveStable = 0;
 				}
 			}
-
-			if (this.drifting && this.driftLanded) {
-				if (this._lastCollided != this._sounds.lastTerrain || this._lastBE != this._sounds.lastBE || this._sounds.drift == null) {
-					if (this._sounds.drift != null) nitroAudio.kill(this._sounds.drift);
-					if (this._lastColSounds.drift != null) {
-						this._sounds.drift = nitroAudio.playSound(this._lastColSounds.drift, {}, 0, this);
-					}
-				}
-			} else if (this._sounds.drift != null) {
-				nitroAudio.kill(this._sounds.drift);
-				this._sounds.drift = null;
-			}
-
-			this._sounds.lastTerrain = this._lastCollided;
-			this._sounds.lastBE = this._lastBE;
-		} else {
-			if (this._sounds.drift != null) {
-				nitroAudio.kill(this._sounds.drift);
-				this._sounds.drift = null;
-			}
-			if (this._sounds.drive != null) {
-				nitroAudio.kill(this._sounds.drive);
-				this._sounds.drive = null;
-			}
 		}
+
 		this.wheelParticles[0].pause = !isMoving;
 		this.wheelParticles[1].pause = !isMoving;
 
 		//end sound update
 
 		if (!this.preboost) {
-		if (this.cannon != null) {
-			//when cannon is active, we fly forward at max move speed until we get to the cannon point.
-			let c = scene.nkm.sections["KTPC"].entries[this.cannon];
+			if (this.cannon != null) {
+				//when cannon is active, we fly forward at max move speed until we get to the cannon point.
+				let c = scene.nkm.sections["KTPC"].entries[this.cannon];
 
-			if (c.id1 != -1 && c.id2 != -1) {
-				const c2 = scene.nkm.sections["KTPC"].entries[c.id2];
-				c = c2;
+				if (c.id1 != -1 && c.id2 != -1) {
+					const c2 = scene.nkm.sections["KTPC"].entries[c.id2];
+					c = c2;
 
-				const mat = mat4.create();
-				mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
-				mat4.rotateX(mat, mat, c.angle[0] * (-Math.PI / 180));
+					const mat = mat4.create();
+					mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
+					mat4.rotateX(mat, mat, c.angle[0] * (-Math.PI / 180));
 
-				this.pos = vec3.clone(c2.pos);
-				vec3.add(this.pos, this.pos, vec3.transformMat4([0, 0, 0], [0, 16, 32], mat));
-				this.airTime = 4;
+					this.pos = vec3.clone(c2.pos);
+					vec3.add(this.pos, this.pos, vec3.transformMat4([0, 0, 0], [0, 16, 32], mat));
+					this.airTime = 4;
 
-				this.physicalDir = (180 - c2.angle[1]) * (Math.PI / 180);
-				this.angle = this.physicalDir;
-				this.cannon = null;
-			} else {
-				const mat = mat4.create();
-				mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
-				//vertical angle from position? airship fortress is impossible otherwise
-				//var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
-				const diff = vec3.sub([0, 0, 0], c.pos, this.pos);
-				const dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
-				const dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-				mat4.rotateX(mat, mat, (diff[1] > 0 ? -1 : 1) * Math.acos(dAdj / dHyp));
-
-				const forward: vec3 = [0, 0, 1];
-				const up: vec3 = [0, 1, 0];
-
-				this.vel = vec3.scale([0, 0, 0], vec3.transformMat4(forward, forward, mat), this._MAXSPEED);
-				this.speed = Math.min(this.speed + 1, this._MAXSPEED);
-				vec3.add(this.pos, this.pos, this.vel);
-				this.physicalDir = (180 - c.angle[1]) * (Math.PI / 180);
-				this.angle = this.physicalDir;
-				this.kartTargetNormal = vec3.transformMat4(up, up, mat);
-				this.airTime = 0;
-
-				const planeConst = -vec3.dot(c.pos, forward);
-				const cannonDist = vec3.dot(this.pos, forward) + planeConst;
-				if (cannonDist > 0) {
-					this.cannon = null; //leaving cannon state
-					this.speed = this._params.topSpeed;
-					this.vel = vec3.scale([0, 0, 0], vec3.transformMat4(forward, forward, mat), this.speed);
-				}
-			}
-		} else {
-			//default kart mode
-			if (this.OOB > 0) {
-				this.playCharacterSound(0);
-				const current = this._checkpoints[this.checkPointNumber];
-				let respawn;
-				if (current == null)
-					respawn = this._respawns[(Math.random() * this._respawns.length) | 0]; //todo: deterministic
-				else respawn = this._respawns[current.respawn];
-				this.physicalDir = (180 - respawn.angle[1]) * (Math.PI / 180);
-				this.angle = this.physicalDir;
-				this.speed = 0;
-				this.vel = vec3.create();
-				this.pos = vec3.clone(respawn.pos);
-				vec3.add(this.pos, this.pos, [0, 16, 0]);
-				if (this.controller.setRouteID != null) this.controller.setRouteID(respawn.id1);
-				this.OOB = 0;
-			}
-			let groundEffect = 0;
-			if (this._lastCollided != -1) {
-				groundEffect = MKDS_COLTYPE.PHYS_MAP[this._lastCollided];
-				if (groundEffect == null) groundEffect = 0;
-			}
-
-			const effect = this._params.colParam[groundEffect];
-			const top = this._params.topSpeed * effect.topSpeedMul; //if you let go of accel, drift ends anyway, so always accel in drift.
-
-			const boosting = this.boostNorm + this.boostMT > 0;
-			if (this.specialControlHandler) {
-				this._damagedControls();
-			} else {
-				if (boosting) {
-					let top2;
-					if (this.boostNorm > 0) {
-						top2 = this._params.topSpeed * 1.3;
-						this.boostNorm--;
-					} else {
-						top2 = this._params.topSpeed * (effect.topSpeedMul >= 1 ? 1.3 : effect.topSpeedMul);
-					}
-
-					if (this.boostMT > 0) {
-						this.boostMT--;
-					}
-
-					if (this.speed <= top2) {
-						this.speed += 1;
-						if (this.speed > top2) this.speed = top2;
-					} else {
-						this.speed *= 0.95;
-					}
-				}
-
-				//kart controls
-				if (this.drifting) {
-					if (this._onGround && !(input.accel && input.drift && (this.speed > 2 || !this.driftLanded))) {
-						//end drift, execute miniturbo
-						this._endDrift();
-						if (this.driftPSMode == 3) {
-							this.boostMT = this._params.miniTurbo;
-						}
-						this.driftPSMode = 0;
-						this.driftPSTick = 0;
-					}
-
-					if (this.driftMode == 0) {
-						if (input.turn > 0.3) {
-							this.driftMode = 2;
-						} else if (input.turn < -0.3) {
-							this.driftMode = 1;
-						}
-					} else {
-						if (this.driftLanded) {
-							const change = (((this.driftMode - 1.5) * Math.PI) / 1.5 - this.driftOff) * 0.05;
-							this.driftOff += change;
-							this.physicalDir -= change;
-						}
-
-						//if we're above the initial y position, add a constant turn with a period of 180 frames.
-						if (!this.driftLanded && this.ylock >= 0) {
-							this.physicalDir += ((Math.PI * 2) / 180) * (this.driftMode * 2 - 3);
-						}
-					}
-
-					if (this._onGround) {
-						if (!this.driftLanded) {
-							if (this.driftMode == 0) {
-								this._endDrift();
-							} else {
-								this.driftPSMode = 0;
-								this.driftPSTick = 0;
-								this.driftLanded = true;
-								if (this.drifting) this._setWheelParticles(20, 1); //20 = smoke, 1 = drift priority
-							}
-						}
-						if (this.drifting) {
-							if (!boosting) {
-								if (this.speed <= top) {
-									this.speed +=
-										this.speed / top > this._params.driftAccelSwitch
-											? this._params.driftAccel2
-											: this._params.driftAccel1;
-									if (this.speed > top) this.speed = top;
-								} else {
-									this.speed *= 0.95;
-								}
-							}
-
-							const turn = (this.driftMode == 1 ? input.turn - 1 : input.turn + 1) / 2;
-
-							this.physicalDir += this._params.driftTurnRate * turn + (this.driftMode == 1 ? -1 : 1) * (50 / 32768) * Math.PI; //what is this mystery number i hear you ask? well my friend, this is the turn rate for outward drift.
-
-							//miniturbo code
-							if (input.turn != 0) {
-								const inward = input.turn > 0 == this.driftMode - 1 > 0; //if we're turning
-
-								switch (this.driftPSMode) {
-									case 0: //dpad away from direction for 10 frames
-										if (!inward) this.driftPSTick++;
-										else if (this.driftPSTick > 9) {
-											this.driftPSMode++;
-											this.driftPSTick = 1;
-
-											//play blue spark sound, flare
-											this._setWheelParticles(126, 2); //126 = blue flare, 2 = flare priority
-											const blue = nitroAudio.playSound(210, {}, 0, this)!;
-											blue.gainN.gain.value = parseFloat("2");
-										} else this.driftPSTick = 0;
-										break;
-									case 1: //dpad toward direction for 10 frames
-										if (inward) this.driftPSTick++;
-										else if (this.driftPSTick > 9) {
-											this.driftPSMode++;
-											this.driftPSTick = 1;
-										} else this.driftPSTick = 0;
-										break;
-									case 2: //dpad away from direction for 10 frames
-										if (!inward) this.driftPSTick++;
-										else if (this.driftPSTick > 9) {
-											this.driftPSMode++;
-											this.driftPSTick = 1;
-											//play red sparks sound, full MT!
-											this._setWheelParticles(22, 2); //22 = red flare, 2 = flare priority
-											this._setWheelParticles(17, 1); //17 = red mt, 1 = drift priority ... 18 is sparks that come out - but their mode is not working yet (spark mode)
-											const powerslideSound = nitroAudio.playSound(209, {}, 0, this);
-											this._sounds.powerslide = powerslideSound;
-											if (powerslideSound != null) powerslideSound.gainN.gain.value = parseFloat("2");
-										} else this.driftPSTick = 0;
-										break;
-									case 3: //turbo charged
-										break;
-								}
-							}
-						}
-					}
-				}
-
-				if (!this.drifting) {
-					if (this._onGround) {
-						if (!boosting) {
-							if (input.accel) {
-								if (this.speed <= top) {
-									this.speed += this.speed / top > this._params.accelSwitch ? this._params.accel2 : this._params.accel1;
-									if (this.speed > top) this.speed = top;
-								} else {
-									this.speed *= 0.95;
-								}
-							} else {
-								this.speed *= this._params.decel;
-							}
-						}
-
-						if ((input.accel && this.speed >= 0) || this.speed > 0.1) {
-							this.physicalDir += this._params.turnRate * input.turn;
-						} else if (this.speed < -0.1) {
-							this.physicalDir -= this._params.turnRate * input.turn;
-						}
-
-						if (input.drift) {
-							this._ylvel = 1.25;
-							this.vel[1] += 1.25;
-							this.airTime = 4;
-							this.drifting = true;
-							this.driftLanded = false;
-							this.driftMode = 0;
-							this.ylock = 0;
-							this._onGround = false;
-
-							const boing = nitroAudio.playSound(207, { transpose: -4 }, 0, this)!;
-							boing.gainN.gain.value = parseFloat("2");
-						}
-					} else {
-						if (input.drift) {
-							this._ylvel = 0;
-							this.drifting = true;
-							this.driftLanded = false;
-							this.driftMode = 0;
-							this.ylock = -0.001;
-						}
-					}
-				}
-			}
-
-			this.physicalDir = this._fixDir(this.physicalDir);
-
-			if (this.driftOff != 0 && (!this.drifting || !this.driftLanded)) {
-				if (this.driftOff > 0) {
-					this.physicalDir += this._params.driftOffRestore;
-					this.driftOff -= this._params.driftOffRestore;
-					if (this.driftOff < 0) this.driftOff = 0;
+					this.physicalDir = (180 - c2.angle[1]) * (Math.PI / 180);
+					this.angle = this.physicalDir;
+					this.cannon = null;
 				} else {
-					this.physicalDir -= this._params.driftOffRestore;
-					this.driftOff += this._params.driftOffRestore;
-					if (this.driftOff > 0) this.driftOff = 0;
+					const mat = mat4.create();
+					mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
+					//vertical angle from position? airship fortress is impossible otherwise
+					//var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
+					const diff = vec3.sub([0, 0, 0], c.pos, this.pos);
+					const dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
+					const dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+					mat4.rotateX(mat, mat, (diff[1] > 0 ? -1 : 1) * Math.acos(dAdj / dHyp));
+
+					const forward: vec3 = [0, 0, 1];
+					const up: vec3 = [0, 1, 0];
+
+					this.vel = vec3.scale([0, 0, 0], vec3.transformMat4(forward, forward, mat), this._MAXSPEED);
+					this.speed = Math.min(this.speed + 1, this._MAXSPEED);
+					vec3.add(this.pos, this.pos, this.vel);
+					this.physicalDir = (180 - c.angle[1]) * (Math.PI / 180);
+					this.angle = this.physicalDir;
+					this.kartTargetNormal = vec3.transformMat4(up, up, mat);
+					this.airTime = 0;
+
+					const planeConst = -vec3.dot(c.pos, forward);
+					const cannonDist = vec3.dot(this.pos, forward) + planeConst;
+					if (cannonDist > 0) {
+						this.cannon = null; //leaving cannon state
+						this.speed = this._params.topSpeed;
+						this.vel = vec3.scale([0, 0, 0], vec3.transformMat4(forward, forward, mat), this.speed);
+					}
 				}
-			}
-
-			this._checkKartCollision(scene);
-
-			if (!this._onGround) {
-				this.kartTargetNormal = [0, 1, 0];
-				if (this.physBasis != null) vec3.transformMat4(this.kartTargetNormal, this.kartTargetNormal, this.physBasis.mat);
-				vec3.add(this.vel, this.vel, this.gravity);
-				if (this.ylock >= 0) {
-					this._ylvel += this.gravity[1];
-					this.ylock += this._ylvel;
+			} else {
+				//default kart mode
+				if (this.OOB > 0) {
+					this.playCharacterSound(0);
+					const current = this._checkpoints[this.checkPointNumber];
+					let respawn;
+					if (current == null)
+						respawn = this._respawns[(Math.random() * this._respawns.length) | 0]; //todo: deterministic
+					else respawn = this._respawns[current.respawn];
+					this.physicalDir = (180 - respawn.angle[1]) * (Math.PI / 180);
+					this.angle = this.physicalDir;
+					this.speed = 0;
+					this.vel = vec3.create();
+					this.pos = vec3.clone(respawn.pos);
+					vec3.add(this.pos, this.pos, [0, 16, 0]);
+					if (this.controller.setRouteID != null) this.controller.setRouteID(respawn.id1);
+					this.OOB = 0;
+				}
+				let groundEffect = 0;
+				if (this._lastCollided != -1) {
+					groundEffect = MKDS_COLTYPE.PHYS_MAP[this._lastCollided];
+					if (groundEffect == null) groundEffect = 0;
 				}
 
-				/*
+				const effect = this._params.colParam[groundEffect];
+				const top = this._params.topSpeed * effect.topSpeedMul; //if you let go of accel, drift ends anyway, so always accel in drift.
+
+				const boosting = this.boostNorm + this.boostMT > 0;
+				if (this.specialControlHandler) {
+					this._damagedControls();
+				} else {
+					if (boosting) {
+						let top2;
+						if (this.boostNorm > 0) {
+							top2 = this._params.topSpeed * 1.3;
+							this.boostNorm--;
+						} else {
+							top2 = this._params.topSpeed * (effect.topSpeedMul >= 1 ? 1.3 : effect.topSpeedMul);
+						}
+
+						if (this.boostMT > 0) {
+							this.boostMT--;
+						}
+
+						if (this.speed <= top2) {
+							this.speed += 1;
+							if (this.speed > top2) this.speed = top2;
+						} else {
+							this.speed *= 0.95;
+						}
+					}
+
+					//kart controls
+					if (this.drifting) {
+						if (this._onGround && !(input.accel && input.drift && (this.speed > 2 || !this.driftLanded))) {
+							//end drift, execute miniturbo
+							this._endDrift();
+							if (this.driftPSMode == 3) {
+								this.boostMT = this._params.miniTurbo;
+							}
+							this.driftPSMode = 0;
+							this.driftPSTick = 0;
+						}
+
+						if (this.driftMode == 0) {
+							if (input.turn > 0.3) {
+								this.driftMode = 2;
+							} else if (input.turn < -0.3) {
+								this.driftMode = 1;
+							}
+						} else {
+							if (this.driftLanded) {
+								const change = (((this.driftMode - 1.5) * Math.PI) / 1.5 - this.driftOff) * 0.05;
+								this.driftOff += change;
+								this.physicalDir -= change;
+							}
+
+							//if we're above the initial y position, add a constant turn with a period of 180 frames.
+							if (!this.driftLanded && this.ylock >= 0) {
+								this.physicalDir += ((Math.PI * 2) / 180) * (this.driftMode * 2 - 3);
+							}
+						}
+
+						if (this._onGround) {
+							if (!this.driftLanded) {
+								if (this.driftMode == 0) {
+									this._endDrift();
+								} else {
+									this.driftPSMode = 0;
+									this.driftPSTick = 0;
+									this.driftLanded = true;
+									if (this.drifting) this._setWheelParticles(20, 1); //20 = smoke, 1 = drift priority
+								}
+							}
+							if (this.drifting) {
+								if (!boosting) {
+									if (this.speed <= top) {
+										this.speed +=
+											this.speed / top > this._params.driftAccelSwitch
+												? this._params.driftAccel2
+												: this._params.driftAccel1;
+										if (this.speed > top) this.speed = top;
+									} else {
+										this.speed *= 0.95;
+									}
+								}
+
+								const turn = (this.driftMode == 1 ? input.turn - 1 : input.turn + 1) / 2;
+
+								this.physicalDir +=
+									this._params.driftTurnRate * turn + (this.driftMode == 1 ? -1 : 1) * (50 / 32768) * Math.PI; //what is this mystery number i hear you ask? well my friend, this is the turn rate for outward drift.
+
+								//miniturbo code
+								if (input.turn != 0) {
+									const inward = input.turn > 0 == this.driftMode - 1 > 0; //if we're turning
+
+									switch (this.driftPSMode) {
+										case 0: //dpad away from direction for 10 frames
+											if (!inward) this.driftPSTick++;
+											else if (this.driftPSTick > 9) {
+												this.driftPSMode++;
+												this.driftPSTick = 1;
+
+												//play blue spark sound, flare
+												this._setWheelParticles(126, 2); //126 = blue flare, 2 = flare priority
+												if (this.local) {
+													const blue = nitroAudio.playSound(210, {}, 0, this)!;
+													blue.gainN.gain.value = this._loopSoundGain();
+												}
+											} else this.driftPSTick = 0;
+											break;
+										case 1: //dpad toward direction for 10 frames
+											if (inward) this.driftPSTick++;
+											else if (this.driftPSTick > 9) {
+												this.driftPSMode++;
+												this.driftPSTick = 1;
+											} else this.driftPSTick = 0;
+											break;
+										case 2: //dpad away from direction for 10 frames
+											if (!inward) this.driftPSTick++;
+											else if (this.driftPSTick > 9) {
+												this.driftPSMode++;
+												this.driftPSTick = 1;
+												//play red sparks sound, full MT!
+												this._setWheelParticles(22, 2); //22 = red flare, 2 = flare priority
+												this._setWheelParticles(17, 1); //17 = red mt, 1 = drift priority ... 18 is sparks that come out - but their mode is not working yet (spark mode)
+												if (this.local) {
+													const powerslideSound = nitroAudio.playSound(209, {}, 0, this);
+													this._sounds.powerslide = powerslideSound;
+													if (powerslideSound != null) powerslideSound.gainN.gain.value = this._loopSoundGain();
+												}
+											} else this.driftPSTick = 0;
+											break;
+										case 3: //turbo charged
+											break;
+									}
+								}
+							}
+						}
+					}
+
+					if (!this.drifting) {
+						if (this._onGround) {
+							if (!boosting) {
+								if (input.accel) {
+									if (this.speed <= top) {
+										this.speed +=
+											this.speed / top > this._params.accelSwitch ? this._params.accel2 : this._params.accel1;
+										if (this.speed > top) this.speed = top;
+									} else {
+										this.speed *= 0.95;
+									}
+								} else {
+									this.speed *= this._params.decel;
+								}
+							}
+
+							if ((input.accel && this.speed >= 0) || this.speed > 0.1) {
+								this.physicalDir += this._params.turnRate * input.turn;
+							} else if (this.speed < -0.1) {
+								this.physicalDir -= this._params.turnRate * input.turn;
+							}
+
+							if (input.drift) {
+								this._ylvel = 1.25;
+								this.vel[1] += 1.25;
+								this.airTime = 4;
+								this.drifting = true;
+								this.driftLanded = false;
+								this.driftMode = 0;
+								this.ylock = 0;
+								this._onGround = false;
+
+								if (this.local) {
+									const boing = nitroAudio.playSound(207, { transpose: -4 }, 0, this)!;
+									boing.gainN.gain.value = this._loopSoundGain();
+								}
+							}
+						} else {
+							if (input.drift) {
+								this._ylvel = 0;
+								this.drifting = true;
+								this.driftLanded = false;
+								this.driftMode = 0;
+								this.ylock = -0.001;
+							}
+						}
+					}
+				}
+
+				this.physicalDir = this._fixDir(this.physicalDir);
+
+				if (this.driftOff != 0 && (!this.drifting || !this.driftLanded)) {
+					if (this.driftOff > 0) {
+						this.physicalDir += this._params.driftOffRestore;
+						this.driftOff -= this._params.driftOffRestore;
+						if (this.driftOff < 0) this.driftOff = 0;
+					} else {
+						this.physicalDir -= this._params.driftOffRestore;
+						this.driftOff += this._params.driftOffRestore;
+						if (this.driftOff > 0) this.driftOff = 0;
+					}
+				}
+
+				this._checkKartCollision(scene);
+
+				if (!this._onGround) {
+					this.kartTargetNormal = [0, 1, 0];
+					if (this.physBasis != null) vec3.transformMat4(this.kartTargetNormal, this.kartTargetNormal, this.physBasis.mat);
+					vec3.add(this.vel, this.vel, this.gravity);
+					if (this.ylock >= 0) {
+						this._ylvel += this.gravity[1];
+						this.ylock += this._ylvel;
+					}
+
+					/*
 				if (k.kartColTimer == COLBOUNCE_TIME) {
 					vec3.add(k.vel, k.vel, k.kartColVel);
 				}
 				*/
-			} else {
-				this.angle += this._dirDiff(this.physicalDir, this.angle) * effect.handling;
-				this.angle += this._dirDiff(this.physicalDir, this.angle) * effect.handling; //applying this twice appears to be identical to the original
-				this.angle = this._fixDir(this.angle);
+				} else {
+					this.angle += this._dirDiff(this.physicalDir, this.angle) * effect.handling;
+					this.angle += this._dirDiff(this.physicalDir, this.angle) * effect.handling; //applying this twice appears to be identical to the original
+					this.angle = this._fixDir(this.angle);
 
-				//reduce our forward speed by how much of our velocity is not going forwards
-				const factor = Math.sin(this.physicalDir) * Math.sin(this.angle) + Math.cos(this.physicalDir) * Math.cos(this.angle);
-				this.speed *= 1 - (1 - factor) * (1 - this.params.decel);
-				//var reducedSpeed = k.vel[0]*Math.sin(k.angle) + k.vel[2]*(-Math.cos(k.angle));
-				//reducedSpeed = ((reducedSpeed < 0) ? -1 : 1) * Math.sqrt(Math.abs(reducedSpeed));
-				this.vel[1] += this.gravity[1];
-				this.vel = [Math.sin(this.angle) * this.speed, this.vel[1], -Math.cos(this.angle) * this.speed];
-				//k.speed = reducedSpeed;
+					//reduce our forward speed by how much of our velocity is not going forwards
+					const factor = Math.sin(this.physicalDir) * Math.sin(this.angle) + Math.cos(this.physicalDir) * Math.cos(this.angle);
+					this.speed *= 1 - (1 - factor) * (1 - this.params.decel);
+					//var reducedSpeed = k.vel[0]*Math.sin(k.angle) + k.vel[2]*(-Math.cos(k.angle));
+					//reducedSpeed = ((reducedSpeed < 0) ? -1 : 1) * Math.sqrt(Math.abs(reducedSpeed));
+					this.vel[1] += this.gravity[1];
+					this.vel = [Math.sin(this.angle) * this.speed, this.vel[1], -Math.cos(this.angle) * this.speed];
+					//k.speed = reducedSpeed;
 
-				/*
+					/*
 				if (k.kartColTimer > 0) {
 					vec3.add(k.vel, k.vel, vec3.scale([], k.kartColVel, k.kartColTimer / 10))
 				}
 				*/
-			}
-
-			if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
-				this.vel = [0, 0, 0];
-				this.speed = 0;
-				this._ylvel = 0;
-			}
-
-			if (this.kartColTimer > 0) this.kartColTimer--;
-			if (this.kartWallTimer > 0) this.kartWallTimer--;
-			if (this.charSoundTimer > 0) this.charSoundTimer--;
-
-			this._wheelTurn += this.speed / 16;
-			this._wheelTurn = this._fixDir(this._wheelTurn);
-			this.airTime++;
-			//end kart controls
-
-			//move kart on moving platforms (no collision, will be corrected by next step)
-			if (this._stuckTo != null && this.damageType != MKDSCONST.DAMAGE_STOMP) {
-				if (this._stuckTo.moveWith != null) {
-					this._stuckTo.moveWith(this);
 				}
-				this._stuckTo = null;
-			}
 
-			//move kart.
-			if (this.damageType != MKDSCONST.DAMAGE_STOMP) {
-				let steps = 0;
-				let remainingT = 1;
-				let baseVel = this.vel;
-				if (this.physBasis != null) {
-					if (this.physBasis.time-- < 0) this.exitBasis();
-					else {
-						baseVel = vec3.transformMat4([0, 0, 0], baseVel, this.physBasis.mat);
-						this.vel[1] = -1;
+				if (this.damageType == MKDSCONST.DAMAGE_STOMP) {
+					this.vel = [0, 0, 0];
+					this.speed = 0;
+					this._ylvel = 0;
+				}
+
+				if (this.kartColTimer > 0) this.kartColTimer--;
+				if (this.kartWallTimer > 0) this.kartWallTimer--;
+				if (this.charSoundTimer > 0) this.charSoundTimer--;
+
+				this._wheelTurn += this.speed / 16;
+				this._wheelTurn = this._fixDir(this._wheelTurn);
+				this.airTime++;
+				//end kart controls
+
+				//move kart on moving platforms (no collision, will be corrected by next step)
+				if (this._stuckTo != null && this.damageType != MKDSCONST.DAMAGE_STOMP) {
+					if (this._stuckTo.moveWith != null) {
+						this._stuckTo.moveWith(this);
 					}
+					this._stuckTo = null;
 				}
-				let velSeg = vec3.clone(baseVel);
-				if (this.kartColTimer > 0) {
-					vec3.add(velSeg, velSeg, vec3.scale([0, 0, 0], this.kartColVel, this.kartColTimer / this._COLBOUNCE_TIME));
-				}
-				const posSeg = vec3.clone(this.pos);
-				const ignoreList: lsc_collision_triangle[] = [];
-				while (steps++ < 10 && remainingT > 0.01) {
-					const result = lsc.sweepEllipse(
-						posSeg,
-						velSeg,
-						scene,
-						[this._params.colRadius, this._params.colRadius, this._params.colRadius],
-						ignoreList
-					);
-					if (result != null) {
-						this._colResponse(posSeg, velSeg, result, ignoreList);
-						remainingT -= result.t;
-						if (remainingT > 0.01) {
-							if (this.physBasis != null) {
-								baseVel = vec3.transformMat4([0, 0, 0], this.vel, this.physBasis.mat);
-							}
-							velSeg = vec3.scale(vec3.create(), baseVel, remainingT);
+
+				//move kart.
+				if (this.damageType != MKDSCONST.DAMAGE_STOMP) {
+					let steps = 0;
+					let remainingT = 1;
+					let baseVel = this.vel;
+					if (this.physBasis != null) {
+						if (this.physBasis.time-- < 0) this.exitBasis();
+						else {
+							baseVel = vec3.transformMat4([0, 0, 0], baseVel, this.physBasis.mat);
+							this.vel[1] = -1;
 						}
-					} else {
-						vec3.add(posSeg, posSeg, velSeg);
-						remainingT = 0;
 					}
+					let velSeg = vec3.clone(baseVel);
+					if (this.kartColTimer > 0) {
+						vec3.add(velSeg, velSeg, vec3.scale([0, 0, 0], this.kartColVel, this.kartColTimer / this._COLBOUNCE_TIME));
+					}
+					const posSeg = vec3.clone(this.pos);
+					const ignoreList: lsc_collision_triangle[] = [];
+					while (steps++ < 10 && remainingT > 0.01) {
+						const result = lsc.sweepEllipse(
+							posSeg,
+							velSeg,
+							scene,
+							[this._params.colRadius, this._params.colRadius, this._params.colRadius],
+							ignoreList
+						);
+						if (result != null) {
+							this._colResponse(posSeg, velSeg, result, ignoreList);
+							remainingT -= result.t;
+							if (remainingT > 0.01) {
+								if (this.physBasis != null) {
+									baseVel = vec3.transformMat4([0, 0, 0], this.vel, this.physBasis.mat);
+								}
+								velSeg = vec3.scale(vec3.create(), baseVel, remainingT);
+							}
+						} else {
+							vec3.add(posSeg, posSeg, velSeg);
+							remainingT = 0;
+						}
+					}
+					this.pos = posSeg;
 				}
-				this.pos = posSeg;
 			}
-		}
 		}
 
 		//interpolate visual normal roughly to target
@@ -1111,7 +1167,40 @@ export class Kart {
 		if (volume == null) {
 			volume = 1;
 		}
-		nitroAudio.playSound(sound + this._charRes.sndOff, { volume: 2 * volume }, 2, this);
+		nitroAudio.playSound(sound + this._charRes.sndOff, { volume: this._sfxVolume(2 * volume) }, 2, this);
+	}
+
+	private _sfxVolume(scale = 1) {
+		return scale * (this.local ? 1 : REMOTE_KART_SFX_MUL);
+	}
+
+	private _loopSoundGain() {
+		return LOOP_SOUND_GAIN * (this.local ? 1 : REMOTE_KART_SFX_MUL);
+	}
+
+	private _clearKartLoopSounds() {
+		if (this._sounds.boost != null) {
+			nitroAudio.kill(this._sounds.boost);
+			this._sounds.boost = null;
+		}
+		if (this._sounds.drive != null) {
+			nitroAudio.kill(this._sounds.drive);
+			this._sounds.drive = null;
+		}
+		this._sounds.driveId = null;
+		this._sounds.pendingDriveId = null;
+		this._sounds.driveStable = 0;
+		if (this._sounds.drift != null) {
+			nitroAudio.kill(this._sounds.drift);
+			this._sounds.drift = null;
+		}
+		this._sounds.driftId = null;
+		this._sounds.pendingDriftId = null;
+		this._sounds.driftStable = 0;
+		if (this._sounds.powerslide != null) {
+			nitroAudio.instaKill(this._sounds.powerslide);
+			this._sounds.powerslide = null;
+		}
 	}
 
 	private _clearWheelParticles(prio?: number) {
@@ -1229,8 +1318,8 @@ export class Kart {
 		//play this kart's horn
 		if (this.kartColTimer == 0) {
 			//not if we're still being bounced
-			nitroAudio.playSound(208, { volume: 2 }, 0, this);
-			nitroAudio.playSound(193 + this._charRes.sndOff / 14, { volume: 1.5 }, 0, this);
+			nitroAudio.playSound(208, { volume: this._sfxVolume(2) }, 0, this);
+			nitroAudio.playSound(193 + this._charRes.sndOff / 14, { volume: this._sfxVolume(1.5) }, 0, this);
 		}
 
 		this.kartColTimer = this._COLBOUNCE_TIME;
@@ -1460,7 +1549,8 @@ export class Kart {
 
 			if (proj < -1) {
 				if (this.kartWallTimer == 0) {
-					if (this._lastColSounds.hit != null) nitroAudio.playSound(this._lastColSounds.hit, { volume: 1 }, 0, this);
+					if (this._lastColSounds.hit != null)
+						nitroAudio.playSound(this._lastColSounds.hit, { volume: this._sfxVolume(1) }, 0, this);
 					const colObj = {
 						pos: pos,
 						vel: vec3.clone([0, 0, 0]),
@@ -1532,7 +1622,8 @@ export class Kart {
 			}
 			if (!this._onGround && !stick) {
 				this._groundAnim = 0;
-				if (this._lastColSounds.land != null) nitroAudio.playSound(this._lastColSounds.land, { volume: 1 }, 0, this);
+				if (this._lastColSounds.land != null)
+					nitroAudio.playSound(this._lastColSounds.land, { volume: this._sfxVolume(1) }, 0, this);
 			}
 			this.airTime = 0;
 			this._stuckTo = dat.object;

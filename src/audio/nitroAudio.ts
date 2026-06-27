@@ -43,6 +43,8 @@ export class nitroAudio {
 	static ctx: AudioContext;
 	static sounds: nitroAudioSound[] = [];
 	static sdat: sdat;
+	private static _tickInterval: ReturnType<typeof setInterval> | null = null;
+	private static readonly TICK_MS = 1000 / 60;
 
 	static init(sdat: sdat) {
 		nitroAudio.ctx = new AudioContext();
@@ -53,20 +55,32 @@ export class nitroAudio {
 
 		SSEQWaveCache.init(sdat, nitroAudio.ctx);
 		nitroAudio.sdat = sdat;
+		nitroAudio._bindBackgroundAudio();
+		nitroAudio._startTickLoop();
+		void nitroAudio._ensureRunning();
+	}
 
-		const suspendAudio = () => {
-			void nitroAudio.ctx.suspend();
-		};
-		const resumeAudio = () => {
-			if (!document.hidden) void nitroAudio.ctx.resume();
-		};
+	private static _ensureRunning() {
+		if (nitroAudio.ctx.state === "suspended") {
+			void nitroAudio.ctx.resume();
+		}
+	}
 
+	private static _bindBackgroundAudio() {
 		document.addEventListener("visibilitychange", () => {
-			if (document.hidden) suspendAudio();
-			else resumeAudio();
+			void nitroAudio._ensureRunning();
 		});
-		window.addEventListener("blur", suspendAudio);
-		window.addEventListener("focus", resumeAudio);
+		window.addEventListener("focus", () => {
+			void nitroAudio._ensureRunning();
+		});
+	}
+
+	private static _startTickLoop() {
+		if (nitroAudio._tickInterval != null) return;
+		nitroAudio._tickInterval = setInterval(() => {
+			nitroAudio._ensureRunning();
+			nitroAudio.tick();
+		}, nitroAudio.TICK_MS);
 	}
 
 	static updateListener(pos: vec3 | null, view: mat4) {
@@ -122,27 +136,6 @@ export class nitroAudio {
 		nitroAudio.sounds.splice(ind, 1);
 	}
 
-	static killAll() {
-		const sounds = nitroAudio.sounds.splice(0);
-		for (const snd of sounds) {
-			try {
-				snd.seq.instaKill();
-			} catch {
-				/* sequence may already be dead */
-			}
-			try {
-				snd.gainN.disconnect();
-			} catch {
-				/* already disconnected */
-			}
-			try {
-				snd.panner?.disconnect();
-			} catch {
-				/* no panner */
-			}
-		}
-	}
-
 	static playSound(
 		seqN: number,
 		params: SSEQPlayer_param | null,
@@ -151,6 +144,7 @@ export class nitroAudio {
 	): nitroAudioSound | null {
 		//if arc is not specified, we just play a normal sequence. this allows 3 overloads.
 		//obj should have a property "soundProps" where it sets its falloff, position and velocity relative to the oberver occasionally
+		void nitroAudio._ensureRunning();
 		const sound: nitroAudioSound = {
 			dead: false,
 			killing: false,
@@ -160,7 +154,7 @@ export class nitroAudio {
 			gainN: undefined!,
 		};
 
-		let output: PannerNode | GainNode;
+		let output;
 		if (obj != null) {
 			//if obj is not null then we have a 3d target to assign this sound to.
 			output = nitroAudio.ctx.createPanner();
@@ -194,7 +188,7 @@ export class nitroAudio {
 		return sound;
 	}
 
-	private static _updatePanner(panner: PannerNode, soundProps: nitroAudioSoundProps | null) {
+	static _updatePanner(panner: PannerNode, soundProps: nitroAudioSoundProps | null) {
 		if (panner == null || soundProps == null) return;
 		if (soundProps.pos != null) panner.setPosition(soundProps.pos[0], soundProps.pos[1], soundProps.pos[2]);
 		//if (soundProps.vel != null) panner.setVelocity(soundProps.vel[0], soundProps.vel[1], soundProps.vel[2]);

@@ -71,7 +71,6 @@ export class nitroAnimator {
 		const totalLength = this.getLength(anim);
 		frame %= this.getLength(anim);
 
-
 		const model = this.bmd.modelData.objectData[modelind];
 		const fallback = model.objects.objectData;
 

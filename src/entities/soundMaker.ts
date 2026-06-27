@@ -88,8 +88,10 @@ export class ObjSoundMaker implements SceneEntityObject {
 			}
 		} else {
 			if (this.sound == null) {
-				this.sound = nitroAudio.playSound(this.sN, {}, 0, this);
-				this.sound!.gainN.gain.value = parseFloat(`${this.gain}`);
+				const snd = nitroAudio.playSound(this.sN, {}, 0, this);
+				if (snd == null) return;
+				this.sound = snd;
+				this.sound.gainN.gain.value = parseFloat(`${this.gain}`);
 			}
 		}
 	}

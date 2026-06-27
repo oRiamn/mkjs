@@ -84,7 +84,6 @@ import { ObjWater } from "./entities/water";
 
 import {
 	getRequestAnimationFrameFnct,
-	startGameLoop,
 	hideMenu,
 	mobilecheck,
 	onAppStateChange,
@@ -94,6 +93,7 @@ import {
 	setupMenu,
 	showMenu,
 	showMenuScreen,
+	startGameLoop,
 } from "./app";
 import { SSEQThread } from "./audio/sseqThread";
 import { MKDS_COLSOUNDS } from "./engine/collisionSounds";

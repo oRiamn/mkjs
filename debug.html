@@ -41,6 +41,7 @@
 				setupViewerControls();
 				setupFileListControls();
 				setupRomControls();
+				setupSdatControls();
 				restoreDebugFilters();
 				renderLoop();
 				setStatus("Loading ROM…");
@@ -231,7 +232,9 @@
 																	? " bin"
 																	: l.endsWith(".tbl") || l.endsWith(".mtbl") || l.endsWith(".ktbl")
 																		? " tbl"
-																		: "";
+																		: l.endsWith(".sdat")
+																			? " sdat"
+																			: "";
 			}
 
 			function renderFilteredList() {
@@ -286,6 +289,7 @@
 				else if (lp.endsWith(".spa")) loadSPA(path, el);
 				else if (lp.endsWith(".bin")) loadBIN(path, el);
 				else if (lp.endsWith(".tbl") || lp.endsWith(".mtbl") || lp.endsWith(".ktbl")) loadTBL(path, el);
+				else if (lp.endsWith(".sdat")) loadSDAT(path, el);
 			}
 
 			function setupFileListControls() {
@@ -603,6 +607,14 @@
 			// Switches to 3D rendering (models): hides the 2D canvas and 2D selectors.
 			function show3D() {
 				view2d = null;
+				sdatView = null;
+				document.getElementById("viewSdat").style.display = "none";
+				document.getElementById("sdatSectionSelect").style.display = "none";
+				document.getElementById("sdatSeqSelect").style.display = "none";
+				document.getElementById("sdatVolLabel").style.display = "none";
+				document.getElementById("sdatVol").style.display = "none";
+				document.getElementById("sdatPlayBtn").style.display = "none";
+				document.getElementById("sdatStopBtn").style.display = "none";
 				document.getElementById("view2d").style.display = "none";
 				document.getElementById("viewText").style.display = "none";
 				document.getElementById("canvas3d").style.display = "";
@@ -617,6 +629,14 @@
 			// Switches to 2D rendering (images): stops 3D rendering.
 			function show2D() {
 				viewer = null;
+				sdatView = null;
+				document.getElementById("viewSdat").style.display = "none";
+				document.getElementById("sdatSectionSelect").style.display = "none";
+				document.getElementById("sdatSeqSelect").style.display = "none";
+				document.getElementById("sdatVolLabel").style.display = "none";
+				document.getElementById("sdatVol").style.display = "none";
+				document.getElementById("sdatPlayBtn").style.display = "none";
+				document.getElementById("sdatStopBtn").style.display = "none";
 				document.getElementById("viewText").style.display = "none";
 				document.getElementById("canvas3d").style.display = "none";
 				document.getElementById("animSelect").style.display = "none";
@@ -633,9 +653,46 @@
 				document.getElementById("view2d").style.display = "block";
 			}
 
+			var sdatView = null;
+			var sdatPlayer = null;
+
+			function showSdatView() {
+				viewer = null;
+				view2d = null;
+				document.getElementById("canvas3d").style.display = "none";
+				document.getElementById("view2d").style.display = "none";
+				document.getElementById("viewText").style.display = "none";
+				document.getElementById("animSelect").style.display = "none";
+				document.getElementById("palSelect").style.display = "none";
+				document.getElementById("texSelect").style.display = "none";
+				document.getElementById("ncgrSelect").style.display = "none";
+				document.getElementById("nclrSelect").style.display = "none";
+				document.getElementById("btxSelect").style.display = "none";
+				document.getElementById("bcaSelect").style.display = "none";
+				document.getElementById("btpSelect").style.display = "none";
+				document.getElementById("btaSelect").style.display = "none";
+				document.getElementById("animFps").style.display = "none";
+				document.getElementById("animFpsLabel").style.display = "none";
+				document.getElementById("sdatSectionSelect").style.display = "";
+				document.getElementById("sdatSeqSelect").style.display = "";
+				document.getElementById("sdatVolLabel").style.display = "";
+				document.getElementById("sdatVol").style.display = "";
+				document.getElementById("sdatPlayBtn").style.display = "";
+				document.getElementById("sdatStopBtn").style.display = "";
+				document.getElementById("viewSdat").style.display = "block";
+			}
+
 			function showTextView() {
 				viewer = null;
 				view2d = null;
+				sdatView = null;
+				document.getElementById("viewSdat").style.display = "none";
+				document.getElementById("sdatSectionSelect").style.display = "none";
+				document.getElementById("sdatSeqSelect").style.display = "none";
+				document.getElementById("sdatVolLabel").style.display = "none";
+				document.getElementById("sdatVol").style.display = "none";
+				document.getElementById("sdatPlayBtn").style.display = "none";
+				document.getElementById("sdatStopBtn").style.display = "none";
 				document.getElementById("canvas3d").style.display = "none";
 				document.getElementById("view2d").style.display = "none";
 				document.getElementById("animSelect").style.display = "none";
@@ -952,6 +1009,477 @@
 					document.getElementById("binHex").textContent = formatHexDump(new Uint8Array(buf), 65536);
 					setSel(el);
 					setStatus(path + "  (" + buf.byteLength + " bytes)");
+				} catch (err) {
+					console.error(err);
+					setStatus("Load error: " + (err && err.message ? err.message : err));
+				}
+			}
+
+			var sdatCourseMusic = null;
+
+			function buildCourseMusicMap() {
+				var map = Object.create(null);
+				if (typeof MKDSCONST !== "undefined" && MKDSCONST.COURSES) {
+					for (var i = 0; i < MKDSCONST.COURSES.length; i++) {
+						var c = MKDSCONST.COURSES[i];
+						var id = c.music;
+						if (!map[id]) map[id] = [];
+						map[id].push(c.name);
+					}
+				}
+				return map;
+			}
+
+			function sdatReadVarLen(data, pc) {
+				var start = pc;
+				var read = data[pc++];
+				var value = read & 0x7f;
+				while (read & 0x80) {
+					read = data[pc++];
+					value = (value << 7) | (read & 0x7f);
+				}
+				return { value: value, pc: pc, size: pc - start };
+			}
+
+			function sdatReadU16(data, pc) {
+				return data[pc] | (data[pc + 1] << 8);
+			}
+
+			function sdatReadU24(data, pc) {
+				return data[pc] | (data[pc + 1] << 8) | (data[pc + 2] << 16);
+			}
+
+			function sdatReadS16(data, pc) {
+				var v = sdatReadU16(data, pc);
+				if (v & 0x8000) v -= 0x10000;
+				return v;
+			}
+
+			function sdatHexAt(data, pc, len) {
+				var out = [];
+				for (var i = 0; i < len && pc + i < data.length; i++) {
+					var b = data[pc + i];
+					out.push((b < 16 ? "0" : "") + b.toString(16));
+				}
+				return out.join(" ");
+			}
+
+			function sdatDisasmLine(addr, bytes, text) {
+				var off = ("0000" + addr.toString(16)).slice(-4);
+				return off + "  " + bytes.padEnd(20, " ") + "  " + text;
+			}
+
+			function disassembleSseq(data, startPc, maxLines) {
+				var lines = [];
+				var pc = startPc || 0;
+				var end = data.length;
+				while (pc < end && lines.length < (maxLines || 512)) {
+					var op = data[pc];
+					var addr = pc;
+					pc++;
+					if (op === 0) {
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 1), "nop"));
+						continue;
+					}
+					if (op < 0x80) {
+						var vel = data[pc++];
+						var lenR = sdatReadVarLen(data, pc);
+						pc = lenR.pc;
+						var lenTxt = lenR.value === 0 ? "inf" : String(lenR.value);
+						var total = pc - addr;
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, total), "note " + op + "  vel=" + vel + "  len=" + lenTxt));
+						continue;
+					}
+					if (op === 0x80 || op === 0x81) {
+						var vl = sdatReadVarLen(data, pc);
+						pc = vl.pc;
+						var total = pc - addr;
+						lines.push(
+							sdatDisasmLine(
+								addr,
+								sdatHexAt(data, addr, total),
+								(op === 0x80 ? "rest" : "prog/bank") +
+									"  " +
+									vl.value +
+									(op === 0x81 ? "  prog=" + (vl.value & 0x7f) + " bank=" + (vl.value >> 7) : "")
+							)
+						);
+						continue;
+					}
+					if (op === 0x93) {
+						var track = data[pc++];
+						var target = sdatReadU24(data, pc);
+						pc += 3;
+						lines.push(
+							sdatDisasmLine(
+								addr,
+								sdatHexAt(data, addr, 5),
+								"track " + track + "  @" + ("0000" + target.toString(16)).slice(-4)
+							)
+						);
+						continue;
+					}
+					if (op === 0x94 || op === 0x95) {
+						var jump = sdatReadU24(data, pc);
+						pc += 3;
+						lines.push(
+							sdatDisasmLine(
+								addr,
+								sdatHexAt(data, addr, 4),
+								(op === 0x94 ? "jump" : "call") + "  @" + ("0000" + jump.toString(16)).slice(-4)
+							)
+						);
+						continue;
+					}
+					if (op === 0xfe) {
+						var mask = sdatReadU16(data, pc);
+						pc += 2;
+						var bits = [];
+						for (var b = 0; b < 16; b++) if (mask & (1 << b)) bits.push(b);
+						lines.push(
+							sdatDisasmLine(addr, sdatHexAt(data, addr, 3), "tracks  0x" + mask.toString(16) + "  [" + bits.join(",") + "]")
+						);
+						continue;
+					}
+					if (op === 0xff || op === 0xfc || op === 0xfd) {
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 1), op === 0xff ? "end" : op === 0xfc ? "loop-end" : "ret"));
+						continue;
+					}
+					if (op === 0xe1) {
+						var tempo = sdatReadU16(data, pc);
+						pc += 2;
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 3), "tempo  " + tempo));
+						continue;
+					}
+					if (op === 0xe0) {
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 3), "mod-delay  " + sdatReadU16(data, pc)));
+						pc += 2;
+						continue;
+					}
+					if (op === 0xe3) {
+						var sweep = sdatReadS16(data, pc);
+						pc += 2;
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 3), "sweep  " + sweep));
+						continue;
+					}
+					if (op >= 0xb0 && op <= 0xb6) {
+						var v0 = data[pc++];
+						var v1 = data[pc++];
+						var ops = ["=", "+=", "-=", "*=", "/=", "shift", "rand"];
+						lines.push(
+							sdatDisasmLine(
+								addr,
+								sdatHexAt(data, addr, 3),
+								"var" + ops[op - 0xb0] + "  v" + v0 + "  " + (v1 >= 0x80 ? v1 - 256 : v1)
+							)
+						);
+						continue;
+					}
+					if (op >= 0xb8 && op <= 0xbd) {
+						var cv0 = data[pc++];
+						var cv1 = data[pc++];
+						var cmp = ["==", ">=", ">", "<=", "<", "!="];
+						lines.push(
+							sdatDisasmLine(
+								addr,
+								sdatHexAt(data, addr, 3),
+								"if " + cmp[op - 0xb8] + "  v" + cv0 + "  " + (cv1 >= 0x80 ? cv1 - 256 : cv1)
+							)
+						);
+						continue;
+					}
+					if (op === 0xa2) {
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 1), "if-skip-next"));
+						continue;
+					}
+					if (op === 0xa0 || op === 0xa1) {
+						var cmd = data[pc++];
+						var extra = 0;
+						if (cmd < 0x80 || (cmd >= 0xb0 && cmd <= 0xbd)) extra = 1;
+						if (op === 0xa0) {
+							var a0min = sdatReadS16(data, pc + extra);
+							var a0max = sdatReadS16(data, pc + extra + 2);
+							pc += extra + 4;
+							lines.push(
+								sdatDisasmLine(
+									addr,
+									sdatHexAt(data, addr, pc - addr),
+									"random  cmd=0x" + cmd.toString(16) + "  " + a0min + ".." + a0max
+								)
+							);
+						} else {
+							var varIdx = data[pc + extra];
+							pc += extra + 1;
+							lines.push(
+								sdatDisasmLine(
+									addr,
+									sdatHexAt(data, addr, pc - addr),
+									"from-var  cmd=0x" + cmd.toString(16) + "  v" + varIdx
+								)
+							);
+						}
+						continue;
+					}
+					if (op >= 0xc0 && op <= 0xcf) {
+						var cnames = {
+							0xc0: "pan",
+							0xc1: "vol",
+							0xc2: "main-vol",
+							0xc3: "transpose",
+							0xc4: "pitch-bend",
+							0xc5: "bend-range",
+							0xc6: "prio",
+							0xc7: "note-wait",
+							0xc8: "tie",
+							0xc9: "porta",
+							0xca: "mod-depth",
+							0xcb: "mod-speed",
+							0xcc: "mod-type",
+							0xcd: "mod-range",
+							0xce: "porta-on",
+							0xcf: "porta-time",
+						};
+						var cv = data[pc++];
+						lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 2), (cnames[op] || "cmd") + "  " + cv));
+						continue;
+					}
+					if (op >= 0xd0 && op <= 0xd4) {
+						var dnames = { 0xd0: "attack", 0xd1: "decay", 0xd2: "sustain", 0xd3: "release", 0xd4: "loop-start" };
+						if (op === 0xd4) {
+							var loopVl = sdatReadVarLen(data, pc);
+							pc = loopVl.pc;
+							lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, pc - addr), "loop-start  " + loopVl.value));
+						} else {
+							var dv = data[pc++];
+							lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 2), (dnames[op] || "adsr") + "  " + dv));
+						}
+						continue;
+					}
+					lines.push(sdatDisasmLine(addr, sdatHexAt(data, addr, 1), "unk 0x" + op.toString(16)));
+				}
+				if (pc < end) lines.push("… truncated at " + lines.length + " lines (" + (end - pc) + " bytes remain)");
+				return lines.join("\n");
+			}
+
+			function formatSdatSummary(sd, path) {
+				var info = sd.sections["$INFO"];
+				var fat = sd.sections["$FAT "];
+				var lines = [];
+				lines.push(path);
+				lines.push("SDAT archive");
+				if (fat) lines.push("FAT entries: " + fat.length);
+				if (info) {
+					lines.push("SSEQ: " + (info[0] ? info[0].length : 0));
+					lines.push("SSAR: " + (info[1] ? info[1].length : 0));
+					lines.push("SBNK: " + (info[2] ? info[2].length : 0));
+					lines.push("SWAR: " + (info[3] ? info[3].length : 0));
+					lines.push("STRM: " + (info[7] ? info[7].length : 0));
+				}
+				lines.push("");
+				lines.push("Course music IDs (MKDSCONST):");
+				if (!sdatCourseMusic) sdatCourseMusic = buildCourseMusicMap();
+				var keys = Object.keys(sdatCourseMusic)
+					.map(Number)
+					.sort(function (a, b) {
+						return a - b;
+					});
+				for (var k = 0; k < keys.length; k++) {
+					var id = keys[k];
+					lines.push("  #" + id + "  →  " + sdatCourseMusic[id].join(", "));
+				}
+				return lines.join("\n");
+			}
+
+			function formatSseqEntryMeta(entry, index) {
+				var lines = [];
+				lines.push("SSEQ #" + index);
+				if (!sdatCourseMusic) sdatCourseMusic = buildCourseMusicMap();
+				if (sdatCourseMusic[index]) lines.push("Used by: " + sdatCourseMusic[index].join(", "));
+				lines.push("fileID: " + entry.fileID);
+				lines.push("bank: " + entry.bank);
+				lines.push("vol: " + entry.vol + "  cpr: " + entry.cpr + "  ppr: " + entry.ppr + "  ply: " + entry.ply);
+				lines.push("unknown: " + entry.unknown);
+				lines.push("data size: " + entry.seq.data.length + " bytes");
+				lines.push("pc: 0x" + (entry.pc || 0).toString(16));
+				return lines.join("\n");
+			}
+
+			function formatSsarEntryMeta(arc, arcIndex, seqIndex) {
+				var entry = arc.arc.entries[seqIndex];
+				var lines = [];
+				lines.push("SSAR #" + arcIndex + "  seq #" + seqIndex);
+				lines.push("fileID: " + arc.fileID);
+				lines.push("entries: " + arc.arc.entries.length);
+				lines.push("bank: " + entry.bank);
+				lines.push("vol: " + entry.vol + "  cpr: " + entry.cpr + "  ppr: " + entry.ppr + "  ply: " + entry.ply);
+				lines.push("pc: 0x" + entry.pc.toString(16));
+				lines.push("data size: " + arc.arc.data.length + " bytes (shared)");
+				return lines.join("\n");
+			}
+
+			function formatSbnkEntryMeta(entry, index) {
+				var lines = [];
+				lines.push("SBNK #" + index);
+				lines.push("fileID: " + entry.fileID);
+				lines.push("wave arcs: " + entry.waveArcs.join(", "));
+				return lines.join("\n");
+			}
+
+			function formatSwarEntryMeta(entry, index) {
+				var lines = [];
+				lines.push("SWAR #" + index);
+				lines.push("fileID: " + entry.fileID);
+				if (entry.arc && entry.arc.samples) lines.push("waves: " + entry.arc.samples.length);
+				return lines.join("\n");
+			}
+
+			function populateSdatSeqSelect(sd) {
+				var sel = document.getElementById("sdatSeqSelect");
+				var section = document.getElementById("sdatSectionSelect").value;
+				var opts = [];
+				var info = sd.sections["$INFO"];
+				if (!info) {
+					sel.innerHTML = "";
+					return;
+				}
+				if (!sdatCourseMusic) sdatCourseMusic = buildCourseMusicMap();
+				if (section === "sseq") {
+					for (var i = 0; i < info[0].length; i++) {
+						var label = "#" + i;
+						if (sdatCourseMusic[i]) label += "  " + sdatCourseMusic[i][0];
+						opts.push('<option value="' + i + '">' + label + "</option>");
+					}
+				} else if (section === "ssar") {
+					for (var a = 0; a < info[1].length; a++) {
+						var arc = info[1][a];
+						for (var s = 0; s < arc.arc.entries.length; s++) {
+							opts.push('<option value="' + a + ":" + s + '">arc #' + a + " seq #" + s + "</option>");
+						}
+					}
+				} else if (section === "sbnk") {
+					for (var b = 0; b < info[2].length; b++)
+						opts.push('<option value="' + b + '">#' + b + "  fileID=" + info[2][b].fileID + "</option>");
+				} else if (section === "swar") {
+					for (var w = 0; w < info[3].length; w++)
+						opts.push('<option value="' + w + '">#' + w + "  fileID=" + info[3][w].fileID + "</option>");
+				}
+				sel.innerHTML = opts.join("");
+			}
+
+			function renderSdatDetail() {
+				if (!sdatView) return;
+				var sd = sdatView.sdat;
+				var section = document.getElementById("sdatSectionSelect").value;
+				var selVal = document.getElementById("sdatSeqSelect").value;
+				var summary = document.getElementById("sdatSummary");
+				var disasm = document.getElementById("sdatDisasm");
+				var hex = document.getElementById("sdatHex");
+				var info = sd.sections["$INFO"];
+				summary.textContent = formatSdatSummary(sd, sdatView.path);
+
+				if (section === "sseq" && info && info[0][selVal]) {
+					var entry = info[0][parseInt(selVal, 10)];
+					var data = entry.seq.data;
+					var pc = entry.pc || 0;
+					document.getElementById("sdatEntryMeta").textContent = formatSseqEntryMeta(entry, parseInt(selVal, 10));
+					disasm.textContent = disassembleSseq(data, pc, 800);
+					hex.textContent = formatHexDump(data, 4096);
+					document.getElementById("sdatPlayBtn").disabled = false;
+					return;
+				}
+				if (section === "ssar" && selVal.indexOf(":") !== -1) {
+					var parts = selVal.split(":");
+					var arcN = parseInt(parts[0], 10);
+					var seqN = parseInt(parts[1], 10);
+					var arc = info[1][arcN];
+					var ssarEntry = arc.arc.entries[seqN];
+					var ssarData = arc.arc.data;
+					document.getElementById("sdatEntryMeta").textContent = formatSsarEntryMeta(arc, arcN, seqN);
+					disasm.textContent = disassembleSseq(ssarData, ssarEntry.pc, 800);
+					hex.textContent = formatHexDump(ssarData, 4096);
+					document.getElementById("sdatPlayBtn").disabled = false;
+					return;
+				}
+				if (section === "sbnk" && info && info[2][selVal]) {
+					document.getElementById("sdatEntryMeta").textContent = formatSbnkEntryMeta(
+						info[2][parseInt(selVal, 10)],
+						parseInt(selVal, 10)
+					);
+					disasm.textContent = "(no disassembly for instrument banks)";
+					hex.textContent = prettyJson(info[2][parseInt(selVal, 10)].bank);
+					document.getElementById("sdatPlayBtn").disabled = true;
+					return;
+				}
+				if (section === "swar" && info && info[3][selVal]) {
+					document.getElementById("sdatEntryMeta").textContent = formatSwarEntryMeta(
+						info[3][parseInt(selVal, 10)],
+						parseInt(selVal, 10)
+					);
+					disasm.textContent = "(no disassembly for wave archives)";
+					hex.textContent = prettyJson(info[3][parseInt(selVal, 10)].arc);
+					document.getElementById("sdatPlayBtn").disabled = true;
+					return;
+				}
+				document.getElementById("sdatEntryMeta").textContent = "";
+				disasm.textContent = "";
+				hex.textContent = "";
+				document.getElementById("sdatPlayBtn").disabled = true;
+			}
+
+			function sdatStopPlayback() {
+				try {
+					nitroAudio.killAll();
+				} catch (e) {}
+				sdatPlayer = null;
+			}
+
+			function sdatPlaySelected() {
+				if (!sdatView) return;
+				var section = document.getElementById("sdatSectionSelect").value;
+				var selVal = document.getElementById("sdatSeqSelect").value;
+				var vol = parseFloat(document.getElementById("sdatVol").value);
+				if (!Number.isFinite(vol)) vol = 2;
+				sdatStopPlayback();
+				try {
+					if (nitroAudio.ctx && nitroAudio.ctx.state === "suspended") nitroAudio.ctx.resume();
+				} catch (e) {}
+				if (section === "sseq") {
+					sdatPlayer = nitroAudio.playSound(parseInt(selVal, 10), { volume: vol }, null, null);
+				} else if (section === "ssar" && selVal.indexOf(":") !== -1) {
+					var parts = selVal.split(":");
+					sdatPlayer = nitroAudio.playSound(parseInt(parts[1], 10), { volume: vol }, parseInt(parts[0], 10), null);
+				}
+				if (!sdatPlayer) setStatus("Failed to play sequence");
+			}
+
+			function setupSdatControls() {
+				document.getElementById("sdatSectionSelect").addEventListener("change", function () {
+					if (!sdatView) return;
+					populateSdatSeqSelect(sdatView.sdat);
+					renderSdatDetail();
+				});
+				document.getElementById("sdatSeqSelect").addEventListener("change", renderSdatDetail);
+				document.getElementById("sdatPlayBtn").addEventListener("click", sdatPlaySelected);
+				document.getElementById("sdatStopBtn").addEventListener("click", sdatStopPlayback);
+			}
+
+			function loadSDAT(path, el) {
+				try {
+					var buf = readROMFile(path);
+					var sd = new sdat(buf);
+					sdatView = { path: path, sdat: sd };
+					sdatStopPlayback();
+					nitroAudio.musicOnlyMode = false;
+					nitroAudio.init(sd);
+					showSdatView();
+					document.getElementById("sdatSectionSelect").value = "sseq";
+					populateSdatSeqSelect(sd);
+					if (document.getElementById("sdatSeqSelect").options.length > 0) {
+						document.getElementById("sdatSeqSelect").selectedIndex = 0;
+					}
+					renderSdatDetail();
+					setSel(el);
+					setStatus(path + "  (SDAT, " + buf.byteLength + " bytes)");
 				} catch (err) {
 					console.error(err);
 					setStatus("Load error: " + (err && err.message ? err.message : err));
@@ -1696,6 +2224,9 @@
 
 			function renderLoop(now) {
 				requestAnimationFrame(renderLoop);
+				try {
+					nitroAudio.tick();
+				} catch (e) {}
 				resizeCanvas();
 				gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
@@ -2222,6 +2753,90 @@
 				padding-bottom: 12px;
 			}
 
+			#viewSdat {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				overflow: auto;
+				display: none;
+				padding: 40px 12px 12px;
+				background: #0a0a12;
+			}
+
+			#sdatSummary,
+			#sdatEntryMeta,
+			#sdatDisasm,
+			#sdatHex {
+				margin: 0 0 12px;
+				font-family: monospace;
+				font-size: 12px;
+				line-height: 1.4;
+				color: #ccc;
+				white-space: pre-wrap;
+				word-break: break-word;
+			}
+
+			#sdatSummary {
+				color: #c9f;
+				border-bottom: 1px solid #333;
+				padding-bottom: 12px;
+			}
+
+			#sdatEntryMeta {
+				color: #9fd;
+				border-bottom: 1px solid #333;
+				padding-bottom: 8px;
+			}
+
+			#sdatDisasm {
+				color: #ddf;
+			}
+
+			#sdatSectionSelect,
+			#sdatSeqSelect {
+				background: #1d1d3a;
+				color: #fff;
+				border: 1px solid #2e2e6f;
+				font-family: monospace;
+				font-size: 12px;
+				max-width: 320px;
+			}
+
+			#sdatPlayBtn,
+			#sdatStopBtn {
+				background: #1d3a1d;
+				color: #fff;
+				border: 1px solid #2e5d2e;
+				font-family: monospace;
+				font-size: 12px;
+				cursor: pointer;
+			}
+
+			#sdatStopBtn {
+				background: #3a1d1d;
+				border-color: #5d2e2e;
+			}
+
+			#sdatVol {
+				background: #121212;
+				color: #ddd;
+				border: 1px solid #333;
+				font-family: monospace;
+				font-size: 12px;
+				width: 40px;
+				padding: 2px 4px;
+			}
+
+			#sdatVolLabel {
+				color: #888;
+			}
+
+			.f.sdat {
+				color: #c9f;
+			}
+
 			#palSelect {
 				background: #3a1d3a;
 				color: #fff;
@@ -2351,9 +2966,26 @@
 					<pre id="binSummary"></pre>
 					<pre id="binHex"></pre>
 				</div>
+				<div id="viewSdat" style="display: none">
+					<pre id="sdatSummary"></pre>
+					<pre id="sdatEntryMeta"></pre>
+					<pre id="sdatDisasm"></pre>
+					<pre id="sdatHex"></pre>
+				</div>
 				<div id="topbar">
 					<label id="animFpsLabel" for="animFps">FPS</label>
 					<input id="animFps" type="number" min="1" max="240" step="1" value="60" />
+					<select id="sdatSectionSelect" style="display: none">
+						<option value="sseq">SSEQ</option>
+						<option value="ssar">SSAR</option>
+						<option value="sbnk">SBNK</option>
+						<option value="swar">SWAR</option>
+					</select>
+					<select id="sdatSeqSelect" style="display: none"></select>
+					<label id="sdatVolLabel" for="sdatVol" style="display: none">Vol</label>
+					<input id="sdatVol" type="number" min="0" max="4" step="0.1" value="2" style="display: none" />
+					<button id="sdatPlayBtn" type="button" style="display: none">Play</button>
+					<button id="sdatStopBtn" type="button" style="display: none">Stop</button>
 					<select id="animSelect" style="display: none"></select>
 					<select id="btxSelect" style="display: none"></select>
 					<select id="bcaSelect" style="display: none"></select>

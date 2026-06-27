@@ -405,7 +405,11 @@ export class Item {
 		if (this.controller.draw) {
 			this.controller.draw(mvMatrix, pMatrix);
 		} else {
-			const mat = mat4.translate(mat4.create(), mvMatrix, vec3.add(vec3.create(), this.pos, [0, this.colRadius * this.xyScale[1], 0]));
+			const mat = mat4.translate(
+				mat4.create(),
+				mvMatrix,
+				vec3.add(vec3.create(), this.pos, [0, this.colRadius * this.xyScale[1], 0])
+			);
 
 			this._spritify(mat);
 			const scale = 6 * this.colRadius * (1 - this.holdTime / 7);
