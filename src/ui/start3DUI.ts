@@ -34,8 +34,8 @@ export class Start3DUI implements SceneEntity {
 		this.buildOrtho(nitroRender.getViewWidth(), nitroRender.getViewHeight());
 		this.lastWidth = 0;
 
-		let bmdFile = this.scene.gameRes.RaceLoc.getFile("start.nsbmd")!;
-		let bcaFile = this.scene.gameRes.Race.getFile("start.nsbca")!;
+		const bmdFile = this.scene.gameRes.RaceLoc.getFile("start.nsbmd")!;
+		const bcaFile = this.scene.gameRes.Race.getFile("start.nsbca")!;
 
 		this.bmd = new nsbmd(bmdFile);
 		this.bca = new nsbca(bcaFile);
@@ -51,14 +51,14 @@ export class Start3DUI implements SceneEntity {
 
 	private buildOrtho(width: number, height: number) {
 		this.lastWidth = width;
-		let ratio = width / height;
-		let w = ((this.param[3] - this.param[2]) * ratio) / 2;
+		const ratio = width / height;
+		const w = ((this.param[3] - this.param[2]) * ratio) / 2;
 		mat4.ortho(this.proj, -w, w, this.param[2], this.param[3], -0.001, 10);
 	}
 
 	draw(view: mat4) {
 		if (nitroRender.flagShadow || this.animFrame < 0) return;
-		let width = nitroRender.getViewWidth();
+		const width = nitroRender.getViewWidth();
 		if (width != this.lastWidth) {
 			this.buildOrtho(width, nitroRender.getViewHeight());
 		}

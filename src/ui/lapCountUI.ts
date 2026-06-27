@@ -86,7 +86,7 @@ export class LapCountUI implements SceneEntity {
 	}
 
 	update() {
-		let currentlap = this.kart.lapNumber < MKDSCONST.MAX_LAP ? this.kart.lapNumber : MKDSCONST.MAX_LAP;
+		const currentlap = this.kart.lapNumber < MKDSCONST.MAX_LAP ? this.kart.lapNumber : MKDSCONST.MAX_LAP;
 		if (currentlap != this.lap) {
 			this.lap = currentlap;
 			this.flattenerCurrentLap.loadTextue(32 + this.lap);

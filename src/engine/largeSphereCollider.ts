@@ -26,7 +26,7 @@ export class lsc {
 		//used for shells, bananas and spammable items. Much faster than sphere sweep. Error used to avoid falling through really small seams between tris.
 		error = error == null ? 0 : error;
 		lsc.t = 1;
-		let tris = lsc._getTriList(pos, dir, scn.kcl);
+		const tris = lsc._getTriList(pos, dir, scn.kcl);
 		lsc.colPlane = null;
 		lsc.colPoint = null; //can be calculated from t, but we calculate it anyway so why not include
 		lsc.colO = null;
@@ -34,8 +34,8 @@ export class lsc {
 		lsc._rayVTris(pos, dir, tris, null, ignoreList, null, error);
 
 		for (let i = 0; i < scn.colEnt.length; i++) {
-			let c = scn.colEnt[i];
-			let col = c.getCollision();
+			const c = scn.colEnt[i];
+			const col = c.getCollision();
 
 			if (vec3.distance(pos, c.pos) < c.colRad) {
 				lsc._rayVTris(pos, dir, col.tris, col.mat, ignoreList, c, error, col.frame);
@@ -92,9 +92,9 @@ export class lsc {
 		//used for karts or things that need to occupy physical space.
 		lsc.t = 1;
 
-		let ed = vec3.divide([0, 0, 0], [1, 1, 1], eDimensions);
+		const ed = vec3.divide([0, 0, 0], [1, 1, 1], eDimensions);
 
-		let tris = lsc._getTriList(pos, dir, scn.kcl);
+		const tris = lsc._getTriList(pos, dir, scn.kcl);
 
 		const oPos = pos;
 
@@ -109,8 +109,8 @@ export class lsc {
 		lsc._ellipseVTris(ePos, eDir, tris, eDimensions, ignoreList, true);
 
 		for (let i = 0; i < scn.colEnt.length; i++) {
-			let c = scn.colEnt[i];
-			let col = c.getCollision();
+			const c = scn.colEnt[i];
+			const col = c.getCollision();
 
 			if (vec3.distance(oPos, c.pos) < c.colRad) {
 				lsc._ellipseVTris(
@@ -129,7 +129,7 @@ export class lsc {
 		const colPoint = lsc.colPoint as vec3 | null;
 		const planeNormal = lsc.planeNormal as vec3 | null;
 		if (colPlane != null && colPoint != null && planeNormal != null) {
-			let norm = vec3.scale([0, 0, 0], eDir, lsc.t);
+			const norm = vec3.scale([0, 0, 0], eDir, lsc.t);
 			vec3.add(norm, ePos, norm);
 			vec3.sub(norm, norm, colPoint);
 
@@ -152,23 +152,23 @@ export class lsc {
 	static pointInTriangle(tri: Pick<lsc_collision_triangle, "Vertices">, point: vec3, error: number) {
 		//barycentric check
 		//compute direction vectors to the other verts and the point
-		let v0 = vec3.sub([0, 0, 0], tri.Vertices[2], tri.Vertices[0]);
-		let v1 = vec3.sub([0, 0, 0], tri.Vertices[1], tri.Vertices[0]);
-		let v2 = vec3.sub([0, 0, 0], point, tri.Vertices[0]);
+		const v0 = vec3.sub([0, 0, 0], tri.Vertices[2], tri.Vertices[0]);
+		const v1 = vec3.sub([0, 0, 0], tri.Vertices[1], tri.Vertices[0]);
+		const v2 = vec3.sub([0, 0, 0], point, tri.Vertices[0]);
 
 		//we need to find u and v across the two vectors v0 and v1 such that adding them will result in our point's position
 		//where the unit length of both vectors v0 and v1 is 1, the sum of both u and v should not exceed 1 and neither should be negative
 
-		let dot00 = vec3.dot(v0, v0);
-		let dot01 = vec3.dot(v0, v1);
-		let dot02 = vec3.dot(v0, v2);
-		let dot11 = vec3.dot(v1, v1);
-		let dot12 = vec3.dot(v1, v2);
+		const dot00 = vec3.dot(v0, v0);
+		const dot01 = vec3.dot(v0, v1);
+		const dot02 = vec3.dot(v0, v2);
+		const dot11 = vec3.dot(v1, v1);
+		const dot12 = vec3.dot(v1, v2);
 		//dot11 and dot00 result in the square of the distance for v0 and v1
 
-		let inverse = 1 / (dot00 * dot11 - dot01 * dot01);
-		let u = (dot11 * dot02 - dot01 * dot12) * inverse;
-		let v = (dot00 * dot12 - dot01 * dot02) * inverse;
+		const inverse = 1 / (dot00 * dot11 - dot01 * dot01);
+		const u = (dot11 * dot02 - dot01 * dot12) * inverse;
+		const v = (dot00 * dot12 - dot01 * dot02) * inverse;
 
 		return u >= -error && v >= -error && u + v < 1 + error;
 	}
@@ -192,7 +192,7 @@ export class lsc {
 				if (tri.colFrame === colFrame && tri.cache) {
 					tri = tri.cache;
 				} else {
-					let oT = tri;
+					const oT = tri;
 					tri = lsc._modTri(tris[i], mat);
 					oT.cache = tri;
 					oT.colFrame = colFrame;
@@ -201,14 +201,14 @@ export class lsc {
 
 			if (ignoreList.indexOf(tri) != -1) continue;
 
-			let planeConst = -vec3.dot(tri.Normal, tri.Vertices[0]);
-			let dist = vec3.dot(tri.Normal, pos) + planeConst;
-			let modDir = vec3.dot(tri.Normal, dir);
+			const planeConst = -vec3.dot(tri.Normal, tri.Vertices[0]);
+			const dist = vec3.dot(tri.Normal, pos) + planeConst;
+			const modDir = vec3.dot(tri.Normal, dir);
 			if (dist < 0 || modDir == 0) continue; //can't collide with back side of polygons! also can't intersect plane with ray perpendicular to plane
-			let newT = -dist / modDir;
+			const newT = -dist / modDir;
 			if (newT > 0 && newT < lsc.t) {
 				//we have a winner! check if the plane intersecion point is in the triangle.
-				let pt = vec3.add([0, 0, 0], pos, vec3.scale([0, 0, 0], dir, newT));
+				const pt = vec3.add([0, 0, 0], pos, vec3.scale([0, 0, 0], dir, newT));
 				if (lsc.pointInTriangle(tri, pt, error)) {
 					lsc.t = newT;
 					lsc.colPlane = tri;
@@ -220,7 +220,7 @@ export class lsc {
 	}
 
 	private static _transformMat3Normal(out: vec3, a: vec3, m: mat4): vec3 {
-		let x = a[0],
+		const x = a[0],
 			y = a[1],
 			z = a[2];
 		out[0] = x * m[0] + y * m[4] + z * m[8];
@@ -276,13 +276,13 @@ export class lsc {
 			//only if this happens do we check if the point is in the triangle.
 			//we would also only do sphere sweep if this happens.
 
-			let oTri = tris[i];
+			const oTri = tris[i];
 			if (ignoreList.includes(oTri)) continue;
 
-			let tri = eDims ? lsc._scaleTri(tris[i], mat as vec3) : lsc._modTri(tris[i], mat as mat4);
-			let planeConst = -vec3.dot(tri.Normal, tri.Vertices[0]);
-			let dist = vec3.dot(tri.Normal, pos) + planeConst;
-			let modDir = vec3.dot(tri.Normal, dir);
+			const tri = eDims ? lsc._scaleTri(tris[i], mat as vec3) : lsc._modTri(tris[i], mat as mat4);
+			const planeConst = -vec3.dot(tri.Normal, tri.Vertices[0]);
+			const dist = vec3.dot(tri.Normal, pos) + planeConst;
+			const modDir = vec3.dot(tri.Normal, dir);
 
 			if (dist < 0) continue; //can't collide with back side of polygons! also can't intersect plane with ray perpendicular to plane
 
@@ -305,7 +305,7 @@ export class lsc {
 
 			if (t0 > t1) {
 				//make sure t0 is smallest value
-				let temp = t1;
+				const temp = t1;
 				t1 = t0;
 				t0 = temp;
 			}
@@ -322,10 +322,10 @@ export class lsc {
 					embedded = true;
 					t0 = 0;
 				}
-				let newT = t0;
+				const newT = t0;
 
 				//sphere intersects plane of triangle
-				let pt: vec3 = [0, 0, 0];
+				const pt: vec3 = [0, 0, 0];
 				if (embedded) {
 					vec3.sub(pt, pos, vec3.scale([0, 0, 0], tri.Normal, dist));
 				} else {
@@ -345,8 +345,8 @@ export class lsc {
 
 				//no inside intersection check vertices:
 				for (let j = 0; j <= 2; j++) {
-					let vert = vec3.sub([0, 0, 0], pos, tri.Vertices[j]);
-					let root = lsc._getSmallestRoot(vec3.dot(dir, dir), 2 * vec3.dot(dir, vert), vec3.dot(vert, vert) - 1, lsc.t);
+					const vert = vec3.sub([0, 0, 0], pos, tri.Vertices[j]);
+					const root = lsc._getSmallestRoot(vec3.dot(dir, dir), 2 * vec3.dot(dir, vert), vec3.dot(vert, vert) - 1, lsc.t);
 					if (root != null) {
 						lsc.t = root;
 						lsc.colPlane = oTri;
@@ -360,17 +360,17 @@ export class lsc {
 				//... and lines
 
 				for (let j = 0; j <= 2; j++) {
-					let vert = tri.Vertices[j];
-					let nextV = tri.Vertices[(j + 1) % 3];
+					const vert = tri.Vertices[j];
+					const nextV = tri.Vertices[(j + 1) % 3];
 
-					let distVert = vec3.sub([0, 0, 0], vert, pos);
-					let distLine = vec3.sub([0, 0, 0], nextV, vert);
+					const distVert = vec3.sub([0, 0, 0], vert, pos);
+					const distLine = vec3.sub([0, 0, 0], nextV, vert);
 
-					let edgeDist = vec3.dot(distLine, distLine);
-					let edgeDotVelocity = vec3.dot(distLine, dir);
-					let edgeDotVert = vec3.dot(distVert, distLine);
+					const edgeDist = vec3.dot(distLine, distLine);
+					const edgeDotVelocity = vec3.dot(distLine, dir);
+					const edgeDotVert = vec3.dot(distVert, distLine);
 
-					let root = lsc._getSmallestRoot(
+					const root = lsc._getSmallestRoot(
 						edgeDist * -1 * vec3.dot(dir, dir) + edgeDotVelocity * edgeDotVelocity,
 						edgeDist * 2 * vec3.dot(dir, distVert) - 2 * edgeDotVelocity * edgeDotVert,
 						edgeDist * (1 - vec3.dot(distVert, distVert)) + edgeDotVert * edgeDotVert,
@@ -378,7 +378,7 @@ export class lsc {
 					);
 
 					if (root != null) {
-						let edgePos = (edgeDotVelocity * root - edgeDotVert) / edgeDist;
+						const edgePos = (edgeDotVelocity * root - edgeDotVert) / edgeDist;
 
 						if (edgePos >= 0 && edgePos <= 1) {
 							lsc.t = root;
@@ -405,7 +405,7 @@ export class lsc {
 
 			if (root1 > root2) {
 				//ensure root1 is smallest
-				let temp = root1;
+				const temp = root1;
 				root1 = root2;
 				root2 = temp;
 			}
@@ -422,7 +422,7 @@ export class lsc {
 
 	private static _getTriList(pos: vec3, diff: vec3, kclO: kcl): kcl_plane[] {
 		//gets tris from kcl around a line. currently only fetches from middle point of line, but should include multiple samples for large differences in future.
-		let sample = vec3.add([0, 0, 0], pos, vec3.scale([0, 0, 0], diff, 0.5));
+		const sample = vec3.add([0, 0, 0], pos, vec3.scale([0, 0, 0], diff, 0.5));
 		return kclO.getPlanesAt(sample[0], sample[1], sample[2]);
 	}
 }

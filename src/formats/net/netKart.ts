@@ -38,12 +38,12 @@ export class netKart {
 		netKart.saveVec3(view, off + 0x3d, k.kartTargetNormal);
 		netKart.saveVec3(view, off + 0x49, k.trackAttach);
 
-		let driftFlags = (k.drifting ? 1 : 0) | (k.driftMode << 1) | (k.driftLanded ? 8 : 0);
+		const driftFlags = (k.drifting ? 1 : 0) | (k.driftMode << 1) | (k.driftLanded ? 8 : 0);
 		view.setUint8(off + 0x55, driftFlags);
 
 		view.setUint8(off + 0x56, netKart.animNames.indexOf(k.animMode));
 
-		let binput = (input.accel ? 1 : 0) | (input.decel ? 2 : 0) | (input.drift ? 4 : 0);
+		const binput = (input.accel ? 1 : 0) | (input.decel ? 2 : 0) | (input.drift ? 4 : 0);
 		view.setUint8(off + 0x57, binput);
 
 		view.setFloat32(off + 0x58, input.turn, true);
@@ -109,7 +109,7 @@ export class netKart {
 	}
 
 	static _readVec3(view: DataView, off: number, vec: vec3) {
-		let first = view.getFloat32(off, true);
+		const first = view.getFloat32(off, true);
 		if (isNaN(first)) return null;
 		vec = vec3.create();
 		vec[0] = first;

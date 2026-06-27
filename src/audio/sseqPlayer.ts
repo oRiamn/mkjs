@@ -81,7 +81,7 @@ export class SSEQPlayer {
 		};
 
 		if (properties != null) {
-			for (let p in properties) {
+			for (const p in properties) {
 				if (Object.hasOwn(properties, p)) {
 					const t = p as keyof SSEQPlayer_properties;
 					const val = properties[t];

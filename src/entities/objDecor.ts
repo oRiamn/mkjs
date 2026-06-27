@@ -96,11 +96,11 @@ export abstract class ObjDecor implements SceneEntityObject {
 		if (this._staringAtCamera) {
 			this.angle[1] = 0;
 			for (let i = 0; i < r.mdl.length; i++) {
-				let bmd = r.mdl[i].bmd;
+				const bmd = r.mdl[i].bmd;
 				bmd.hasBillboards = true;
-				let models = bmd.modelData.objectData;
+				const models = bmd.modelData.objectData;
 				for (let j = 0; j < models.length; j++) {
-					let objs = models[j].objects.objectData;
+					const objs = models[j].objects.objectData;
 					for (let k = 0; k < objs.length; k++) {
 						objs[k].billboardMode = 2;
 					}

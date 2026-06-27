@@ -386,18 +386,18 @@ export class nkm implements MKJSDataFormator {
 			const pathLen = view.getInt16(off + 0x2, true);
 			const dest = [view.getInt8(off + 0x4)];
 
-			let tmp = view.getInt8(off + 0x5);
+			const tmp = view.getInt8(off + 0x5);
 			if (tmp != -1) dest.push(tmp);
 
-			let tmp2 = view.getInt8(off + 0x6);
+			const tmp2 = view.getInt8(off + 0x6);
 			if (tmp2 != -1) dest.push(tmp2);
 
 			const source = [view.getInt8(off + 0x7)];
 
-			let tmp3 = view.getInt8(off + 0x8);
+			const tmp3 = view.getInt8(off + 0x8);
 			if (tmp3 != -1) source.push(tmp3);
 
-			let tmp4 = view.getInt8(off + 0x9);
+			const tmp4 = view.getInt8(off + 0x9);
 			if (tmp4 != -1) source.push(tmp4);
 
 			const sectionOrder = view.getInt16(off + 0xa, true);
@@ -420,12 +420,12 @@ export class nkm implements MKJSDataFormator {
 			const dest = [];
 			let o = off + 4;
 			for (let i = 0; i < 8; i++) {
-				let tmp = view.getInt8(o++);
+				const tmp = view.getInt8(o++);
 				if (tmp != -1) dest.push(tmp);
 			}
 			const source = [];
 			for (let i = 0; i < 8; i++) {
-				let tmp = view.getInt8(o++);
+				const tmp = view.getInt8(o++);
 				if (tmp != -1) source.push(tmp);
 			}
 			const nextOff = o;
@@ -603,7 +603,7 @@ export class nkm implements MKJSDataFormator {
 
 		if (this.input != null) {
 			if (typeof this.input == "string") {
-				let xml = new XMLHttpRequest();
+				const xml = new XMLHttpRequest();
 				xml.responseType = "arraybuffer";
 				xml.open("GET", this.input, true);
 				xml.onload = () => {
@@ -618,14 +618,14 @@ export class nkm implements MKJSDataFormator {
 
 	load(buffer: MKJSDataInput) {
 		buffer = MKSUtils.prepareInput(buffer);
-		let view = new DataView(buffer);
+		const view = new DataView(buffer);
 		this.stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
 			MKSUtils.asciireadChar(view, 0x1) +
 			MKSUtils.asciireadChar(view, 0x2) +
 			MKSUtils.asciireadChar(view, 0x3);
 		this.version = view.getUint16(0x4, true);
-		let n = view.getUint16(0x6, true);
+		const n = view.getUint16(0x6, true);
 		let off = 8;
 		this.sections = {
 			OBJI: undefined!,
@@ -649,8 +649,8 @@ export class nkm implements MKJSDataFormator {
 		};
 
 		for (let i = 0; i < (n - 8) / 4; i++) {
-			let soff = view.getUint32(off, true);
-			let section = this._readSection(view, soff + n);
+			const soff = view.getUint32(off, true);
+			const section = this._readSection(view, soff + n);
 			if (Object.prototype.hasOwnProperty.call(this.sections, section.type)) {
 				const t = section.type as unknown as keyof nkm_Section;
 				(this.sections[t] as unknown) = section;
@@ -708,8 +708,8 @@ export class nkm implements MKJSDataFormator {
 				...stagobj,
 			};
 		} else {
-			let handler = this.handlers[type];
-			let obj: SectionObj = {
+			const handler = this.handlers[type];
+			const obj: SectionObj = {
 				type,
 				entries: [],
 			};
@@ -717,10 +717,10 @@ export class nkm implements MKJSDataFormator {
 				console.error(`Unknown NKM section type ${type}!`);
 				return obj;
 			}
-			let entN = view.getUint32(off + 0x4, true);
+			const entN = view.getUint32(off + 0x4, true);
 			off += 0x8;
 			for (let i = 0; i < entN; i++) {
-				let item = handler(view, off);
+				const item = handler(view, off);
 				obj.entries!.push(item);
 				off = item.nextOff;
 			}
@@ -729,8 +729,8 @@ export class nkm implements MKJSDataFormator {
 	}
 
 	private _readRGB(view: DataView, offset: number) {
-		let dat = view.getUint16(offset, true);
-		let col = [dat & 31, (dat >> 5) & 31, (dat >> 10) & 31];
+		const dat = view.getUint16(offset, true);
+		const col = [dat & 31, (dat >> 5) & 31, (dat >> 10) & 31];
 		return col;
 	}
 }

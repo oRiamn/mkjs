@@ -42,7 +42,7 @@ export class ObjWater implements SceneEntityObject {
 
 	draw(view: mat4, pMatrix: mat4) {
 		if (nitroRender.flagShadow) return;
-		let waterM = mat4.create();
+		const waterM = mat4.create();
 
 		gl.enable(gl.STENCIL_TEST);
 		gl.stencilMask(0xff);
@@ -50,7 +50,7 @@ export class ObjWater implements SceneEntityObject {
 		gl.stencilFunc(gl.ALWAYS, 1, 0xff);
 		gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE); //when depth test passes for water lower layer, pixel is already drawn, do not cover it with the white overlay (set stencil bit)
 
-		let height = this.pos[1] + this.wheight + Math.sin(this.frame / 150) * this.wosc; //0.106
+		const height = this.pos[1] + this.wheight + Math.sin(this.frame / 150) * this.wosc; //0.106
 
 		mat4.translate(waterM, view, [Math.sin(this.frame / 180) * 96, height, Math.cos(this.frame / 146) * 96]);
 		if (this.useAlpha) {

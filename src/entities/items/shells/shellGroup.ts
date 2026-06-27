@@ -30,7 +30,7 @@ class ShellGroup implements KartItemEntity {
 		this.item.holdPos = [0, 0, 0];
 		//create children
 		this.children = Array.from({ length: 3 }).map(() => {
-			let sub = this.scene.items.createItem(this.type, this.item.owner);
+			const sub = this.scene.items.createItem(this.type, this.item.owner);
 			sub.holdTime = 7;
 			sub.groupItem = this.item;
 			return sub;
@@ -63,11 +63,11 @@ class ShellGroup implements KartItemEntity {
 
 		let slot = 0;
 		for (let i = 0; i < children.length; i++) {
-			let child = children[i];
-			let angle = (slot / children.length + this.phase / this.rotationPeriod) * Math.PI * 2;
+			const child = children[i];
+			const angle = (slot / children.length + this.phase / this.rotationPeriod) * Math.PI * 2;
 			slot++;
-			let rad = this.item.owner.params.colRadius;
-			let dist = this.spinDist + rad;
+			const rad = this.item.owner.params.colRadius;
+			const dist = this.spinDist + rad;
 			child.holdPos = [-Math.sin(angle) * dist, -this.item.owner.params.colRadius, Math.cos(angle) * dist];
 		}
 		this.phase++;
@@ -76,7 +76,7 @@ class ShellGroup implements KartItemEntity {
 	}
 
 	release(forward: 1 | -1): boolean {
-		let toUse: Item | null | undefined = this.children.pop();
+		const toUse: Item | null | undefined = this.children.pop();
 		if (toUse && toUse != null) {
 			toUse.release(forward);
 		}

@@ -28,9 +28,9 @@ export class ItemController {
 	}
 
 	update(scene: courseScene) {
-		let itC = this.items.slice(0);
+		const itC = this.items.slice(0);
 		for (let i = 0; i < itC.length; i++) {
-			let ent = itC[i];
+			const ent = itC[i];
 			ent.update(scene);
 		}
 	}
@@ -38,7 +38,7 @@ export class ItemController {
 	draw(mvMatrix: mat4, pMatrix: mat4) {
 		nitroRender.setShadBias(0.001);
 		for (let i = 0; i < this.items.length; i++) {
-			let e = this.items[i];
+			const e = this.items[i];
 			e.draw(mvMatrix, pMatrix);
 		}
 		nitroRender.resetShadOff();
@@ -46,13 +46,13 @@ export class ItemController {
 
 	createItem(type: keyof items_IngameRes, kart: Kart) {
 		// KartItems._createItem
-		let item = new Item(this.scene, kart, type, this.curInd++);
+		const item = new Item(this.scene, kart, type, this.curInd++);
 		this.items.push(item);
 		return item;
 	}
 
 	removeItem(item: Item) {
-		let ind = this.items.indexOf(item);
+		const ind = this.items.indexOf(item);
 		if (ind !== -1) {
 			this.items.splice(ind, 1);
 		}

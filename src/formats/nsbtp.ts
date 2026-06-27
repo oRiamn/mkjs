@@ -75,7 +75,7 @@ export class nsbtp implements MKJSDataFormator {
 
 		this.mainOff = offset;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, offset + 0x0) +
 			MKSUtils.asciireadChar(view, offset + 0x1) +
 			MKSUtils.asciireadChar(view, offset + 0x2) +
@@ -86,10 +86,10 @@ export class nsbtp implements MKJSDataFormator {
 	}
 
 	private _animInfoHandler(view: DataView, offset: number): nsbtp_animadata {
-		let animOff = view.getUint32(offset, true);
+		const animOff = view.getUint32(offset, true);
 
-		let off = this.mainOff + animOff;
-		let obj = this._readAnimData(view, off);
+		const off = this.mainOff + animOff;
+		const obj = this._readAnimData(view, off);
 		obj.nextoff = offset + 4;
 
 		return obj;
@@ -121,7 +121,7 @@ export class nsbtp implements MKJSDataFormator {
 		//var tinfo = texInfoHandler(view, offset+4);
 		//8 bytes here? looks like texinfo
 
-		let duration = view.getUint16(offset, true);
+		const duration = view.getUint16(offset, true);
 		this.texTotal = view.getUint8(offset + 2);
 		this.palTotal = view.getUint8(offset + 3);
 		this.texNamesOff = view.getUint16(offset + 4, true);
@@ -150,7 +150,7 @@ export class nsbtp implements MKJSDataFormator {
 		}
 
 		//...then another nitro
-		let data = nitro.read3dInfo(view, offset + 8, (...args) => this._matInfoHandler(args[0], args[1]));
+		const data = nitro.read3dInfo(view, offset + 8, (...args) => this._matInfoHandler(args[0], args[1]));
 
 		return {
 			data: data,
@@ -182,9 +182,9 @@ export class nsbtp implements MKJSDataFormator {
 		//then (frame of these)
 		// 16char palname
 		// texture animations are bound to the material via the name of this block.
-		let nbframes = view.getUint32(offset, true);
+		const nbframes = view.getUint32(offset, true);
 		const flags = view.getUint16(offset + 4, true);
-		let offset2 = view.getUint16(offset + 6, true);
+		const offset2 = view.getUint16(offset + 6, true);
 		offset += 8;
 		const nextoff = offset;
 

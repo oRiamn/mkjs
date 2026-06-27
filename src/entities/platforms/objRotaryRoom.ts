@@ -37,7 +37,7 @@ export class ObjRotaryRoom implements SceneEntityObject, lsc_taget {
 	}
 
 	draw(view: mat4, pMatrix: mat4) {
-		let mat = mat4.translate(mat4.create(), view, this.pos);
+		const mat = mat4.translate(mat4.create(), view, this.pos);
 
 		mat4.scale(mat, mat, vec3.scale([0, 0, 0], this.scale, 16));
 
@@ -55,10 +55,10 @@ export class ObjRotaryRoom implements SceneEntityObject, lsc_taget {
 	}
 
 	getCollision() {
-		let inf = this._res.mdl[0].getCollisionModel(0, 0, 0);
+		const inf = this._res.mdl[0].getCollisionModel(0, 0, 0);
 		const tris = inf.dat;
 
-		let mat = mat4.translate(mat4.create(), mat4.create(), this.pos);
+		const mat = mat4.translate(mat4.create(), mat4.create(), this.pos);
 		mat4.scale(mat, mat, vec3.mul([0, 0, 0], [16 * inf.scale, 16 * inf.scale, 16 * inf.scale], this.scale));
 		mat4.rotateY(mat, mat, this.angle);
 
@@ -70,7 +70,7 @@ export class ObjRotaryRoom implements SceneEntityObject, lsc_taget {
 
 	moveWith(obj: Item) {
 		//used for collidable objects that move.
-		let p = vec3.sub([0, 0, 0], obj.pos, this.pos);
+		const p = vec3.sub([0, 0, 0], obj.pos, this.pos);
 		vec3.transformMat4(p, p, mat4.rotateY(mat4.create(), mat4.create(), this._dirVel));
 		vec3.add(obj.pos, this.pos, p);
 		// obj.physicalDir -= this._dirVel;

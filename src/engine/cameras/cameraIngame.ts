@@ -44,18 +44,18 @@ export class cameraIngame implements Camera {
 
 	getView(_scene: Scene): CamView {
 		const physBasis = this.kart.physBasis;
-		let loop = physBasis != null && physBasis.loop;
-		let basis = this._buildBasis();
+		const loop = physBasis != null && physBasis.loop;
+		const basis = this._buildBasis();
 		this._tweenVec3(this.camOffset, loop ? [0, 12, -57] : [0, 32, -48]);
-		let camPos = vec3.transformMat4([0, 0, 0], this.camOffset, basis);
-		let lookAtPos = vec3.transformMat4([0, 0, 0], this.lookAtOffset, basis);
+		const camPos = vec3.transformMat4([0, 0, 0], this.camOffset, basis);
+		const lookAtPos = vec3.transformMat4([0, 0, 0], this.lookAtOffset, basis);
 
 		vec3.scale(camPos, camPos, 1 / 1024);
 		vec3.scale(lookAtPos, lookAtPos, 1 / 1024);
 
 		this.mat = mat4.lookAt(mat4.create(), camPos, lookAtPos, this.kart.physBasis ? this.camNormal : [0, 1, 0]);
 
-		let kpos = vec3.clone(this.kart.pos);
+		const kpos = vec3.clone(this.kart.pos);
 		if (this.kart.drifting && !this.kart.driftLanded && this.kart.ylock > 0) kpos[1] -= this.kart.ylock;
 		mat4.translate(this.mat, this.mat, vec3.scale([0, 0, 0], kpos, -1 / 1024));
 
@@ -64,8 +64,8 @@ export class cameraIngame implements Camera {
 		vec3.normalize(this.camNormal, this.camNormal);
 
 		if (physBasis != null && physBasis.loop) {
-			let kartA = this.kart.physicalDir + this.kart.driftOff / 2;
-			let forward = [Math.sin(kartA), 0, -Math.cos(kartA)] as vec3;
+			const kartA = this.kart.physicalDir + this.kart.driftOff / 2;
+			const forward = [Math.sin(kartA), 0, -Math.cos(kartA)] as vec3;
 			vec3.transformMat4(forward, forward, physBasis.mat);
 			this.camAngle += this._dirDiff(Math.atan2(forward[0], -forward[2]), this.camAngle) * 0.075;
 			if (this.forwardNormal == null) {
@@ -81,7 +81,7 @@ export class cameraIngame implements Camera {
 
 		this.boostOff += ((this.kart.boostNorm + this.kart.boostMT > 0 ? 5 : 0) - this.boostOff) * 0.075;
 
-		let p = mat4.perspective(
+		const p = mat4.perspective(
 			mat4.create(),
 			((70 + this.boostOff) / 180) * Math.PI,
 			gl.viewportWidth / gl.viewportHeight,
@@ -89,7 +89,7 @@ export class cameraIngame implements Camera {
 			10000.0
 		);
 
-		let dist = 192;
+		const dist = 192;
 		this.targetShadowPos = vec3.add([0, 0, 0], this.kart.pos, [Math.sin(this.kart.angle) * dist, 0, -Math.cos(this.kart.angle) * dist]);
 
 		this.view = {
@@ -103,16 +103,16 @@ export class cameraIngame implements Camera {
 
 	private _buildBasis(): mat4 {
 		//order y, x, z
-		let forward = this.forwardNormal != null ? this.forwardNormal : ([Math.sin(this.camAngle), 0, -Math.cos(this.camAngle)] as vec3);
-		let side = vec3.cross([0, 0, 0], forward, this.camNormal);
+		const forward = this.forwardNormal != null ? this.forwardNormal : ([Math.sin(this.camAngle), 0, -Math.cos(this.camAngle)] as vec3);
+		const side = vec3.cross([0, 0, 0], forward, this.camNormal);
 		/*
         if (kart.physBasis != null) {
             vec3.transformMat4(forward, forward, kart.physBasis.mat);
             vec3.transformMat4(side, side, kart.physBasis.mat);
         }
         */
-		let basis = this._gramShmidt(this.camNormal, side, forward);
-		let temp = basis[0];
+		const basis = this._gramShmidt(this.camNormal, side, forward);
+		const temp = basis[0];
 		basis[0] = basis[1];
 		basis[1] = temp; //todo: cleanup
 		// prettier-ignore
@@ -125,9 +125,9 @@ export class cameraIngame implements Camera {
 	}
 
 	private _gramShmidt(v1: vec3, v2: vec3, v3: vec3) {
-		let u1 = v1;
-		let u2 = vec3.sub([0, 0, 0], v2, this._project(u1, v2));
-		let u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this._project(u1, v3)), this._project(u2, v3));
+		const u1 = v1;
+		const u2 = vec3.sub([0, 0, 0], v2, this._project(u1, v2));
+		const u3 = vec3.sub([0, 0, 0], vec3.sub([0, 0, 0], v3, this._project(u1, v3)), this._project(u2, v3));
 		return [vec3.normalize(u1, u1), vec3.normalize(u2, u2), vec3.normalize(u3, u3)];
 	}
 
@@ -140,7 +140,7 @@ export class cameraIngame implements Camera {
 	}
 
 	private _dirDiff(dir1: number, dir2: number) {
-		let d = this._fixDir(dir1 - dir2);
+		const d = this._fixDir(dir1 - dir2);
 		return d > Math.PI ? -2 * Math.PI + d : d;
 	}
 

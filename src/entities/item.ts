@@ -23,7 +23,7 @@ import { GreenShellGroup, RedShellGroup } from "./items/shells/shellGroup";
 import { Kart } from "./kart";
 
 //
-let itemTypes: { [x: string]: typeof KartItemEntity } = {
+const itemTypes: { [x: string]: typeof KartItemEntity } = {
 	//physics, holdable
 	$koura_g: GreenShellC,
 	$koura_r: RedShellC,
@@ -158,14 +158,14 @@ export class Item {
 	private updateHold(kart: Kart) {
 		//move the object behind the kart (physical direction without drift off)
 		//assuming this will only be called for something that can be held
-		let dir = kart.driftOff / 4;
+		const dir = kart.driftOff / 4;
 
 		//offset the kart's drift offset (on direction)
 		let pos;
 		if (this.holdPos != null) {
 			pos = vec3.clone(this.holdPos);
 		} else {
-			let dist = this.colRadius + kart.params.colRadius + this.holdDist;
+			const dist = this.colRadius + kart.params.colRadius + this.holdDist;
 			pos = vec3.clone([Math.sin(dir) * dist, -kart.params.colRadius, -Math.cos(dir) * dist]);
 		}
 
@@ -190,21 +190,21 @@ export class Item {
 			//default drop and throw. just here for template purposes
 			if (forward > 0) {
 				nitroAudio.playSound(218, { volume: 2 }, 0, this._owner);
-				let dir = this._owner.driftOff / 4;
+				const dir = this._owner.driftOff / 4;
 
 				//offset the kart's drift offset (on direction). add y component
-				let vel = vec3.clone([
+				const vel = vec3.clone([
 					-Math.sin(dir) * this._throwVelocity,
 					Math.tan(this._throwAngle) * this._throwVelocity,
 					Math.cos(dir) * this._throwVelocity,
 				]);
-				let z = vec3.clone([0, 0, 0]);
+				const z = vec3.clone([0, 0, 0]);
 
 				//make relative to the kart's orientation
 				vec3.transformMat4(vel, vel, this._owner.mat);
 				vec3.transformMat4(z, z, this._owner.mat);
 				vec3.sub(vel, vel, z);
-				let v2 = vec3.scale([0, 0, 0], this._owner.vel, 2);
+				const v2 = vec3.scale([0, 0, 0], this._owner.vel, 2);
 				vec3.add(vel, vel, v2);
 
 				this.vel = vel;
@@ -271,7 +271,7 @@ export class Item {
 				//set our velocity to move away (not too intensely)
 				//(only apply if our id is before, to avoid double adding the velocity)
 				if (this.id < item.id) {
-					let diff = vec3.sub(this._working, this.pos, item.pos);
+					const diff = vec3.sub(this._working, this.pos, item.pos);
 					vec3.scale(diff, diff, 0.33);
 					this._intensityMax(this.vel, diff);
 					vec3.scale(diff, diff, -1);
@@ -318,9 +318,9 @@ export class Item {
 		let hitSafe = false;
 		//search for player collisions, collisions with other items
 		for (let i = 0; i < scene.karts.length; i++) {
-			let ok = scene.karts[i];
+			const ok = scene.karts[i];
 
-			let dist = vec3.dist(vec3.add(this._working, this.pos, [0, this.colRadius / 2, 0]), ok.pos);
+			const dist = vec3.dist(vec3.add(this._working, this.pos, [0, this.colRadius / 2, 0]), ok.pos);
 			if (dist < this.colRadius + ok.params.colRadius) {
 				//colliding with a kart.
 				//do we need to do something?
@@ -342,10 +342,10 @@ export class Item {
 		if (this.holdTime == 0) {
 			//avoid mutual item destruction on the first frame
 			for (let i = 0; i < scene.items.items.length; i++) {
-				let ot = scene.items.items[i];
+				const ot = scene.items.items[i];
 				if (ot == this || (this.held && ot.held)) continue;
 				if (this.groupItem != null && this.groupItem === ot.groupItem) continue;
-				let dist = vec3.dist(this.pos, ot.pos);
+				const dist = vec3.dist(this.pos, ot.pos);
 				if (dist < this.colRadius + ot.colRadius && ot.holdTime <= 7 && ot.deadTimer == 0) {
 					//two items are colliding.
 					this.collide(ot);
@@ -380,10 +380,10 @@ export class Item {
 		let steps = 0;
 		let remainingT = 1;
 		let velSeg = vec3.clone(this.vel);
-		let posSeg = vec3.clone(this.pos);
-		let ignoreList: lsc_collision_triangle[] = [];
+		const posSeg = vec3.clone(this.pos);
+		const ignoreList: lsc_collision_triangle[] = [];
 		while (steps++ < 10 && remainingT > 0.01) {
-			let result = lsc.raycast(posSeg, velSeg, scene, 0.05, ignoreList);
+			const result = lsc.raycast(posSeg, velSeg, scene, 0.05, ignoreList);
 			if (result != null) {
 				if (this.controller.colResponse && !this.held) this.controller.colResponse(posSeg, velSeg, result, ignoreList);
 				else this._colResponse(posSeg, velSeg, result, ignoreList);
@@ -405,18 +405,18 @@ export class Item {
 		if (this.controller.draw) {
 			this.controller.draw(mvMatrix, pMatrix);
 		} else {
-			let mat = mat4.translate(mat4.create(), mvMatrix, vec3.add(vec3.create(), this.pos, [0, this.colRadius * this.xyScale[1], 0]));
+			const mat = mat4.translate(mat4.create(), mvMatrix, vec3.add(vec3.create(), this.pos, [0, this.colRadius * this.xyScale[1], 0]));
 
 			this._spritify(mat);
-			let scale = 6 * this.colRadius * (1 - this.holdTime / 7);
+			const scale = 6 * this.colRadius * (1 - this.holdTime / 7);
 			mat4.scale(mat, mat, [scale, scale, scale]);
 
-			let mdl = this._scene.gameRes.items[this._type]; // mdl == nitromodel
+			const mdl = this._scene.gameRes.items[this._type]; // mdl == nitromodel
 			//apply our custom mat (in sprite space), if it exists
 			//used for destruction animation, scaling
 			if (this.sprMat) {
 				// sometime baseMat is undefined
-				let oldMat = mdl.baseMat;
+				const oldMat = mdl.baseMat;
 				mdl.setBaseMat(this.sprMat);
 				mdl.draw(mat, pMatrix);
 				mdl.setBaseMat(oldMat);
@@ -428,7 +428,7 @@ export class Item {
 	}
 
 	private _spritify(mat: mat4) {
-		let scale = Math.sqrt(mat[0] * mat[0] + mat[1] * mat[1] + mat[2] * mat[2]);
+		const scale = Math.sqrt(mat[0] * mat[0] + mat[1] * mat[1] + mat[2] * mat[2]);
 
 		mat[0] = scale;
 		mat[1] = 0;
@@ -442,27 +442,27 @@ export class Item {
 	}
 
 	private _colResponse(pos: vec3, pvel: vec3, dat: lscraycast, ignoreList: lsc_collision_triangle[]) {
-		let plane = dat.plane;
+		const plane = dat.plane;
 		const collisionType = plane.CollisionType ?? 0;
-		let colType = (collisionType >> 8) & 31;
+		const colType = (collisionType >> 8) & 31;
 		vec3.add(pos, pos, vec3.scale(vec3.create(), pvel, dat.t));
 
-		let n = dat.normal;
+		const n = dat.normal;
 		vec3.normalize(n, n);
 		let adjustPos = true;
 
 		if (MKDS_COLTYPE.GROUP_WALL.indexOf(colType) != -1) {
 			//wall
 			//normally, item collision with a wall cause a perfect reflection of the velocity.
-			let proj = vec3.dot(this.vel, n) * 2;
+			const proj = vec3.dot(this.vel, n) * 2;
 			vec3.sub(this.vel, this.vel, vec3.scale(vec3.create(), n, proj));
 			this.safeKart = null;
 		} else if (colType == MKDS_COLTYPE.OOB || colType == MKDS_COLTYPE.FALL) {
 			if (this.deadTimer == 0) this.deadTimer++;
 		} else if (MKDS_COLTYPE.GROUP_ROAD.indexOf(colType) != -1) {
 			//sliding plane
-			let bounce = this.held ? 0 : this.floorBounce;
-			let proj = vec3.dot(this.vel, n) * (1 + bounce);
+			const bounce = this.held ? 0 : this.floorBounce;
+			const proj = vec3.dot(this.vel, n) * (1 + bounce);
 			vec3.sub(this.vel, this.vel, vec3.scale(vec3.create(), n, proj));
 
 			if (!this.held && (this.floorBounce == 0 || Math.abs(proj) < this.minBounceVel)) {

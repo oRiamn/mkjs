@@ -106,17 +106,17 @@ export class nitroModel {
 	}
 
 	draw(mv: mat4, project: mat4, matStack?: nitromodel_matStack) {
-		let models = this.bmd.modelData.objectData;
+		const models = this.bmd.modelData.objectData;
 		for (let j = 0; j < models.length; j++) {
 			this._drawModel(models[j], mv, project, j, matStack);
 		}
 	}
 
 	drawPoly(mv: mat4, project: mat4, modelind: number, polyInd: number, matStack?: nitromodel_matStack) {
-		let models = this.bmd.modelData.objectData;
-		let model = models[modelind];
+		const models = this.bmd.modelData.objectData;
+		const model = models[modelind];
 
-		let polys = model.polys.objectData;
+		const polys = model.polys.objectData;
 		if (matStack == null) {
 			matStack = this._matBuf[modelind];
 
@@ -128,7 +128,7 @@ export class nitroModel {
 			}
 		}
 
-		let shader = nitroRender.nitroShader;
+		const shader = nitroRender.nitroShader;
 
 		//var mv = mat4.scale([], mv, [model.head.scale, model.head.scale, model.head.scale]);
 
@@ -143,14 +143,14 @@ export class nitroModel {
 	}
 
 	drawModel(mv: mat4, project: mat4, mdl: number) {
-		let models = this.bmd.modelData.objectData;
+		const models = this.bmd.modelData.objectData;
 		this._drawModel(models[mdl], mv, project, mdl);
 	}
 
 	getBoundingCollisionModel(modelind: number, polyind: number): nitromodel_BoundingCollisionModel {
 		//simple func to get collision model for a model. used when I'm too lazy to define my own... REQUIRES TRI MODE ACTIVE!
-		let model = this.bmd.modelData.objectData[modelind];
-		let poly = model.polys.objectData[polyind];
+		const model = this.bmd.modelData.objectData[modelind];
+		const poly = model.polys.objectData[polyind];
 		if (this._modelBuffers[modelind][polyind] == null)
 			this._modelBuffers[modelind][polyind] = nitroRender.renderDispList(
 				poly.disp,
@@ -158,10 +158,10 @@ export class nitroModel {
 				poly.stackID == null ? model.lastStackID : poly.stackID
 			);
 
-		let tris = this._modelBuffers[modelind][polyind].strips[0].posArray;
+		const tris = this._modelBuffers[modelind][polyind].strips[0].posArray;
 
-		let min = [Infinity, Infinity, Infinity];
-		let max = [-Infinity, -Infinity, -Infinity];
+		const min = [Infinity, Infinity, Infinity];
+		const max = [-Infinity, -Infinity, -Infinity];
 		for (let i = 0; i < tris.length; i += 3) {
 			for (let j = 0; j < 3; j++) {
 				if (tris[i + j] < min[j]) min[j] = tris[i + j];
@@ -285,8 +285,8 @@ export class nitroModel {
 		//simple func to get collision model for a model. used when I'm too lazy to define my own... REQUIRES TRI MODE ACTIVE!
 		if (this._collisionModel[modelind] == null) this._collisionModel[modelind] = [];
 		if (this._collisionModel[modelind][polyind] != null) return this._collisionModel[modelind][polyind];
-		let model = this.bmd.modelData.objectData[modelind];
-		let poly = model.polys.objectData[polyind];
+		const model = this.bmd.modelData.objectData[modelind];
+		const poly = model.polys.objectData[polyind];
 		if (this._modelBuffers[modelind][polyind] == null)
 			this._modelBuffers[modelind][polyind] = nitroRender.renderDispList(
 				poly.disp,
@@ -294,10 +294,10 @@ export class nitroModel {
 				poly.stackID == null ? model.lastStackID : poly.stackID
 			);
 
-		let tris = this._modelBuffers[modelind][polyind].strips[0].posArray;
+		const tris = this._modelBuffers[modelind][polyind].strips[0].posArray;
 
-		let out: nitromodel_collisionModel_dat[] = [];
-		let tC = tris.length / 9;
+		const out: nitromodel_collisionModel_dat[] = [];
+		const tC = tris.length / 9;
 		let off = 0;
 		for (let i = 0; i < tC; i++) {
 			const Vertices: vec3[] = [];
@@ -307,8 +307,8 @@ export class nitroModel {
 			Vertices[2] = [tris[off++], tris[off++], tris[off++]];
 
 			//calculate normal
-			let v = vec3.sub([0, 0, 0], Vertices[1], Vertices[0]);
-			let w = vec3.sub([0, 0, 0], Vertices[2], Vertices[0]);
+			const v = vec3.sub([0, 0, 0], Vertices[1], Vertices[0]);
+			const w = vec3.sub([0, 0, 0], Vertices[2], Vertices[0]);
 
 			out.push({
 				Normal: vec3.cross([0, 0, 0], v, w),
@@ -324,22 +324,22 @@ export class nitroModel {
 		//examines the materials in the loaded model and generates textures for each.
 		this._texCanvas = [];
 		this._tex = [];
-		let models = this.bmd.modelData.objectData;
+		const models = this.bmd.modelData.objectData;
 		for (let j = 0; j < models.length; j++) {
-			let model = models[j];
-			let mat = model.materials.objectData;
+			const model = models[j];
+			const mat = model.materials.objectData;
 			for (let i = 0; i < mat.length; i++) {
-				let m = mat[i];
+				const m = mat[i];
 
-				let fC = document.createElement("canvas");
+				const fC = document.createElement("canvas");
 				fC.width = 2;
 				fC.height = 2;
-				let ctx = fC.getContext("2d")!;
+				const ctx = fC.getContext("2d")!;
 				ctx.fillStyle = "black";
 				ctx.globalAlpha = 0.33;
 				ctx.fillRect(0, 0, 2, 2);
 				this._texCanvas.push(fC);
-				let t = nitroModel._loadTex(fC, gl, !m.repeatX, !m.repeatY);
+				const t = nitroModel._loadTex(fC, gl, !m.repeatX, !m.repeatY);
 				t.realWidth = 2;
 				t.realHeight = 2;
 				this._tex.push(t);
@@ -351,10 +351,10 @@ export class nitroModel {
 		//examines the materials in the loaded model and generates textures for each.
 		this._texCanvas = [];
 		this._tex = [];
-		let models = this.bmd.modelData.objectData;
+		const models = this.bmd.modelData.objectData;
 		for (let j = 0; j < models.length; j++) {
-			let model = models[j];
-			let mat = model.materials.objectData;
+			const model = models[j];
+			const mat = model.materials.objectData;
 			for (let i = 0; i < mat.length; i++) {
 				mat[i].texInd = this._tex.length;
 				this._loadMatTex(mat[i], btx);
@@ -394,8 +394,8 @@ export class nitroModel {
 		if (matReplace) {
 			m = matReplace;
 		}
-		let texI = m.texName;
-		let palI = m.palName;
+		const texI = m.texName;
+		const palI = m.palName;
 
 		if (texI == null) {
 			console.warn(`WARNING: material in model could not be assigned a texture (missing tex name).`);
@@ -403,8 +403,8 @@ export class nitroModel {
 			return;
 		}
 
-		let truetex = btx.textureInfoNameToIndex[`$${texI}`] ?? 0;
-		let truepal = this._resolvePaletteIndex(btx, truetex, palI);
+		const truetex = btx.textureInfoNameToIndex[`$${texI}`] ?? 0;
+		const truepal = this._resolvePaletteIndex(btx, truetex, palI);
 		if (truepal == null) {
 			console.warn(`WARNING: material ${texI} in model could not be assigned a palette.`);
 			this._assignPlaceholderTex(mat);
@@ -415,14 +415,14 @@ export class nitroModel {
 	}
 
 	private _cacheTex(btx: nsbtx, truetex: number, truepal: number, m: nsbmd_MatInfos): CustomWebGLTexture {
-		let cacheID = `${truetex}:${truepal}`;
-		let cached = btx.cache[cacheID];
+		const cacheID = `${truetex}:${truepal}`;
+		const cached = btx.cache[cacheID];
 
 		if (cached == null) {
-			let canvas = btx.readTexWithPal(truetex, truepal);
+			const canvas = btx.readTexWithPal(truetex, truepal);
 			if (m.flipX || m.flipY) {
-				let fC = document.createElement("canvas");
-				let ctx = fC.getContext("2d")!;
+				const fC = document.createElement("canvas");
+				const ctx = fC.getContext("2d")!;
 				fC.width = m.flipX ? canvas.width * 2 : canvas.width;
 				fC.height = m.flipY ? canvas.height * 2 : canvas.height;
 
@@ -442,14 +442,14 @@ export class nitroModel {
 					ctx.restore();
 				}
 				this._texCanvas.push(fC);
-				let t = nitroModel._loadTex(fC, gl, !m.repeatX, !m.repeatY);
+				const t = nitroModel._loadTex(fC, gl, !m.repeatX, !m.repeatY);
 				t.realWidth = canvas.width;
 				t.realHeight = canvas.height;
 				btx.cache[cacheID] = t;
 				return t;
 			} else {
 				this._texCanvas.push(canvas);
-				let oTexture = nitroModel._loadTex(canvas, gl, !m.repeatX, !m.repeatY);
+				const oTexture = nitroModel._loadTex(canvas, gl, !m.repeatX, !m.repeatY);
 				oTexture.realWidth = canvas.width;
 				oTexture.realHeight = canvas.height;
 				btx.cache[cacheID] = oTexture;
@@ -461,7 +461,7 @@ export class nitroModel {
 	}
 
 	private _drawModel(model: nsbmd_modelData, mv: mat4, project: mat4, modelind: number, matStack?: nitromodel_matStack) {
-		let polys = model.polys.objectData;
+		const polys = model.polys.objectData;
 		if (matStack == null) {
 			matStack = this._matBuf[modelind];
 
@@ -472,7 +472,7 @@ export class nitroModel {
 				this.billboardID = nitroRender.billboardID;
 			}
 		}
-		let shader = nitroRender.nitroShader;
+		const shader = nitroRender.nitroShader;
 
 		//var mv = mat4.scale([], mv, [model.head.scale, model.head.scale, model.head.scale]);
 
@@ -489,20 +489,20 @@ export class nitroModel {
 	}
 
 	private _drawPoly(poly: nsbmd_poly, modelind: number, polyind: number) {
-		let shader = nitroRender.nitroShader;
-		let model = this.bmd.modelData.objectData[modelind];
+		const shader = nitroRender.nitroShader;
+		const model = this.bmd.modelData.objectData[modelind];
 
 		//texture 0 SHOULD be bound, assuming the nitrorender program has been prepared
-		let pmat = poly.mat;
-		let matname = model.materials.names[pmat]; //attach tex anim to mat with same name
+		const pmat = poly.mat;
+		const matname = model.materials.names[pmat]; //attach tex anim to mat with same name
 		if (this._texPAnim != null) {
-			let info = this._texPAnim.animData.objectData[modelind];
-			let anims = this._texPAnim.animData.objectData[modelind].data;
-			let animNum = anims.names.indexOf(matname);
+			const info = this._texPAnim.animData.objectData[modelind];
+			const anims = this._texPAnim.animData.objectData[modelind].data;
+			const animNum = anims.names.indexOf(matname);
 			if (animNum != -1) {
-				let offFrame = this._texFrame % info.duration;
+				const offFrame = this._texFrame % info.duration;
 				//we got a match! it's wonderful :')
-				let anim = anims.objectData[animNum];
+				const anim = anims.objectData[animNum];
 				//look thru frames for the approprate point in the animation
 				for (let i = anim.frames.length - 1; i >= 0; i--) {
 					if (offFrame >= anim.frames[i].time) {
@@ -524,19 +524,19 @@ export class nitroModel {
 			nitroRender.last.tex = this._tex[pmat];
 		}
 
-		let material = model.materials.objectData[pmat];
+		const material = model.materials.objectData[pmat];
 		nitroRender.setAlpha(material.alpha);
 
 		if (this._texAnim != null) {
 			//generate and send texture matrix from data
-			let matname = model.materials.names[pmat]; //attach tex anim to mat with same name
-			let textanims = this._texAnim.animData.objectData[modelind].data;
-			let animNum = textanims.names.indexOf(matname);
+			const matname = model.materials.names[pmat]; //attach tex anim to mat with same name
+			const textanims = this._texAnim.animData.objectData[modelind].data;
+			const animNum = textanims.names.indexOf(matname);
 
 			if (animNum != -1) {
 				//we got a match! it's wonderful :')
-				let tanim = textanims.objectData[animNum];
-				let mat = this._matAtFrame(this._texFrame, tanim);
+				const tanim = textanims.objectData[animNum];
+				const mat = this._matAtFrame(this._texFrame, tanim);
 				gl.uniformMatrix3fv(shader.uniforms.texMatrixUniform, false, mat);
 			} else {
 				gl.uniformMatrix3fv(shader.uniforms.texMatrixUniform, false, material.texMat);
@@ -572,17 +572,17 @@ export class nitroModel {
 
 	private _frameLerp(frame: number, step: number, values: number[]) {
 		if (values.length == 1) return values[0];
-		let i = (frame / (1 << step)) % 1;
+		const i = (frame / (1 << step)) % 1;
 		let len = values.length;
 		if (step > 0) len -= 1;
-		let frame1 = (frame >> step) % len;
-		let from = values[frame1];
-		let to = values[frame1 + 1] || values[frame1];
+		const frame1 = (frame >> step) % len;
+		const from = values[frame1];
+		const to = values[frame1 + 1] || values[frame1];
 		return to * i + from * (1 - i);
 	}
 
 	private _matAtFrame(frame: number, anim: nsbta_data_obj) {
-		let mat = mat3.create(); //material texture mat is ignored
+		const mat = mat3.create(); //material texture mat is ignored
 
 		mat3.scale(mat, mat, [
 			this._frameLerp(frame, anim.frameStep.scaleS, anim.scaleS),
@@ -598,23 +598,23 @@ export class nitroModel {
 
 	private _generateMatrixStack(model: nsbmd_modelData, targ: Float32Array) {
 		//this generates a matrix stack with the default bones. use nitroAnimator to pass custom matrix stacks using nsbca animations.
-		let matrices: mat4[] = [];
+		const matrices: mat4[] = [];
 
-		let objs = model.objects.objectData;
-		let cmds = model.commands;
+		const objs = model.objects.objectData;
+		const cmds = model.commands;
 		let curMat = mat4.clone(this.baseMat);
 		let lastStackID = 0;
 		let highestUsed = -1;
 
 		for (let i = 0; i < cmds.length; i++) {
-			let cmd = cmds[i];
+			const cmd = cmds[i];
 			if (cmd.copy != null) {
 				//copy this matrix to somewhere else, because it's bound and is going to be overwritten.
 				matrices[cmd.dest!] = mat4.clone(matrices[cmd.copy!]);
 				continue;
 			}
 			if (cmd.restoreID != null) curMat = mat4.clone(matrices[cmd.restoreID]);
-			let o = objs[cmd.obj!];
+			const o = objs[cmd.obj!];
 			mat4.multiply(curMat, curMat, o.mat);
 			if (o.billboardMode == 1) mat4.multiply(curMat, curMat, nitroRender.billboardMat);
 			if (o.billboardMode == 2) mat4.multiply(curMat, curMat, nitroRender.yBillboardMat);
@@ -630,7 +630,7 @@ export class nitroModel {
 
 		model.lastStackID = lastStackID;
 
-		let scale: vec3 = [model.head.scale, model.head.scale, model.head.scale];
+		const scale: vec3 = [model.head.scale, model.head.scale, model.head.scale];
 		targ.set(this._matBufEmpty);
 		let off = 0;
 		for (let i = 0; i <= highestUsed; i++) {
@@ -646,7 +646,7 @@ export class nitroModel {
 
 	private _drawModelBuffer(buf: nitroRender_modelBuffer, gl: CustomWebGLRenderingContext, shader: nitroShaders_defaultShader) {
 		for (let i = 0; i < buf.strips.length; i++) {
-			let obj = buf.strips[i];
+			const obj = buf.strips[i];
 
 			if (obj != nitroRender.last.obj) {
 				gl.bindBuffer(gl.ARRAY_BUFFER, obj.vPos);
@@ -672,7 +672,7 @@ export class nitroModel {
 
 	private static _loadTex(img: HTMLCanvasElement, gl: CustomWebGLRenderingContext, clampx: boolean, clampy: boolean): CustomWebGLTexture {
 		//general purpose function for loading an image into a texture.
-		let texture = gl.createTexture() as CustomWebGLTexture;
+		const texture = gl.createTexture() as CustomWebGLTexture;
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 

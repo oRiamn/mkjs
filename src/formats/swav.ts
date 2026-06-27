@@ -50,18 +50,18 @@ export class swav {
 		if (!dataView) {
 			input = MKSUtils.prepareInput(input as MKJSDataInput);
 		}
-		let view = dataView ? (input as DataView) : new DataView(input as MKJSDataInput);
+		const view = dataView ? (input as DataView) : new DataView(input as MKJSDataInput);
 		let offset = 0;
 
 		if (hasHead) {
-			let stamp =
+			const stamp =
 				MKSUtils.asciireadChar(view, 0x0) +
 				MKSUtils.asciireadChar(view, 0x1) +
 				MKSUtils.asciireadChar(view, 0x2) +
 				MKSUtils.asciireadChar(view, 0x3);
 			if (stamp != "SWAV") throw `SWAV invalid. Expected SWAV, found ${stamp}`;
 			offset += 16;
-			let data =
+			const data =
 				MKSUtils.asciireadChar(view, offset) +
 				MKSUtils.asciireadChar(view, offset + 1) +
 				MKSUtils.asciireadChar(view, offset + 2) +
@@ -113,7 +113,7 @@ export class swav {
 	getAudioBuffer(ctx: BaseAudioContext): AudioBuffer {
 		while (true) {
 			try {
-				let buf = ctx.createBuffer(1, this.data.length, this.nSampleRate);
+				const buf = ctx.createBuffer(1, this.data.length, this.nSampleRate);
 				buf.getChannelData(0).set(this.data);
 				return buf;
 			} catch {
@@ -132,17 +132,17 @@ export class swav {
 		let ind = view.getUint8(off + 2); //initial index
 		off += 4;
 
-		let size = this.bytesize - 4;
-		let out = new Float32Array(size * 2);
+		const size = this.bytesize - 4;
+		const out = new Float32Array(size * 2);
 		let write = 0;
 		//out[write++] = pcm/0x7FFF;
 
 		for (let i = 0; i < size; i++) {
-			let b = view.getUint8(off++);
+			const b = view.getUint8(off++);
 			for (let j = 0; j < 2; j++) {
-				let nibble = (b >> (j * 4)) & 15;
+				const nibble = (b >> (j * 4)) & 15;
 
-				let diff = Math.floor((((nibble & 7) * 2 + 1) * this.ADPCMTable[ind]) / 8);
+				const diff = Math.floor((((nibble & 7) * 2 + 1) * this.ADPCMTable[ind]) / 8);
 				if (nibble & 8) pcm = Math.max(pcm - diff, -0x7fff);
 				else pcm = Math.min(pcm + diff, 0x7fff);
 				out[write++] = pcm / 0x7fff;

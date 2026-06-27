@@ -88,7 +88,7 @@ export class nftr implements MKJSDataFormator {
 		const header = nitro.readHeader(view);
 		//debugger;
 		if (header.stamp != "RTFN") throw `NFTR invalid. Expected RTFN, found ${header.stamp}`;
-		let offset = 0x10; //nitro header for nftr doesn't have section offsets - they are in order
+		const offset = 0x10; //nitro header for nftr doesn't have section offsets - they are in order
 		//end nitro
 
 		const type =
@@ -164,7 +164,7 @@ export class nftr implements MKJSDataFormator {
 
 		offset += 0x10;
 		const tiles: Uint8Array[] = [];
-		let total = (blockSize - 0x10) / tileLength;
+		const total = (blockSize - 0x10) / tileLength;
 		for (let i = 0; i < total; i++) {
 			tiles.push(new Uint8Array(view.buffer.slice(offset, offset + tileLength)));
 			offset += tileLength;
@@ -300,10 +300,10 @@ export class nftr implements MKJSDataFormator {
 
 	private mapText(text: string, missing: string): number[] {
 		if (missing == null) missing = "*";
-		let map = this.charMap;
-		let result = [];
+		const map = this.charMap;
+		const result = [];
 		for (let i = 0; i < text.length; i++) {
-			let code = text[i];
+			const code = text[i];
 			let mapped = map[code];
 			if (mapped == null) mapped = map[missing];
 			result.push(mapped);
@@ -318,7 +318,7 @@ export class nftr implements MKJSDataFormator {
 	private measureMapped(mapped: number[], spacing: number): number[] {
 		if (spacing == null) spacing = 1;
 		let width = 0;
-		let widths = this.cwdh.info;
+		const widths = this.cwdh.info;
 
 		for (let i = 0; i < mapped.length; i++) {
 			width += widths[mapped[i]].pixelLength + spacing; // pixelWidth is the width of drawn section - length is how wide the char is
@@ -329,23 +329,23 @@ export class nftr implements MKJSDataFormator {
 
 	drawToCanvas(text: string, palette: nftr_color[], spacing: number): HTMLCanvasElement {
 		if (spacing == null) spacing = 1;
-		let mapped = this.mapText(text, "");
-		let size = this.measureMapped(mapped, spacing);
+		const mapped = this.mapText(text, "");
+		const size = this.measureMapped(mapped, spacing);
 
-		let canvas = document.createElement("canvas");
+		const canvas = document.createElement("canvas");
 		canvas.width = size[0];
 		canvas.height = size[1];
-		let ctx = canvas.getContext("2d")!;
+		const ctx = canvas.getContext("2d")!;
 
 		//draw chars
-		let widths = this.cwdh.info;
+		const widths = this.cwdh.info;
 		let position = 0;
 
 		for (let i = 0; i < mapped.length; i++) {
-			let c = mapped[i];
-			let cinfo = widths[c];
+			const c = mapped[i];
+			const cinfo = widths[c];
 
-			let data = this._getCharData(c, palette);
+			const data = this._getCharData(c, palette);
 			ctx.putImageData(data, position + cinfo.pixelStart, 0, 0, 0, cinfo.pixelWidth, data.height);
 
 			position += cinfo.pixelLength + spacing;
@@ -355,13 +355,13 @@ export class nftr implements MKJSDataFormator {
 
 	private _getCharData(id: number, pal: nftr_color[]): ImageData {
 		//todo: cache?
-		let cglp = this.cglp;
-		let tile = cglp.tiles[id];
-		let pixels = cglp.tileWidth * cglp.tileHeight;
-		let d = new Uint8ClampedArray(pixels * 4);
-		let data = new ImageData(d, cglp.tileWidth, cglp.tileHeight);
-		let depth = this.cglp.depth;
-		let mask = (1 << depth) - 1;
+		const cglp = this.cglp;
+		const tile = cglp.tiles[id];
+		const pixels = cglp.tileWidth * cglp.tileHeight;
+		const d = new Uint8ClampedArray(pixels * 4);
+		const data = new ImageData(d, cglp.tileWidth, cglp.tileHeight);
+		const depth = this.cglp.depth;
+		const mask = (1 << depth) - 1;
 
 		let bit = 8;
 		let byte = 0;
@@ -372,7 +372,7 @@ export class nftr implements MKJSDataFormator {
 			let pind = 0;
 			if (bit < 0) {
 				//overlap into next
-				let end = bit + 8;
+				const end = bit + 8;
 				if (end < 8) {
 					//still some left in this byte
 					pind = (curByte << -bit) & mask;
@@ -384,7 +384,7 @@ export class nftr implements MKJSDataFormator {
 				pind = (curByte >> bit) & mask;
 			}
 
-			let col = pal[pind];
+			const col = pal[pind];
 			d[ind++] = col[0];
 			d[ind++] = col[1];
 			d[ind++] = col[2];

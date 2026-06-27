@@ -75,9 +75,9 @@ export class ObjSoundMaker implements SceneEntityObject {
 		this.soundProps.refDistance = 1024;
 		//t.soundProps.rolloffFactor = 1;
 
-		let relPos = vec3.transformMat4([0, 0, 0], this.pos, view);
+		const relPos = vec3.transformMat4([0, 0, 0], this.pos, view);
 
-		let calcVol =
+		const calcVol =
 			this.soundProps.refDistance /
 			(this.soundProps.refDistance + this.soundProps.rolloffFactor * (relPos[2] - this.soundProps.refDistance));
 

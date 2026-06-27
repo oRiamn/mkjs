@@ -25,7 +25,7 @@ export default tseslint.config(
 			"no-debugger": "warn",
 			"no-fallthrough": "warn",
 			"no-useless-escape": "off",
-			"prefer-const": "off",
+			"prefer-const": "warn",
 			"no-empty": "warn",
 			"no-extra-boolean-cast": "warn",
 			"no-prototype-builtins": "warn",
@@ -33,7 +33,7 @@ export default tseslint.config(
 			"no-useless-assignment": "warn",
 			"no-var": "error",
 			"@typescript-eslint/no-empty-object-type": "off",
-			"@typescript-eslint/no-explicit-any": "off",
+			"@typescript-eslint/no-explicit-any": "warn",
 			"@typescript-eslint/no-unused-expressions": "warn",
 			"@typescript-eslint/no-unused-vars": [
 				"warn",

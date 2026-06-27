@@ -87,7 +87,7 @@ export class nsbtx {
 
 		this.mainOff = offset;
 
-		let stamp =
+		const stamp =
 			MKSUtils.asciireadChar(view, offset + 0x0) +
 			MKSUtils.asciireadChar(view, offset + 0x1) +
 			MKSUtils.asciireadChar(view, offset + 0x2) +
@@ -108,16 +108,16 @@ export class nsbtx {
 		this.palOffset = view.getUint32(offset + 0x38, true);
 
 		//read palletes, then textures.
-		let po = this.mainOff + this.palOffset;
+		const po = this.mainOff + this.palOffset;
 		this.palData = input.slice(po, po + this.palSize);
 
-		let to = this.mainOff + this.texOffset;
+		const to = this.mainOff + this.texOffset;
 		this.texData = input.slice(to, to + this.texDataSize);
 
-		let co = this.mainOff + this.compTexOffset;
+		const co = this.mainOff + this.compTexOffset;
 		this.compData = input.slice(co, co + this.compTexSize); //pixel information for compression. 2bpp, 16 pixels, so per 4x4 block takes up 4 bytes
 
-		let cio = this.mainOff + this.compTexInfoDataOff;
+		const cio = this.mainOff + this.compTexInfoDataOff;
 		this.compInfoData = input.slice(cio, cio + this.compTexSize / 2); //each 4x4 block has a 16bit information uint. 2 bytes per block, thus half the size of above.
 
 		this.paletteInfo = nitro.read3dInfo(view, this.mainOff + this.palInfoOff, (...args) => this._palInfoHandler(args[0], args[1]));
@@ -128,32 +128,32 @@ export class nsbtx {
 	}
 
 	readTexWithPal(textureId: number, palId: number) {
-		let tex = this.textureInfo.objectData[textureId];
-		let pal = this.paletteInfo.objectData[palId];
+		const tex = this.textureInfo.objectData[textureId];
+		const pal = this.paletteInfo.objectData[palId];
 
-		let format = tex.format;
-		let trans = tex.pal0trans;
+		const format = tex.format;
+		const trans = tex.pal0trans;
 
 		if (format == 5) return this._readCompressedTex(tex, pal); //compressed 4x4 texture, different processing entirely
 
 		let off = tex.texOffset;
-		let palView = new DataView(this.palData);
-		let texView = new DataView(this.texData);
-		let palOff = pal.palOffset;
+		const palView = new DataView(this.palData);
+		const texView = new DataView(this.texData);
+		const palOff = pal.palOffset;
 
-		let canvas = document.createElement("canvas");
+		const canvas = document.createElement("canvas");
 		canvas.width = tex.width;
 		canvas.height = tex.height;
-		let ctx = canvas.getContext("2d")!;
-		let img = ctx.getImageData(0, 0, tex.width, tex.height);
+		const ctx = canvas.getContext("2d")!;
+		const img = ctx.getImageData(0, 0, tex.width, tex.height);
 
-		let total = tex.width * tex.height;
+		const total = tex.width * tex.height;
 		let databuf: number = undefined!;
 		for (let i = 0; i < total; i++) {
 			let col;
 			if (format == 1) {
 				//A3I5 encoding. 3 bits alpha 5 bits pal index
-				let dat = texView.getUint8(off++);
+				const dat = texView.getUint8(off++);
 				col = this._readPalColour(palView, palOff, dat & 31, trans);
 				col[3] = (dat >> 5) * (255 / 7);
 				this._premultiply(col);
@@ -174,7 +174,7 @@ export class nsbtx {
 				col = this._readPalColour(palView, palOff, texView.getUint8(off++), trans);
 			} else if (format == 6) {
 				//A5I3 encoding. 5 bits alpha 3 bits pal index
-				let dat = texView.getUint8(off++);
+				const dat = texView.getUint8(off++);
 				col = this._readPalColour(palView, palOff, dat & 7, trans);
 				col[3] = (dat >> 3) * (255 / 31);
 				this._premultiply(col);
@@ -199,7 +199,7 @@ export class nsbtx {
 	}
 
 	private _buildNameToIndex(info: nitro_nitroInfos<nsbtx_texInfoHandler | nsbtx_palInfoHandler>) {
-		let nameToIndex: { [x: string]: number } = {};
+		const nameToIndex: { [x: string]: number } = {};
 		for (let i = 0; i < info.names.length; i++) {
 			nameToIndex[`$${info.names[i]}`] = i;
 		}
@@ -215,37 +215,37 @@ export class nsbtx {
 	private _readCompressedTex(tex: nsbtx_texInfoHandler, pal: nsbtx_palInfoHandler) {
 		//format 5, 4x4 texels. I'll keep this well documented so it's easy to understand.
 		let off = tex.texOffset;
-		let texView = new DataView(this.compData); //real texture data - 32 bits per 4x4 block (one byte per 4px horizontal line, each descending 1px)
-		let compView = new DataView(this.compInfoData); //view into compression info - informs of pallete and parameters.
-		let palView = new DataView(this.palData); //view into the texture pallete
+		const texView = new DataView(this.compData); //real texture data - 32 bits per 4x4 block (one byte per 4px horizontal line, each descending 1px)
+		const compView = new DataView(this.compInfoData); //view into compression info - informs of pallete and parameters.
+		const palView = new DataView(this.palData); //view into the texture pallete
 		let compOff = off / 2; //info is 2 bytes per block, so the offset is half that of the tex offset.
-		let palOff = pal.palOffset;
-		let transColor = new Uint8Array([0, 0, 0, 0]); //transparent black
+		const palOff = pal.palOffset;
+		const transColor = new Uint8Array([0, 0, 0, 0]); //transparent black
 
-		let canvas = document.createElement("canvas");
+		const canvas = document.createElement("canvas");
 		canvas.width = tex.width;
 		canvas.height = tex.height;
-		let ctx = canvas.getContext("2d")!;
-		let img = ctx.getImageData(0, 0, tex.width, tex.height);
+		const ctx = canvas.getContext("2d")!;
+		const img = ctx.getImageData(0, 0, tex.width, tex.height);
 
-		let w = tex.width >> 2; //iterate over blocks, block w and h is /4.
-		let h = tex.height >> 2;
+		const w = tex.width >> 2; //iterate over blocks, block w and h is /4.
+		const h = tex.height >> 2;
 
 		for (let y = 0; y < h; y++) {
 			for (let x = 0; x < w; x++) {
 				//inside block
-				let bInfo = compView.getUint16(compOff, true); //block info
+				const bInfo = compView.getUint16(compOff, true); //block info
 
-				let addr = bInfo & 0x3fff; //offset to relevant pallete
-				let mode = (bInfo >> 14) & 3;
+				const addr = bInfo & 0x3fff; //offset to relevant pallete
+				const mode = (bInfo >> 14) & 3;
 
-				let finalPo = palOff + addr * 4;
+				const finalPo = palOff + addr * 4;
 				let imgoff = x * 4 + y * w * 16;
 				for (let iy = 0; iy < 4; iy++) {
-					let dat = texView.getUint8(off++);
+					const dat = texView.getUint8(off++);
 					for (let ix = 0; ix < 4; ix++) {
 						//iterate over horiz lines
-						let part = (dat >> (ix * 2)) & 3;
+						const part = (dat >> (ix * 2)) & 3;
 						let col;
 
 						switch (mode) {
@@ -281,8 +281,8 @@ export class nsbtx {
 	}
 
 	private _readPalColour(view: DataView, palOff: number, ind: number, pal0trans: boolean) {
-		let col = view.getUint16(palOff + ind * 2, true);
-		let f = 255 / 31;
+		const col = view.getUint16(palOff + ind * 2, true);
+		const f = 255 / 31;
 		this.colourBuffer[0] = Math.round((col & 31) * f);
 		this.colourBuffer[1] = Math.round(((col >> 5) & 31) * f);
 		this.colourBuffer[2] = Math.round(((col >> 10) & 31) * f);
@@ -291,10 +291,10 @@ export class nsbtx {
 	}
 
 	private _readFractionalPal(view: DataView, palOff: number, i: number) {
-		let col = view.getUint16(palOff, true);
-		let col2 = view.getUint16(palOff + 2, true);
-		let ni = 1 - i;
-		let f = 255 / 31;
+		const col = view.getUint16(palOff, true);
+		const col2 = view.getUint16(palOff + 2, true);
+		const ni = 1 - i;
+		const f = 255 / 31;
 		this.colourBuffer[0] = Math.round((col & 31) * f * i + (col2 & 31) * f * ni);
 		this.colourBuffer[1] = Math.round(((col >> 5) & 31) * f * i + ((col2 >> 5) & 31) * f * ni);
 		this.colourBuffer[2] = Math.round(((col >> 10) & 31) * f * i + ((col2 >> 10) & 31) * f * ni);
@@ -303,8 +303,8 @@ export class nsbtx {
 	}
 
 	private _palInfoHandler(view: DataView, offset: number): nsbtx_palInfoHandler {
-		let palOffset = view.getUint16(offset, true) << 3;
-		let unknown = view.getUint16(offset + 2, true);
+		const palOffset = view.getUint16(offset, true) << 3;
+		const unknown = view.getUint16(offset + 2, true);
 		return {
 			palOffset: palOffset,
 			unknown: unknown,
@@ -313,12 +313,12 @@ export class nsbtx {
 	}
 
 	private _texInfoHandler(view: DataView, offset: number): nsbtx_texInfoHandler {
-		let texOffset = view.getUint16(offset, true) << 3;
-		let flags = view.getUint16(offset + 2, true);
-		let width2 = view.getUint8(offset + 4);
-		let unknown = view.getUint8(offset + 5);
-		let height2 = view.getUint8(offset + 6);
-		let unknown2 = view.getUint8(offset + 7);
+		const texOffset = view.getUint16(offset, true) << 3;
+		const flags = view.getUint16(offset + 2, true);
+		const width2 = view.getUint8(offset + 4);
+		const unknown = view.getUint8(offset + 5);
+		const height2 = view.getUint8(offset + 6);
+		const unknown2 = view.getUint8(offset + 7);
 		return {
 			texOffset: texOffset,
 			pal0trans: !!((flags >> 13) & 1), //two top flags are texture matrix modes. not sure if it really matters (except for nsbta animation maybe, but 0 = no transform and things that have tex animations are set to 0 anyways).

@@ -102,7 +102,7 @@ export class TileFlattener {
 
 		// Put a unit quad in the buffer
 		// prettier-ignore
-		let positions = [
+		const positions = [
             0, 0,
             0, 1,
             1, 0,
@@ -118,7 +118,7 @@ export class TileFlattener {
 
 		// Put texcoords in the buffer
 		// prettier-ignore
-		let texcoords = [
+		const texcoords = [
             0, 0,
             0, 1,
             1, 0,
@@ -133,24 +133,24 @@ export class TileFlattener {
 	}
 
 	private getTileImg(pal0trans: boolean, tile: number, pal: number) {
-		let cacheID = `${tile}:${pal}`;
+		const cacheID = `${tile}:${pal}`;
 		if (this.tileCache.has(cacheID)) {
 			return this.tileCache.get(cacheID);
 		}
 		//make the tile
-		let canvas = document.createElement("canvas");
+		const canvas = document.createElement("canvas");
 		canvas.width = 8;
 		canvas.height = 8;
-		let ctx = canvas.getContext("2d");
+		const ctx = canvas.getContext("2d");
 
 		if (canvas !== null && ctx !== null) {
-			let d = new Uint8ClampedArray(8 * 8 * 4);
-			let data = new ImageData(d, 8, 8);
+			const d = new Uint8ClampedArray(8 * 8 * 4);
+			const data = new ImageData(d, 8, 8);
 			let targ = 0;
-			let colors = this.palette.pltt.palettes[pal] || [];
-			let tileData = this.tiles.char.tiles[tile] || this.emptyTile;
+			const colors = this.palette.pltt.palettes[pal] || [];
+			const tileData = this.tiles.char.tiles[tile] || this.emptyTile;
 			for (let i = 0; i < 64; i++) {
-				let colID = tileData[i];
+				const colID = tileData[i];
 				let col: NclrPaletteColor;
 				if (pal0trans && colID == 0) {
 					col = this.zero;
@@ -177,8 +177,8 @@ export class TileFlattener {
 		let xMax = 0;
 		let yMax = 0;
 		for (let i = 0; i < image.cells.length; i++) {
-			let cell = image.cells[i];
-			let size = cell.size;
+			const cell = image.cells[i];
+			const size = cell.size;
 			let x = cell.x + size[0];
 			if (x > xMax) xMax = x;
 			x -= size[0];
@@ -192,35 +192,35 @@ export class TileFlattener {
 	}
 
 	toCanvas(pal0trans: boolean, imageInd: number) {
-		let canvas = document.createElement("canvas");
+		const canvas = document.createElement("canvas");
 		if (this.cellMode) {
 			//essentially a collection of ds sprites
 			//render out the image the user has requested
-			let image = this.map.cebk.images[imageInd];
-			let isize = this.calcImageSize(image);
+			const image = this.map.cebk.images[imageInd];
+			const isize = this.calcImageSize(image);
 
 			canvas.width = isize[2] - isize[0];
 			canvas.height = isize[3] - isize[1];
-			let ctx = canvas.getContext("2d");
+			const ctx = canvas.getContext("2d");
 
 			if (ctx !== null) {
-				let tileWidth = this.tiles.char.tilesX as number;
+				const tileWidth = this.tiles.char.tilesX as number;
 				image.cells.sort(function (a: { priority: number }, b: { priority: number }) {
 					return b.priority - a.priority;
 				});
 
 				for (let i = image.cells.length - 1; i >= 0; i--) {
-					let cell = image.cells[i];
+					const cell = image.cells[i];
 
-					let size = cell.size;
-					let sx2 = size[0] / 2;
-					let sy2 = size[1] / 2;
+					const size = cell.size;
+					const sx2 = size[0] / 2;
+					const sy2 = size[1] / 2;
 					ctx.save();
 					ctx.translate(cell.x + sx2 - isize[0], cell.y + sy2 - isize[1]);
 					ctx.scale(cell.xFlip ? -1 : 1, cell.yFlip ? -1 : 1);
 
 					let tile = cell.tileOffset as number;
-					let pal = cell.pal as number;
+					const pal = cell.pal as number;
 					ctx.strokeStyle = "white";
 					if (cell.disable) continue;
 
@@ -228,7 +228,7 @@ export class TileFlattener {
 					let base = tile;
 					for (let y = 0; y < size[1]; y += 8) {
 						for (let x = 0; x < size[0]; x += 8) {
-							let img = this.getTileImg(pal0trans, tile++, pal);
+							const img = this.getTileImg(pal0trans, tile++, pal);
 							if (img) {
 								ctx.drawImage(img, x - sx2, y - sy2);
 							}
@@ -281,7 +281,7 @@ export class TileFlattener {
 
 	debugTileSet() {
 		for (let i = 0; i < this.map.cebk.imageCount; i++) {
-			let render = this.toCanvas(true, i);
+			const render = this.toCanvas(true, i);
 			render.setAttribute("tile", `${i}`);
 			document.body.appendChild(render);
 		}
