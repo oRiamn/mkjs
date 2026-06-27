@@ -46,7 +46,6 @@ export class nitroAudio {
 
 	static init(sdat: sdat) {
 		nitroAudio.ctx = new AudioContext();
-		nitroAudio.ctx = nitroAudio.ctx;
 
 		// var listener = nitroAudio.ctx.listener;
 		// listener.dopplerFactor = 1;

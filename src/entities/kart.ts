@@ -358,7 +358,7 @@ export class Kart {
 		const stompXZ = this.damageType == MKDSCONST.DAMAGE_STOMP ? this._stompSquashXZ : 1;
 
 		mat4.translate(mat, mat, [0, -this._params.colRadius, 0]); //main part
-		let kmat = mat4.scale(this._drawMat.kart, mat, [16 * xscale * stompXZ, 16 * yscale * stompY, 16 * stompXZ]);
+		mat4.scale(this._drawMat.kart, mat, [16 * xscale * stompXZ, 16 * yscale * stompY, 16 * stompXZ]);
 
 		//wheels
 		for (let i = 0; i < 4; i++) {
@@ -410,11 +410,11 @@ export class Kart {
 		this._charRes.model.draw(this._drawMat.character, pMatrix, this.animMat);
 	}
 
-	drawKart(view: mat4, pMatrix: mat4, gl: CustomWebGLRenderingContext) {
+	drawKart(view: mat4, pMatrix: mat4, _gl: CustomWebGLRenderingContext) {
 		if (this._updateMat) this._recalcMat(view);
 		//if we're in simple shadows mode, draw the kart's stencil shadow.
-
-		if (false) {
+		// Disabled stencil shadow path:
+		/*
 			//gl.enable(gl.CULL_FACE); //culling is fun!
 			gl.clear(gl.STENCIL_BUFFER_BIT);
 			//gl.cullFace(gl.FRONT);
@@ -438,6 +438,7 @@ export class Kart {
 			//gl.disable(gl.CULL_FACE);
 			gl.depthMask(true);
 		}
+		*/
 
 		for (let i = 0; i < this._kartPolys.length; i++) {
 			this._kartRes.drawPoly(this._drawMat.kart, pMatrix, 0, this._kartPolys[i], simpleMatStack);
@@ -563,8 +564,8 @@ export class Kart {
 
 		//end sound update
 
-		if (this.preboost) {
-		} else if (this.cannon != null) {
+		if (!this.preboost) {
+		if (this.cannon != null) {
 			//when cannon is active, we fly forward at max move speed until we get to the cannon point.
 			let c = scene.nkm.sections["KTPC"].entries[this.cannon];
 
@@ -586,16 +587,12 @@ export class Kart {
 			} else {
 				let mat = mat4.create();
 				mat4.rotateY(mat, mat, c.angle[1] * (Math.PI / 180));
-				if (true) {
-					//vertical angle from position? airship fortress is impossible otherwise
-					//var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
-					let diff = vec3.sub([0, 0, 0], c.pos, this.pos);
-					let dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
-					let dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
-					mat4.rotateX(mat, mat, (diff[1] > 0 ? -1 : 1) * Math.acos(dAdj / dHyp));
-				} else {
-					mat4.rotateX(mat, mat, c.angle[0] * (-Math.PI / 180));
-				}
+				//vertical angle from position? airship fortress is impossible otherwise
+				//var c2 = scene.nkm.sections["KTPC"].entries[c.id2];
+				let diff = vec3.sub([0, 0, 0], c.pos, this.pos);
+				let dAdj = Math.sqrt(diff[0] * diff[0] + diff[2] * diff[2]);
+				let dHyp = Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+				mat4.rotateX(mat, mat, (diff[1] > 0 ? -1 : 1) * Math.acos(dAdj / dHyp));
 
 				let forward: vec3 = [0, 0, 1];
 				let up: vec3 = [0, 1, 0];
@@ -774,7 +771,6 @@ export class Kart {
 
 				if (!this.drifting) {
 					if (this._onGround) {
-						let effect = this._params.colParam[groundEffect];
 						if (!boosting) {
 							if (input.accel) {
 								if (this.speed <= top) {
@@ -935,6 +931,7 @@ export class Kart {
 				}
 				this.pos = posSeg;
 			}
+		}
 		}
 
 		//interpolate visual normal roughly to target
@@ -1393,7 +1390,7 @@ export class Kart {
 		this.physBasis = null;
 	}
 
-	sndUpdate(view: mat4) {
+	sndUpdate(_view: mat4) {
 		/*
 		k.soundProps.pos = vec3.transformMat4([], k.pos, view);
 		if (k.soundProps.lastPos != null) k.soundProps.vel = vec3.sub([], k.soundProps.pos, k.soundProps.lastPos);
@@ -1404,12 +1401,6 @@ export class Kart {
 
 		this.soundProps.refDistance = 192;
 		this.soundProps.rolloffFactor = 1;
-
-		let calcVol =
-			this.soundProps.refDistance /
-			(this.soundProps.refDistance +
-				this.soundProps.rolloffFactor *
-					(Math.sqrt(vec3.dot(this.soundProps.pos, this.soundProps.pos)) - this.soundProps.refDistance));
 	}
 
 	private _gramShmidt(v1: vec3, v2: vec3, v3: vec3) {
@@ -1449,8 +1440,6 @@ export class Kart {
 		if (this.physBasis != null) {
 			an = vec3.transformMat4([0, 0, 0], n, this.physBasis.inv);
 		}
-		let gravS = Math.sqrt(vec3.dot(this.gravity, this.gravity));
-		let angle = Math.acos(vec3.dot(vec3.scale(vec3.create(), this.gravity, -1 / gravS), n));
 		let adjustPos = true;
 
 		if (MKDS_COLTYPE.GROUP_OOB.indexOf(colType) != -1) {

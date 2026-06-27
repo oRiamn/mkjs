@@ -35,7 +35,7 @@ export class ObjGear implements SceneEntityObject, lsc_taget {
 	private _prevMat: mat4;
 	private _curMat: mat4;
 	private _colMat: mat4;
-	constructor(obji: nkm_section_OBJI, scene: Scene) {
+	constructor(obji: nkm_section_OBJI, _scene: Scene) {
 		console.log("rotatingGear");
 
 		this._obji = obji;

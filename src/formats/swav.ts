@@ -116,7 +116,7 @@ export class swav {
 				let buf = ctx.createBuffer(1, this.data.length, this.nSampleRate);
 				buf.getChannelData(0).set(this.data);
 				return buf;
-			} catch (e) {
+			} catch {
 				this.nSampleRate *= 2; //keep increasing sample rate until the target supports it.
 				this.loopSTime /= 2;
 				this.mul *= 2;

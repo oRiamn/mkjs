@@ -175,12 +175,12 @@ export class spa implements MKJSDataFormator {
 
 		let particleCount = view.getUint16(offset, true);
 		let particleTexCount = view.getUint16(offset + 2, true);
-		let unknown = view.getUint32(offset + 4, true);
-		let unknown2 = view.getUint32(offset + 8, true);
-		let unknown3 = view.getUint32(offset + 12, true);
+		view.getUint32(offset + 4, true);
+		view.getUint32(offset + 8, true);
+		view.getUint32(offset + 12, true);
 
 		let firstTexOffset = view.getUint32(offset + 16, true);
-		let pad = view.getUint32(offset + 20, true);
+		view.getUint32(offset + 20, true);
 
 		offset += 24;
 		if (version == "12_1") {
@@ -263,7 +263,7 @@ export class spa implements MKJSDataFormator {
 					t.realHeight = canvas.height;
 					obj.glTex = t;
 				}
-			} catch (_e) {
+			} catch {
 				return null;
 			}
 		}
@@ -676,7 +676,7 @@ export class spa implements MKJSDataFormator {
 		col[2] *= col[3] / 255;
 	}
 
-	private _readCompressedTex(tex: spa_particuletexture_infos): HTMLCanvasElement {
+	private _readCompressedTex(_tex: spa_particuletexture_infos): HTMLCanvasElement {
 		//format 5, 4x4 texels. I'll keep this well documented so it's easy to understand.
 		throw "compressed tex not supported for particles! (unknowns for tex data offsets and lengths?)";
 	}

@@ -81,16 +81,13 @@ export class nsbca implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
-		let header = null;
-		let offset = 0;
-		let tex;
+		const view = new DataView(input);
 
 		//nitro 3d header
-		header = nitro.readHeader(view);
+		const header = nitro.readHeader(view);
 		if (header.stamp != "BCA0") throw `NSBCA invalid. Expected BCA0, found ${header.stamp}`;
 		if (header.numSections > 1) throw "NSBCA invalid. Too many sections - should have 1 maximum.";
-		offset = header.sectionOffsets[0];
+		const offset = header.sectionOffsets[0];
 		//end nitro
 
 		this.mainOff = offset;
@@ -177,7 +174,6 @@ export class nsbca implements MKJSDataFormator {
 					inf.speed = this.speeds[(dat >> 14) & 3];
 					inf.off = view.getUint32(off + 4, true);
 
-					let extra = obj.unknown != 3 ? 0 : obj.frames - inf.endFrame;
 					let length = Math.ceil((inf.endFrame - inf.startFrame) * inf.speed);
 					let w = inf.halfSize ? 2 : 4;
 
@@ -222,7 +218,6 @@ export class nsbca implements MKJSDataFormator {
 				inf.halfSize = (dat >> 12) & 3; //not used by rotation?
 				inf.speed = this.speeds[(dat >> 14) & 3];
 				inf.off = view.getUint32(off + 4, true);
-				let extra = obj.unknown != 3 ? 0 : obj.frames - inf.endFrame;
 				//florian's rotate code seems to ignore this extra value. I'll need more examples of nsbca to test this more thoroughly.
 				let length = Math.ceil((inf.endFrame - inf.startFrame) * inf.speed);
 
@@ -232,7 +227,9 @@ export class nsbca implements MKJSDataFormator {
 						rotate.push(this._readRotation(view, off2, obj));
 						off2 += 2;
 					}
-				} catch (e) {}
+				} catch {
+					/* rotation data parse error */
+				}
 				rotExtra = inf;
 				off += 8;
 			}
@@ -274,7 +271,6 @@ export class nsbca implements MKJSDataFormator {
 					inf.speed = this.speeds[(dat >> 14) & 3];
 					inf.off = view.getUint32(off + 4, true);
 
-					let extra = obj.unknown != 3 ? 0 : obj.frames - inf.endFrame;
 					let length = Math.ceil((inf.endFrame - inf.startFrame) * inf.speed);
 					let w = inf.halfSize ? 2 : 4;
 

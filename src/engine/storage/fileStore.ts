@@ -92,10 +92,10 @@ export class fileStore {
 		let objectStore = transaction.objectStore("files");
 
 		let request = objectStore.get("mkds.nds");
-		request.onerror = function (event) {
+		request.onerror = function (_event) {
 			alert("Fatal database error!");
 		};
-		request.onsuccess = (event) => {
+		request.onsuccess = (_event) => {
 			if (request.result == null) callback(null!);
 			else callback(request.result.data);
 		};

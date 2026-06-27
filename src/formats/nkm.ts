@@ -223,7 +223,6 @@ export class nkm implements MKJSDataFormator {
 		//todo, support versions for other games (MKWii etc)
 		//this.mkwii = mkwii;
 
-		this.load = this.load;
 		this.handlers = {};
 
 		this.handlers["OBJI"] = (view: DataView, off: number): nkm_section_OBJI => {

@@ -64,12 +64,12 @@ export class nitro {
 		let baseOff = offset;
 		offset += 1; //skip dummy
 		let numObjects = view.getUint8(offset++);
-		let secSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
 		//unknown block. documentation out of 10
-		let uhdSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
-		let usecSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
 		let unknown = view.getUint32(offset, true); //usually 0x0000017F
 		offset += 4;
@@ -81,9 +81,9 @@ export class nitro {
 			offset += 4;
 		}
 		//info block
-		let ihdSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
-		let isecSize = view.getUint16(offset, true);
+		view.getUint16(offset, true);
 		offset += 2;
 		let objectData: Type[] = [];
 		for (let i = 0; i < numObjects; i++) {

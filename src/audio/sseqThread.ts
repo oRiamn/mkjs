@@ -366,8 +366,8 @@ export class SSEQThread {
 		this._Instructions[0xd5] = () => {}; //expression
 		this._Instructions[0xd6] = () => {}; //print variable
 		this._Instructions[0xe0] = () => {
-			let value = this._prog[this._pc++];
-			value |= this._prog[this._pc++] << 8;
+			this._pc++;
+			this._pc++;
 		}; //modulation delay
 
 		this._Instructions[0xe1] = () => {

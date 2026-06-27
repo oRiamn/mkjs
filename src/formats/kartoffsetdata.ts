@@ -60,9 +60,6 @@ export class kartoffsetdata implements MKJSDataFormator {
 				chars.push(pos);
 			}
 
-			wheels = wheels;
-			chars = chars;
-
 			karts.push({
 				name: name as kartoffsetdata_tire_name,
 				frontTireSize,

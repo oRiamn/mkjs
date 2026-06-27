@@ -74,7 +74,6 @@ export class nftr implements MKJSDataFormator {
 	constructor(input: MKJSDataInput) {
 		this.input = input;
 
-		this.mainOff;
 		this.info = undefined!;
 		this.charMap = {};
 
@@ -85,15 +84,11 @@ export class nftr implements MKJSDataFormator {
 
 	load(input: MKJSDataInput): void {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
-		let offset = 0;
-		let tex;
-
-		//nitro 3d header
+		const view = new DataView(input);
 		const header = nitro.readHeader(view);
 		//debugger;
 		if (header.stamp != "RTFN") throw `NFTR invalid. Expected RTFN, found ${header.stamp}`;
-		offset = 0x10; //nitro header for nftr doesn't have section offsets - they are in order
+		let offset = 0x10; //nitro header for nftr doesn't have section offsets - they are in order
 		//end nitro
 
 		const type =

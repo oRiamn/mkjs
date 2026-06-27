@@ -75,12 +75,11 @@ export class nsbtx {
 	private load(input: MKJSDataInput, tex0: boolean) {
 		this.colourBuffer = new Uint32Array(4);
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
-		let header = null;
+		const view = new DataView(input);
 		let offset = 0;
 		if (!tex0) {
 			//nitro 3d header
-			header = nitro.readHeader(view);
+			const header = nitro.readHeader(view);
 			if (header.stamp != "BTX0") throw `nsbtx invalid. Expected BTX0, found ${header.stamp}`;
 			if (header.numSections > 1) throw "NSBTX invalid. Too many sections - should only have one.";
 			offset = header.sectionOffsets[0];
@@ -94,13 +93,13 @@ export class nsbtx {
 			MKSUtils.asciireadChar(view, offset + 0x2) +
 			MKSUtils.asciireadChar(view, offset + 0x3);
 		if (stamp != "TEX0") throw `NSBTX invalid. Expected TEX0, found ${stamp}`;
-		let size = view.getUint32(offset + 0x04, true);
+		view.getUint32(offset + 0x04, true);
 		this.texDataSize = view.getUint16(offset + 0x0c, true) << 3;
 		this.texInfoOff = view.getUint16(offset + 0x0e, true);
 		this.texOffset = view.getUint16(offset + 0x14, true);
 
 		this.compTexSize = view.getUint16(offset + 0x1c, true) << 3;
-		const compTexInfoOff = view.getUint16(offset + 0x1e, true);
+		view.getUint16(offset + 0x1e, true);
 		this.compTexOffset = view.getUint32(offset + 0x24, true);
 		this.compTexInfoDataOff = view.getUint32(offset + 0x28, true);
 

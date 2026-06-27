@@ -15,7 +15,7 @@ module.exports = {
 	resolve: {
 		extensions: [".tsx", ".ts", ".js"],
 	},
-	devtool: 'eval-source-map',
+	devtool: "eval-source-map",
 	plugins: [
 		new webpack.ProvidePlugin({
 			vec2: ["gl-matrix", "vec2"],

@@ -49,7 +49,7 @@ export class netKart {
 		view.setFloat32(off + 0x58, input.turn, true);
 		view.setFloat32(off + 0x5c, input.airTurn, true);
 	}
-	static saveVec3(view: DataView, arg1: number, kartColVel: vec3 | null) {
+	static saveVec3(_view: DataView, _arg1: number, _kartColVel: vec3 | null) {
 		throw new Error("Method not implemented.");
 	}
 
@@ -79,7 +79,7 @@ export class netKart {
 			k.kartTargetNormal = netKart.readVec3(view, off + 0x3d, k.kartTargetNormal);
 			//	k.trackAttach = netKart.readVec3(view, off + 0x49, k.trackAttach);
 
-			let driftFlags = view.getUint8(off + 0x55);
+			view.getUint8(off + 0x55);
 
 			//k.drifting = driftFlags & 1;
 			//k.driftMode = (driftFlags >> 1) & 3;
@@ -97,7 +97,7 @@ export class netKart {
 			//failed to restore kart data. may wish to disconnect on this, but it's probably better to not react.
 		}
 	}
-	static readVec3(view: DataView, off: number, pos: vec3): vec3 {
+	static readVec3(_view: DataView, _off: number, _pos: vec3): vec3 {
 		throw new Error("Method not implemented.");
 	}
 

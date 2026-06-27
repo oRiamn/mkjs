@@ -320,7 +320,7 @@ export class nitroModel {
 		return this._collisionModel[modelind][polyind];
 	}
 
-	private _loadWhiteTex(btx?: nsbtx) {
+	private _loadWhiteTex(_btx?: nsbtx) {
 		//examines the materials in the loaded model and generates textures for each.
 		this._texCanvas = [];
 		this._tex = [];

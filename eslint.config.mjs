@@ -31,7 +31,7 @@ export default tseslint.config(
 			"no-prototype-builtins": "warn",
 			"no-self-assign": "warn",
 			"no-useless-assignment": "warn",
-			"no-var": "off",
+			"no-var": "error",
 			"@typescript-eslint/no-empty-object-type": "off",
 			"@typescript-eslint/no-explicit-any": "off",
 			"@typescript-eslint/no-unused-expressions": "warn",

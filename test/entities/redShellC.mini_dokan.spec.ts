@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { loadCourseCarc, romExists } from "../helpers/rom";
 import { nkm } from "../../src/formats/nkm";
+import { loadCourseCarc, romExists } from "../helpers/rom";
 
 describe.skipIf(!romExists)("redShellC mini_dokan_gc paths", () => {
 	it("should use MEPA/MEPO on battle arena", () => {

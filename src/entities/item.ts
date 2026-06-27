@@ -259,7 +259,7 @@ export class Item {
 			return;
 		}
 
-		if (obj.hasOwnProperty("type")) {
+		if (Object.hasOwn(obj, "type")) {
 			const item = <Item>obj;
 			//has a type, definitely an item
 			if (item.isDestructive() || this.isDestructive()) {

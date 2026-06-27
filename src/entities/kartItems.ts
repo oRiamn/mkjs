@@ -108,7 +108,6 @@ export class KartItems {
 					} else {
 						this._release(input);
 					}
-					pressed = false;
 				}
 			}
 		}

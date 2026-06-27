@@ -80,7 +80,7 @@ export class ObjBridge implements SceneEntityObject, lsc_taget {
 		this._curMat = mat;
 	}
 
-	update(scene: Scene) {
+	update(_scene: Scene) {
 		let angle = 0;
 		this._frame++;
 		switch (this._mode) {

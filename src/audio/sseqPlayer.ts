@@ -82,7 +82,7 @@ export class SSEQPlayer {
 
 		if (properties != null) {
 			for (let p in properties) {
-				if (properties.hasOwnProperty(p)) {
+				if (Object.hasOwn(properties, p)) {
 					const t = p as keyof SSEQPlayer_properties;
 					const val = properties[t];
 					if (val !== undefined) this.properties[t] = val;
@@ -115,7 +115,6 @@ export class SSEQPlayer {
 		this.threadsToKill = [];
 		this.baseAudioTime = this.ctx.currentTime;
 
-		const buffer = 0.02;
 		this.remainder = 0;
 
 		this.tick();
@@ -175,7 +174,9 @@ export class SSEQPlayer {
 			note.note.gain.linearRampToValueAtTime(0, baseTime + releaseTime); //then release
 			note.src.stop(baseTime + releaseTime);
 			if (baseTime + releaseTime > this.lastNoteEnd) this.lastNoteEnd = baseTime + releaseTime;
-		} catch (e) {}
+		} catch {
+			/* note already ended */
+		}
 	}
 
 	setTranspose(newT: number) {
@@ -224,7 +225,7 @@ export class SSEQPlayer {
 	playNote(thread: SSEQThread, velocity: number, duration: number, num: number): ThreadM | null {
 		try {
 			return this._playNote(thread, velocity, duration, num);
-		} catch (e) {
+		} catch {
 			return null;
 		}
 	}
@@ -241,7 +242,6 @@ export class SSEQPlayer {
 			return null;
 		}
 
-		const fireNote = true;
 		let note: SSEQNoteGain;
 		let source: AudioBufferSourceNode;
 		let snd: SSEQWaveCache_wave;

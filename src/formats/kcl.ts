@@ -90,7 +90,6 @@ export class kcl {
 		this.end = !mkwii;
 		this.mkwiiMode = mkwii;
 		buffer = MKSUtils.prepareInput(buffer);
-		let time = Date.now();
 		//loads kcl from an array buffer.
 		let view = new DataView(buffer);
 		this.vertexOffset = view.getUint32(0x00, this.end);

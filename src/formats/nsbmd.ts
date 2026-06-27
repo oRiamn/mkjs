@@ -122,17 +122,15 @@ export class nsbmd implements MKJSDataFormator {
 	load(input: MKJSDataInput) {
 		this.hasBillboards = false;
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
-		let header = null;
-		let offset = 0;
-		let tex;
+		const view = new DataView(input);
 
 		//nitro 3d header
-		header = nitro.readHeader(view);
+		const header = nitro.readHeader(view);
 		if (header.stamp != "BMD0") throw `NSBMD invalid. Expected BMD0, found ${header.stamp}`;
 		if (header.numSections > 2) throw "NSBMD invalid. Too many sections - should have 2 maximum.";
+		let tex: nsbtx | undefined;
 		if (header.numSections == 2) tex = new nsbtx(input.slice(header.sectionOffsets[1]), true);
-		offset = header.sectionOffsets[0];
+		const offset = header.sectionOffsets[0];
 		//end nitro
 
 		this._mainOff = offset;
@@ -270,8 +268,6 @@ export class nsbmd implements MKJSDataFormator {
 		let lastMat: number | null = null;
 		let bound: boolean[] = [];
 
-		let matMap = [];
-
 		while (offset < this._texPalOff) {
 			//bones
 			last = view.getUint8(offset++);
@@ -280,7 +276,7 @@ export class nsbmd implements MKJSDataFormator {
 					//bind object transforms to parent. bone exists but is not placed in the stack
 					const obj = view.getUint8(offset++);
 					const parent = view.getUint8(offset++);
-					const zero = view.getUint8(offset++);
+					view.getUint8(offset++);
 
 					const object = objects.objectData[obj];
 					object.parent = parent;
@@ -298,7 +294,7 @@ export class nsbmd implements MKJSDataFormator {
 				case 0x66: {
 					const obj = view.getUint8(offset++);
 					const parent = view.getUint8(offset++);
-					const zero = view.getUint8(offset++);
+					view.getUint8(offset++);
 					let stackID = view.getUint8(offset++);
 					let restoreID = null;
 					if (last == 0x66) restoreID = view.getUint8(offset++);
@@ -358,7 +354,7 @@ export class nsbmd implements MKJSDataFormator {
 					//bind material to polygon: matID, 5, polyID
 					const mat = view.getUint8(offset++);
 					lastMat = mat;
-					const five = view.getUint8(offset++); //???
+					view.getUint8(offset++); //???
 					const polyId = view.getUint8(offset++);
 					const bindID = forceID == null ? commands[commands.length - 1].stackID! : forceID;
 					bound[bindID] = true;
@@ -388,6 +384,7 @@ export class nsbmd implements MKJSDataFormator {
 				case 3: //stack id for poly (wit)
 					forceID = view.getUint8(offset++);
 					if (debug) console.log(`[0x${last.toString(16)}] Force stack id to ${forceID}`);
+					break;
 				case 0:
 					break;
 				case 5: {
@@ -418,7 +415,6 @@ export class nsbmd implements MKJSDataFormator {
 				}
 				case 9: //skinning equ. not used?
 					if (debug) console.log(`[0x${last.toString(16)}] Skinning Equation (UNIMPLEMENTED)`);
-					debugger;
 					break;
 				case 0x0b:
 					if (debug) console.log(`[0x${last.toString(16)}] BEGIN PAIRING.`);
@@ -438,10 +434,9 @@ export class nsbmd implements MKJSDataFormator {
 		return commands;
 	}
 
-	private _matInfoHandler(view: DataView, off: number, base: number): nsbmd_MatInfos {
+	private _matInfoHandler(view: DataView, off: number, _base: number): nsbmd_MatInfos {
 		let offset = this._texPalOff + view.getUint32(off, true);
 
-		let rel = 0;
 		/*while (rel < 40) {
 			var flags = view.getUint16(offset+rel, true);
 			if ((flags&15)==15) console.log(`rel at ${rel}`);
@@ -609,7 +604,6 @@ export class nsbmd implements MKJSDataFormator {
 			pivot[6] = view.getInt16(offset + 0xe, true) / 4096;
 			pivot[7] = view.getInt16(offset + 0x10, true) / 4096;
 			pivot[8] = view.getInt16(offset + 0x12, true) / 4096;
-			offset += 16;
 		}
 		let mat = mat4.create();
 		mat4.translate(mat, mat, translate);

@@ -222,7 +222,7 @@ export class nitroRender {
 			nitroRender._stripAlt = 0;
 		};
 
-		nitroRender._instructions[0x41] = function (view: DataView, off: number) {
+		nitroRender._instructions[0x41] = function (_view: DataView, _off: number) {
 			//end vtx
 			if (!nitroRender._optimiseTriangles) nitroRender._pushStrip();
 		};

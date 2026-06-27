@@ -183,7 +183,7 @@ export class NitroEmitter {
 				scene.particles.push(particle);
 			}
 
-			let pos = vec3.clone(this._targ.pos);
+			vec3.clone(this._targ.pos);
 		}
 		this.time++;
 

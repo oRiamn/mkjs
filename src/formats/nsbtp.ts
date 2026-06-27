@@ -64,16 +64,13 @@ export class nsbtp implements MKJSDataFormator {
 
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
-		let view = new DataView(input);
-		let header = null;
-		let offset = 0;
-		let tex;
+		const view = new DataView(input);
 
 		//nitro 3d header
-		header = nitro.readHeader(view);
+		const header = nitro.readHeader(view);
 		if (header.stamp != "BTP0") throw `NSBTP invalid. Expected BTP0, found ${header.stamp}`;
 		if (header.numSections > 1) throw "NSBTP invalid. Too many sections - should have 1 maximum.";
-		offset = header.sectionOffsets[0];
+		const offset = header.sectionOffsets[0];
 		//end nitro
 
 		this.mainOff = offset;
@@ -100,11 +97,12 @@ export class nsbtp implements MKJSDataFormator {
 
 	private _readAnimData(view: DataView, offset: number): nsbtp_animadata {
 		this.matOff = offset;
-		let stamp =
+		void (
 			MKSUtils.asciireadChar(view, offset + 0x0) +
 			MKSUtils.asciireadChar(view, offset + 0x1) +
 			MKSUtils.asciireadChar(view, offset + 0x2) +
-			MKSUtils.asciireadChar(view, offset + 0x3); //should be M_PT, where _ is a 0 character
+			MKSUtils.asciireadChar(view, offset + 0x3)
+		); //should be M_PT, where _ is a 0 character
 
 		offset += 4;
 		//b400 0303 4400 7400 - countdown (3..2..1.. then start is another model, duration 180 frames, 3 frames of anim)

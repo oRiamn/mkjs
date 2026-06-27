@@ -97,7 +97,6 @@ export class lsc {
 		let tris = lsc._getTriList(pos, dir, scn.kcl);
 
 		const oPos = pos;
-		const oDir = dir;
 
 		const ePos = vec3.divide([0, 0, 0], pos, eDimensions); //need to rescale position to move into ellipsoid space
 		const eDir = vec3.divide([0, 0, 0], dir, eDimensions);
@@ -323,8 +322,6 @@ export class lsc {
 					embedded = true;
 					t0 = 0;
 				}
-				if (t1 > 1) t1 = 1;
-
 				let newT = t0;
 
 				//sphere intersects plane of triangle

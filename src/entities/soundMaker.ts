@@ -98,5 +98,5 @@ export class ObjSoundMaker implements SceneEntityObject {
 		return { mdl: [] };
 	}
 
-	provideRes(r: ProvidedRes) {}
+	provideRes(_r: ProvidedRes) {}
 }

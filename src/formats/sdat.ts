@@ -153,7 +153,7 @@ export class sdat implements MKJSDataFormator {
 			return a;
 		};
 
-		this.sectionFunc["$FILE"] = (view: DataView, off: number) => {
+		this.sectionFunc["$FILE"] = (_view: DataView, _off: number) => {
 			// console.log("file");
 			return undefined;
 		};
@@ -228,9 +228,9 @@ export class sdat implements MKJSDataFormator {
 			};
 		};
 
-		this.recordInfoFunc[4] = (view: DataView, off: number) => undefined;
-		this.recordInfoFunc[5] = (view: DataView, off: number) => undefined;
-		this.recordInfoFunc[6] = (view: DataView, off: number) => undefined;
+		this.recordInfoFunc[4] = (_view: DataView, _off: number) => undefined;
+		this.recordInfoFunc[5] = (_view: DataView, _off: number) => undefined;
+		this.recordInfoFunc[6] = (_view: DataView, _off: number) => undefined;
 
 		this.recordInfoFunc[7] = (view: DataView, off: number): sdat_section_7 => {
 			const fileID = view.getUint16(off, true);
@@ -257,8 +257,7 @@ export class sdat implements MKJSDataFormator {
 	load(input: MKJSDataInput) {
 		input = MKSUtils.prepareInput(input);
 		this.buffer = input;
-		let view = new DataView(input);
-		let offset = 0;
+		const view = new DataView(input);
 
 		let stamp =
 			MKSUtils.asciireadChar(view, 0x0) +
@@ -267,12 +266,10 @@ export class sdat implements MKJSDataFormator {
 			MKSUtils.asciireadChar(view, 0x3);
 		if (stamp != "SDAT") throw `SDAT invalid. Expected SDAT, found ${stamp}`;
 
-		let unknown1 = view.getUint32(0x4, true);
-		let filesize = view.getUint32(0x8, true);
-		let headsize = view.getUint16(0xc, true);
-		let numSections = view.getUint16(0xe, true);
-		let sectionOffsets = [];
-		let sectionSizes = [];
+		view.getUint32(0x4, true);
+		view.getUint32(0x8, true);
+		view.getUint16(0xc, true);
+		view.getUint16(0xe, true);
 		for (let i = 3; i > -1; i--) {
 			//reverse order so we can process files into js objects
 			let off = view.getUint32(0x10 + i * 8, true);

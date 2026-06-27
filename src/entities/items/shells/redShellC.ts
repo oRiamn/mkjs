@@ -201,8 +201,6 @@ export class RedShellC implements KartItemEntity {
 
 		let n = dat.normal;
 		vec3.normalize(n, n);
-		let gravS = Math.sqrt(vec3.dot(this.gravity, this.gravity));
-		let angle = Math.acos(vec3.dot(vec3.scale(vec3.create(), this.gravity, -1 / gravS), n));
 		let adjustPos = true;
 
 		if (MKDS_COLTYPE.GROUP_WALL.indexOf(colType) != -1) {
