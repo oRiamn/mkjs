@@ -4,19 +4,7 @@ type SSEQInstruction = (this: SSEQThread, inst: number) => void;
 type SSEQArgumentReader = (last: number) => number;
 
 export class SSEQThread {
-	_VOLMUL: number;
-	_pc: number;
-	_prog: Uint8Array;
-	_player: SSEQPlayer;
-	_comparisonResult: boolean;
-	_force: boolean;
-	_forceCommand: number;
-	_forceValue: number;
-	_forceSpecial: number;
 	decay: number | null;
-	buffer: number;
-	wait: number;
-	offT: number;
 	program: number;
 	pitchBendRange: number;
 	pitchBend: number;
@@ -25,27 +13,37 @@ export class SSEQThread {
 	sweepPitch: number;
 	transpose: number;
 	attack: number | null;
-	delay: number | null;
 	sustain: number | null;
 	release: number | null;
 	tie: number;
-	noteWait: boolean;
-	loopPtr: number;
-	loopTimes: number;
-	_ctx: AudioContext;
-	_gainL: GainNode;
-	_gainR: GainNode;
-	_merger: ChannelMergerNode;
-	_splitter: ChannelSplitterNode;
-	pan: number;
+
 	gain: GainNode;
 	lastNote: ThreadM | null;
-	dead: boolean;
-	stack: number[];
-	_InstArgs: SSEQArgumentReader[][];
-	_Instructions: SSEQInstruction[];
-	_varFunc: ((a: number, b: number) => void)[];
-	_boolFunc: ((a: number, b: number) => boolean)[];
+
+	private buffer: number;
+	private wait: number;
+	private noteWait: boolean;
+	private loopPtr: number;
+	private loopTimes: number;
+	private dead: boolean;
+	private stack: number[];
+	private _VOLMUL: number;
+	private _pc: number;
+	private _prog: Uint8Array;
+	private _player: SSEQPlayer;
+	private _comparisonResult: boolean;
+	private _force: boolean;
+	private _forceCommand: number;
+	private _forceValue: number;
+	private _forceSpecial: number;
+	private _ctx: AudioContext;
+	private _gainL: GainNode;
+	private _gainR: GainNode;
+	private _merger: ChannelMergerNode;
+	private _InstArgs: SSEQArgumentReader[][];
+	private _Instructions: SSEQInstruction[];
+	private _varFunc: ((a: number, b: number) => void)[];
+	private _boolFunc: ((a: number, b: number) => boolean)[];
 
 	constructor(prog: Uint8Array, pc: number, player: SSEQPlayer) {
 		this._VOLMUL = 1 / 4;
@@ -65,7 +63,6 @@ export class SSEQThread {
 
 		this.buffer = 10; //the distance in beats where we queue notes to fire.
 		this.wait = 0;
-		this.offT = 0;
 
 		this.program = 0;
 		this.pitchBendRange = 1;
@@ -76,7 +73,6 @@ export class SSEQThread {
 		this.transpose = 0;
 
 		this.attack = null;
-		this.delay = null;
 		this.sustain = null;
 		this.release = null;
 
@@ -93,9 +89,7 @@ export class SSEQThread {
 		this._gainL.gain.value = parseFloat("1");
 		this._gainR.gain.value = parseFloat("1");
 		this._merger = this._ctx.createChannelMerger(2);
-		this._splitter = this._ctx.createChannelSplitter(2);
 
-		this.pan = 0;
 
 		this.gain = this._player.ctx.createGain();
 		this.gain.connect(this._gainL);
@@ -520,14 +514,14 @@ export class SSEQThread {
 		}; //end of track
 	}
 
-	_boolInst(inst: number) {
+	private _boolInst(inst: number) {
 		const varNum = this._forcableValue(true);
 		let arg = this._forcableValue();
 		if (arg & 0x80) arg -= 256;
 		this._comparisonResult = this._boolFunc[inst - 0xb8].bind(this)(varNum, arg);
 	}
 
-	_varInst(inst: number) {
+	private _varInst(inst: number) {
 		const varNum = this._forcableValue(true);
 		let arg = this._forcableValue();
 		if (arg & 0x80) arg -= 256;
@@ -537,7 +531,6 @@ export class SSEQThread {
 
 	tick(time: number) {
 		this.wait -= time;
-		this.offT = 0;
 		let insts = 0;
 
 		while (this.wait < this.buffer && !this.dead) {
@@ -557,7 +550,7 @@ export class SSEQThread {
 		if (this.wait == Infinity && this.lastNote != null && this.lastNote.note.ended) this._Instructions[0xff].bind(this)(0xff);
 	}
 
-	_noteOn(num: number) {
+	private _noteOn(num: number) {
 		if (num == 0) return; //NOP
 		const velocity = this._forcableValue(true);
 		let length = this._forcableValueFunc(false, this._readVariableLength.bind(this));
@@ -566,11 +559,11 @@ export class SSEQThread {
 		if (this.noteWait) this.wait += length;
 	}
 
-	_ticksToMs(ticks: number) {
+	private _ticksToMs(ticks: number) {
 		return (ticks / 48) * (60000 / this._player.properties.bpm);
 	}
 
-	_readVariableLength() {
+	private _readVariableLength() {
 		let read = this._prog[this._pc++];
 		let value = read & 0x7f;
 		while (read & 0x80) {
@@ -584,46 +577,45 @@ export class SSEQThread {
 		return this._player.baseAudioTime + this._ticksToMs(this.wait - this._player.remainder) / 1000;
 	}
 
-	_read16() {
+	private _read16() {
 		let value = this._prog[this._pc++];
 		value |= this._prog[this._pc++] << 8;
 		return value;
 	}
 
-	_reads16() {
+	private _reads16() {
 		let value = this._read16();
 		if (value & 0x8000) value -= 0x10000;
 		return value;
 	}
 
-	_read8() {
+	private _read8() {
 		return this._prog[this._pc++];
 	}
 
-	_readSpecial(last: number) {
+	private _readSpecial(last: number) {
 		if (last < 0x80 || (last >= 0xb0 && last < 0xbd)) return this._prog[this._pc++];
 		else return 0;
 	}
 
-	_read24() {
+	private _read24() {
 		let value = this._prog[this._pc++];
 		value |= this._prog[this._pc++] << 8;
 		value |= this._prog[this._pc++] << 16;
 		return value;
 	}
 
-	_forcableValueFunc(special: boolean, func: () => number) {
+	private _forcableValueFunc(special: boolean, func: () => number) {
 		if (this._force) return special ? this._forceSpecial : this._forceValue;
 		else return func();
 	}
 
-	_forcableValue(special?: boolean) {
+	private _forcableValue(special?: boolean) {
 		if (this._force) return special ? this._forceSpecial : this._forceValue;
 		else return this._prog[this._pc++];
 	}
 
-	_setPan(value: number) {
-		this.pan = value;
+	private _setPan(value: number) {
 		if (value > 0) {
 			this._gainR.gain.value = parseFloat("1");
 			this._gainL.gain.value = parseFloat(`${1 - value}`);
@@ -633,7 +625,7 @@ export class SSEQThread {
 		}
 	}
 
-	_noteToFreq(n: number) {
+	private _noteToFreq(n: number) {
 		return Math.pow(2, (n - 49) / 12) * 440;
 	}
 }

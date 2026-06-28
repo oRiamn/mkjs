@@ -41,8 +41,8 @@ export type nitroAudioSound = {
 
 export class nitroAudio {
 	static ctx: AudioContext;
-	static sounds: nitroAudioSound[] = [];
-	static sdat: sdat;
+	private static sounds: nitroAudioSound[] = [];
+	private static sdat: sdat;
 	private static _tickInterval: ReturnType<typeof setInterval> | null = null;
 	private static readonly TICK_MS = 1000 / 60;
 
@@ -188,7 +188,7 @@ export class nitroAudio {
 		return sound;
 	}
 
-	static _updatePanner(panner: PannerNode, soundProps: nitroAudioSoundProps | null) {
+	private static _updatePanner(panner: PannerNode, soundProps: nitroAudioSoundProps | null) {
 		if (panner == null || soundProps == null) return;
 		if (soundProps.pos != null) panner.setPosition(soundProps.pos[0], soundProps.pos[1], soundProps.pos[2]);
 		//if (soundProps.vel != null) panner.setVelocity(soundProps.vel[0], soundProps.vel[1], soundProps.vel[2]);

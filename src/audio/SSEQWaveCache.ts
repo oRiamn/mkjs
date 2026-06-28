@@ -8,9 +8,9 @@ export type SSEQWaveCache_wave = {
 };
 
 export class SSEQWaveCache {
-	static cache: SSEQWaveCache_wave[][] = [];
-	static sdat: sdat;
-	static ctx: AudioContext;
+	private static cache: SSEQWaveCache_wave[][] = [];
+	private static sdat: sdat;
+	private static ctx: AudioContext;
 
 	static cacheWaveArc(num: number) {
 		if (SSEQWaveCache.cache[num] == null) {

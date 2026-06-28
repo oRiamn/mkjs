@@ -45,25 +45,25 @@ export type ThreadM = {
 	snd: SSEQWaveCache_wave;
 };
 
-//
 export class SSEQPlayer {
-	CYCLE_TIME: number;
-	_outputTarget: outputTarget;
+
 	properties: SSEQPlayer_properties;
 	ctx: AudioContext;
-	_sseqHead: SsarSeqEntry;
-	_sdat: sdat;
-	lastNoteEnd: number;
-	threads: SSEQThread[];
 	trackAlloc: number;
 	trackStarted: number;
-	bank: SSEQBankEntry | null;
 	vars: number[];
 	dead: boolean;
 	masterGain: GainNode;
-	threadsToKill: number[];
 	baseAudioTime: number;
 	remainder: number;
+	private _sseqHead: SsarSeqEntry;
+	private _sdat: sdat;
+	private lastNoteEnd: number;
+	private threads: SSEQThread[];
+	private CYCLE_TIME: number;
+	private _outputTarget: outputTarget;
+	private bank: SSEQBankEntry | null;
+	private threadsToKill: number[];
 	constructor(sseqHead: SsarSeqEntry, sdat: sdat, ctx: AudioContext, outputTarget: outputTarget, properties: SSEQPlayer_param | null) {
 		//a virtual machine, super fun obviously
 		//
@@ -180,7 +180,7 @@ export class SSEQPlayer {
 		}
 	}
 
-	setTranspose(newT: number) {
+	private setTranspose(newT: number) {
 		this.properties.transpose = newT;
 		for (let i = 0; i < this.threads.length; i++) {
 			const note = this.threads[i].lastNote;
@@ -312,7 +312,7 @@ export class SSEQPlayer {
 		};
 	}
 
-	_calculateRequiredAttackCycles(att: number) {
+	private _calculateRequiredAttackCycles(att: number) {
 		let value = 92544;
 		let ticks = 0;
 		while (value > 0) {
@@ -322,14 +322,14 @@ export class SSEQPlayer {
 		return ticks;
 	}
 
-	_convertAttToRate(attack: number) {
+	private _convertAttToRate(attack: number) {
 		const table = [0x00, 0x01, 0x05, 0x0e, 0x1a, 0x26, 0x33, 0x3f, 0x49, 0x54, 0x5c, 0x64, 0x6d, 0x74, 0x7b, 0x7f, 0x84, 0x89, 0x8f];
 		if (attack & 0x80) return 0;
 		else if (attack >= 0x6f) return table[0x7f - attack];
 		else return 0xff - attack;
 	}
 
-	_convertFallToRate(fall: number) {
+	private _convertFallToRate(fall: number) {
 		if (fall & 0x80) return 0;
 		else if (fall == 0x7f) return 0xffff;
 		else if (fall == 0x7e) return 0x3c00;
@@ -337,11 +337,11 @@ export class SSEQPlayer {
 		else return (0x1e00 / (0x7e - fall)) & 0xffff;
 	}
 
-	_noteToFreq(n: number) {
+	private _noteToFreq(n: number) {
 		return Math.pow(2, (n - 49) / 12) * 440;
 	}
 
-	_getInst(inst: sbnk_instrument, note: number): SBNKPlayableInstrument | null {
+	private _getInst(inst: sbnk_instrument, note: number): SBNKPlayableInstrument | null {
 		switch (inst.type) {
 			case 0:
 				return null;
@@ -357,7 +357,7 @@ export class SSEQPlayer {
 		}
 	}
 
-	_ticksToMs(ticks: number) {
+	private _ticksToMs(ticks: number) {
 		return (ticks / 48) * (60000 / this.properties.bpm);
 	}
 }
