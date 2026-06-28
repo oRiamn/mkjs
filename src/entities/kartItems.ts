@@ -8,9 +8,9 @@ export class KartItems {
 	static items = [
 		"koura_g",
 		"koura_r",
-		"banana",
-		"f_box",
-		"bomb",
+		// "banana",
+		// "f_box",
+		// "bomb",
 		"koura_group_g",
 		"koura_group_r",
 		// 'koura_group-bomb-7' bug (too many bomb)

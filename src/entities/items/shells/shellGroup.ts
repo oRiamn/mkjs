@@ -1,7 +1,7 @@
 import { nitroAudio, nitroAudioSound } from "../../../audio/nitroAudio";
 import { Item } from "../../item";
 
-class ShellGroup implements KartItemEntity {
+abstract class ShellGroup implements KartItemEntity {
 	canBeHeld: boolean;
 	canBeDropped: boolean;
 	rotationPeriod: number;

@@ -1,59 +1,3 @@
-//
-// RedShellC — guided red shell item controller
-//-------------------------------------------
-// Shares base physics with GreenShellC (speed, gravity, wall bounces, road slide,
-// constant horizontal speed, DAMAGE_FLIP on kart hit). Differs in steering logic.
-//
-// On release:
-//   - Fires in the owner's facing direction (backward throw reverses angle, no speed bonus).
-//   - Anchors to the nearest EPOI waypoint to the shooter's position.
-//   - Starts a 3-second chase timer (180 frames @ 60 fps).
-//
-// While chasing:
-//   1. Route phase (default) — follows the track like a CPU (controlRaceCPU logic):
-//      loads EPAT/EPOI from the NKM (MEPA/MEPO or IPAT/IPOI as fallback), advances
-//      waypoints via plane-crossing tests, picks fork branches toward the locked target
-//      or the shell itself. Never moves backward on the route.
-//   2. Proximity homing — when an enemy kart enters 192 world units, locks onto the
-//      nearest one (excluding owner and safe-kart). Blends 85% toward the kart and
-//      15% toward the route. Only targets karts ahead (±90°). Releases the lock if
-//      the kart drifts beyond 288 units. Works identically for human and CPU karts.
-//
-// Steering constraints:
-//   - Max turn rate: 0.08 rad/frame.
-//   - Desired angle clamped to ±90° from current heading (no U-turns).
-//
-// After the chase timer expires:
-//   - Stops correcting course and flies straight like a green shell until it hits
-//     something or goes out of bounds.
-//
-// release() returns false (single-use; kart clears heldItem immediately).
-//
-
-//
-// redShellC.ts
-//--------------------
-// Guided offensive shell (koura_r). Shares base physics with GreenShellC
-// (speed, gravity, wall bounces, road slide, constant horizontal speed).
-//
-// Behaviour:
-//   On release, anchors to the EPOI nearest the shooter's position and
-//   follows the track route (EPAT/EPOI from the course NKM) the same way
-//   CPU karts do: sequential waypoint advance via plane-crossing test.
-//
-//   While no opponent is within TARGET_PROXIMITY, it only follows the route.
-//   When a kart enters that radius, it locks the nearest rival and blends
-//   85% homing toward them with 15% route steering. Targeting uses world
-//   position only (works for human and CPU players alike). It never turns
-//   backward: desired heading is clamped to ±90° from the current angle.
-//
-//   After CHASE_FRAMES (3 s at 60 fps) without a hit, homing stops and the
-//   shell continues straight like a green shell until it hits or expires.
-//
-//   On kart contact: DAMAGE_FLIP, then the shell is destroyed.
-//
-//
-
 import { nitroAudio, nitroAudioSound } from "../../../audio/nitroAudio";
 import { MKDS_COLTYPE } from "../../../engine/collisionTypes";
 import { MKDSCONST } from "../../../engine/mkdsConst";
@@ -61,22 +5,10 @@ import { nkm_section_CPAT, nkm_section_EPOI, nkm_section_IPOI, nkm_section_MEPA,
 import { Item } from "../../item";
 import { Kart } from "../../kart";
 
-type routePath = nkm_section_CPAT | nkm_section_MEPA;
-type pathPoint = nkm_section_EPOI | nkm_section_IPOI | nkm_section_MEPO;
+/** Shell lifetime after release (@ 60 fps). */
+const SHELL_TTL_FRAMES = 10 * 60;
 
-function isEpoi(p: pathPoint): p is nkm_section_EPOI {
-	return "pointSize" in p;
-}
-
-/** Max heading change per frame (radians @ 60 fps). */
-const TURN_RATE = 0.08;
-const DEFAULT_POINT_SIZE = 24;
-/** Homing duration after release (@ 60 fps). */
-const CHASE_FRAMES = 3 * 60;
-/** World units — start homing when a kart is this close. */
-const TARGET_PROXIMITY = 192;
-
-export class RedShellC implements KartItemEntity {
+export abstract class ShellC implements KartItemEntity {
 	isSolid!: boolean;
 	item: Item;
 	minimumMove: number;
@@ -88,19 +20,7 @@ export class RedShellC implements KartItemEntity {
 	sound: nitroAudioSound | null;
 	soundCooldown: number;
 	gravity: vec3;
-
-	private _paths: routePath[] = [];
-	private _points: pathPoint[] = [];
-	private _battleMode = false;
-	private _pathReady = false;
-	private _ePath: routePath | null = null;
-	private _ePoiInd = 0;
-	private _ePoi: pathPoint | null = null;
-	private _destPoint = vec3.create();
-	private _destNorm = vec3.create();
-	private _destConst = 0;
-	private _chaseFramesLeft = 0;
-	private _lockedTarget: Kart | null = null;
+	private _ttlFrames = 0;
 
 	constructor(item: Item, _scene: Scene, _type: string) {
 		this.item = item;
@@ -124,19 +44,18 @@ export class RedShellC implements KartItemEntity {
 		this.sound = nitroAudio.playSound(215, { volume: 1.5 }, 0, this.item);
 		this.speed = 6;
 		this.angle = this.item.owner.physicalDir;
-		this._pathReady = false;
-		this._ePoiInd = 0;
-		this._ePoi = null;
-		this._lockedTarget = null;
-		this._chaseFramesLeft = CHASE_FRAMES;
+		this.onRelease(forward);
 		if (forward < 0) {
 			this.angle += Math.PI;
 			this.angle %= Math.PI * 2;
 		} else {
 			this.speed += this.item.owner.speed;
 		}
+		this._ttlFrames = SHELL_TTL_FRAMES;
 		return false;
 	}
+
+	protected onRelease(_forward: number) {}
 
 	onDie(final: boolean) {
 		if (!final) {
@@ -154,40 +73,19 @@ export class RedShellC implements KartItemEntity {
 	}
 
 	update(scene: Scene) {
-		if (this._chaseFramesLeft > 0) {
-			this._chaseFramesLeft--;
-
-			if (!this._pathReady) {
-				this._initRouteFromShooter(scene);
+		this.updateSteering(scene);
+		this.applyMotion();
+		if (this._ttlFrames > 0) {
+			this._ttlFrames--;
+			if (this._ttlFrames <= 0 && this.item.deadTimer === 0) {
+				this.item.deadTimer = 1;
 			}
-
-			const nearby = this._findNearbyKart(scene);
-			if (nearby) {
-				this._lockedTarget = nearby;
-			} else if (this._lockedTarget && vec3.distance(this.item.pos, this._lockedTarget.pos) > TARGET_PROXIMITY * 1.5) {
-				this._lockedTarget = null;
-			}
-
-			let desiredAngle = this.angle;
-
-			if (this._pathReady) {
-				this._skipBackwardWaypoints();
-				this._updatePathProgress();
-				desiredAngle = this._angleTo(this._destPoint);
-			}
-
-			const target = this._lockedTarget;
-			if (target) {
-				const targetAngle = this._angleTo(target.pos);
-				if (this._isAheadAngle(targetAngle)) {
-					desiredAngle = this._lerpAngle(desiredAngle, targetAngle, 0.85);
-				}
-			}
-
-			desiredAngle = this._clampForwardAngle(desiredAngle);
-			this.angle = this._turnToward(this.angle, desiredAngle, TURN_RATE);
 		}
+	}
 
+	protected updateSteering(_scene: Scene) {}
+
+	protected applyMotion() {
 		this.item.vel = [Math.sin(this.angle) * this.speed, this.item.vel[1], -Math.cos(this.angle) * this.speed];
 		vec3.add(this.item.vel, this.item.vel, this.gravity);
 		if (this.soundCooldown > 0) this.soundCooldown--;
@@ -228,11 +126,87 @@ export class RedShellC implements KartItemEntity {
 		}
 
 		const rVelMag = Math.sqrt(vec3.dot(this.item.vel, this.item.vel));
-		vec3.scale(this.item.vel, this.item.vel, this.speed / rVelMag); //force speed to shell speed for red shells.
+		vec3.scale(this.item.vel, this.item.vel, this.speed / rVelMag);
 
 		if (adjustPos) {
 			//move back from plane slightly
 			vec3.add(pos, pos, vec3.scale(vec3.create(), n, this.minimumMove));
+		}
+	}
+}
+
+export class GreenShellC extends ShellC {}
+
+type routePath = nkm_section_CPAT | nkm_section_MEPA;
+type pathPoint = nkm_section_EPOI | nkm_section_IPOI | nkm_section_MEPO;
+
+function isEpoi(p: pathPoint): p is nkm_section_EPOI {
+	return "pointSize" in p;
+}
+
+/** Max heading change per frame (radians @ 60 fps). */
+const TURN_RATE = 0.08;
+const DEFAULT_POINT_SIZE = 24;
+/** Homing duration after release (@ 60 fps). */
+const CHASE_FRAMES = 3 * 60;
+/** World units — start homing when a kart is this close. */
+const TARGET_PROXIMITY = 192;
+
+export class RedShellC extends ShellC {
+	private _paths: routePath[] = [];
+	private _points: pathPoint[] = [];
+	private _battleMode = false;
+	private _pathReady = false;
+	private _ePath: routePath | null = null;
+	private _ePoiInd = 0;
+	private _ePoi: pathPoint | null = null;
+	private _destPoint = vec3.create();
+	private _destNorm = vec3.create();
+	private _destConst = 0;
+	private _chaseFramesLeft = 0;
+	private _lockedTarget: Kart | null = null;
+
+	protected onRelease(_forward: number) {
+		this._pathReady = false;
+		this._ePoiInd = 0;
+		this._ePoi = null;
+		this._lockedTarget = null;
+		this._chaseFramesLeft = CHASE_FRAMES;
+	}
+
+	protected updateSteering(scene: Scene) {
+		if (this._chaseFramesLeft > 0) {
+			this._chaseFramesLeft--;
+
+			if (!this._pathReady) {
+				this._initRouteFromShooter(scene);
+			}
+
+			const nearby = this._findNearbyKart(scene);
+			if (nearby) {
+				this._lockedTarget = nearby;
+			} else if (this._lockedTarget && vec3.distance(this.item.pos, this._lockedTarget.pos) > TARGET_PROXIMITY * 1.5) {
+				this._lockedTarget = null;
+			}
+
+			let desiredAngle = this.angle;
+
+			if (this._pathReady) {
+				this._skipBackwardWaypoints();
+				this._updatePathProgress();
+				desiredAngle = this._angleTo(this._destPoint);
+			}
+
+			const target = this._lockedTarget;
+			if (target) {
+				const targetAngle = this._angleTo(target.pos);
+				if (this._isAheadAngle(targetAngle)) {
+					desiredAngle = this._lerpAngle(desiredAngle, targetAngle, 0.85);
+				}
+			}
+
+			desiredAngle = this._clampForwardAngle(desiredAngle);
+			this.angle = this._turnToward(this.angle, desiredAngle, TURN_RATE);
 		}
 	}
 

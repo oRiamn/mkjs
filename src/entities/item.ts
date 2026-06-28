@@ -17,8 +17,7 @@ import { nitroRender } from "../render/nitroRender";
 import { BananaC } from "./items/droppable/bananaC";
 import { BombC } from "./items/droppable/bombC";
 import { FakeBoxC } from "./items/droppable/fakeBoxC";
-import { GreenShellC } from "./items/shells/greenShellC";
-import { RedShellC } from "./items/shells/redShellC";
+import { GreenShellC, RedShellC } from "./items/shells/shellC";
 import { GreenShellGroup, RedShellGroup } from "./items/shells/shellGroup";
 import { Kart } from "./kart";
 
