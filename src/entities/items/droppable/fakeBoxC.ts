@@ -1,4 +1,4 @@
-import { nitroAudio } from "../../../audio/nitroAudio";
+import { SoundBox } from "../../../audio/soundBox";
 import { MKDSCONST } from "../../../engine/mkdsConst";
 import { Item } from "../../item";
 import { Kart } from "../../kart";
@@ -32,12 +32,12 @@ export class FakeBoxC implements KartItemEntity {
 
 	collideKart(kart: Kart) {
 		this.item.deadTimer = 1;
-		nitroAudio.playSound(250, { volume: 2 }, 0, this.item);
+		SoundBox.fakeBoxPlace(this.item);
 		kart.damage(MKDSCONST.DAMAGE_FLIP);
 	}
 
 	onRest(_normal: vec3) {
-		nitroAudio.playSound(251, { volume: 2 }, 0, this.item);
+		SoundBox.fakeBoxHit(this.item);
 	}
 
 	update(_scene: Scene) {

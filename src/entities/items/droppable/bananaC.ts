@@ -1,4 +1,4 @@
-import { nitroAudio } from "../../../audio/nitroAudio";
+import { SoundBox } from "../../../audio/soundBox";
 import { MKDSCONST } from "../../../engine/mkdsConst";
 import { Item } from "../../item";
 import { Kart } from "../../kart";
@@ -27,7 +27,7 @@ export class BananaC implements KartItemEntity {
 	}
 
 	onRest(_normal: vec3) {
-		nitroAudio.playSound(219, { volume: 2 }, 0, this.item);
+		SoundBox.bananaDrop(this.item);
 	}
 
 	update(_scene: Scene) {

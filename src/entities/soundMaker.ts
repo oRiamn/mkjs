@@ -6,6 +6,7 @@
 //
 
 import { nitroAudio, nitroAudioSound } from "../audio/nitroAudio";
+import { SoundBox } from "../audio/soundBox";
 import { nkm_section_OBJI } from "../formats/nkm";
 
 //0008
@@ -88,7 +89,7 @@ export class ObjSoundMaker implements SceneEntityObject {
 			}
 		} else {
 			if (this.sound == null) {
-				const snd = nitroAudio.playSound(this.sN, {}, 0, this);
+				const snd = SoundBox.ambient(this.sN, this);
 				if (snd == null) return;
 				this.sound = snd;
 				this.sound.gainN.gain.value = parseFloat(`${this.gain}`);

@@ -5,7 +5,7 @@
 // by RHY3756547
 //
 
-import { nitroAudio } from "../audio/nitroAudio";
+import { SoundBox } from "../audio/soundBox";
 import { nkm_section_OBJI } from "../formats/nkm";
 import { nsbca } from "../formats/nsbca";
 import { ItemShard } from "../particles/itemboxShard";
@@ -62,7 +62,7 @@ export class ItemBox implements SceneEntityObject {
 					const ok = scene.karts[i];
 					const dist = vec3.dist(vec3.add([0, 0, 0], this.pos, [0, 1, 0]), ok.pos);
 					if (dist < 24) {
-						const breakSound = nitroAudio.playSound(212, {}, 0, this)!;
+						const breakSound = SoundBox.itemBoxBreak(this)!;
 						breakSound.gainN.gain.value = parseFloat("4");
 						for (let j = 0; j < 10; j++) {
 							scene.particles.push(new ItemShard(scene, ok, this._res.mdl[2]));

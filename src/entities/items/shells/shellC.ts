@@ -1,4 +1,5 @@
 import { nitroAudio, nitroAudioSound } from "../../../audio/nitroAudio";
+import { SoundBox } from "../../../audio/soundBox";
 import { MKDS_COLTYPE } from "../../../engine/collisionTypes";
 import { MKDSCONST } from "../../../engine/mkdsConst";
 import { nkm_section_CPAT, nkm_section_EPOI, nkm_section_IPOI, nkm_section_MEPA, nkm_section_MEPO } from "../../../formats/nkm";
@@ -41,7 +42,6 @@ export abstract class ShellC implements KartItemEntity {
 	}
 
 	release(forward: number) {
-		this.sound = nitroAudio.playSound(215, { volume: 1.5 }, 0, this.item);
 		this.speed = 6;
 		this.angle = this.item.owner.physicalDir;
 		this.onRelease(forward);
@@ -55,11 +55,11 @@ export abstract class ShellC implements KartItemEntity {
 		return false;
 	}
 
-	protected onRelease(_forward: number) {}
+	protected onRelease(_forward: number) { }
 
 	onDie(final: boolean) {
 		if (!final) {
-			nitroAudio.playSound(214, { volume: 2 }, 0, this.item);
+			SoundBox.shellDestroy(this.item);
 		}
 		if (this.sound) {
 			nitroAudio.instaKill(this.sound);
@@ -83,7 +83,7 @@ export abstract class ShellC implements KartItemEntity {
 		}
 	}
 
-	protected updateSteering(_scene: Scene) {}
+	protected updateSteering(_scene: Scene) { }
 
 	protected applyMotion() {
 		this.item.vel = [Math.sin(this.angle) * this.speed, this.item.vel[1], -Math.cos(this.angle) * this.speed];
@@ -105,7 +105,7 @@ export abstract class ShellC implements KartItemEntity {
 			//wall
 			//shell reflection code - slide y vel across plane, bounce on xz
 			if (this.soundCooldown <= 0) {
-				nitroAudio.playSound(213, { volume: 2.5 }, 0, this.item);
+				SoundBox.shellWallBounce(this.item);
 				this.soundCooldown = 30;
 			}
 			vec3.add(this.item.vel, vec3.scale(vec3.create(), n, -2 * (vec3.dot(this.item.vel, n) / vec3.dot(n, n))), this.item.vel);
@@ -135,7 +135,11 @@ export abstract class ShellC implements KartItemEntity {
 	}
 }
 
-export class GreenShellC extends ShellC {}
+export class GreenShellC extends ShellC {
+	protected onRelease(_forward: number): void {
+		this.sound = SoundBox.greenShellFly(this.item);
+	}
+}
 
 type routePath = nkm_section_CPAT | nkm_section_MEPA;
 type pathPoint = nkm_section_EPOI | nkm_section_IPOI | nkm_section_MEPO;
@@ -167,6 +171,7 @@ export class RedShellC extends ShellC {
 	private _lockedTarget: Kart | null = null;
 
 	protected onRelease(_forward: number) {
+		this.sound = SoundBox.redShellFly(this.item);
 		this._pathReady = false;
 		this._ePoiInd = 0;
 		this._ePoi = null;

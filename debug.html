@@ -1449,7 +1449,7 @@
 					var parts = selVal.split(":");
 					sdatPlayer = nitroAudio.playSound(parseInt(parts[1], 10), { volume: vol }, parseInt(parts[0], 10), null);
 				}
-				if (!sdatPlayer) setStatus("Failed to play sequence");
+				if (!sdatPlayer && (section === "sseq" || section === "ssar")) setStatus("Failed to play sequence");
 			}
 
 			function setupSdatControls() {
@@ -1458,7 +1458,11 @@
 					populateSdatSeqSelect(sdatView.sdat);
 					renderSdatDetail();
 				});
-				document.getElementById("sdatSeqSelect").addEventListener("change", renderSdatDetail);
+				document.getElementById("sdatSeqSelect").addEventListener("change", function () {
+					renderSdatDetail();
+					var section = document.getElementById("sdatSectionSelect").value;
+					if (section === "sseq" || section === "ssar") sdatPlaySelected();
+				});
 				document.getElementById("sdatPlayBtn").addEventListener("click", sdatPlaySelected);
 				document.getElementById("sdatStopBtn").addEventListener("click", sdatStopPlayback);
 			}

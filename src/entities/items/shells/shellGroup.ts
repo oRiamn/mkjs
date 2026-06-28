@@ -1,4 +1,5 @@
 import { nitroAudio, nitroAudioSound } from "../../../audio/nitroAudio";
+import { SoundBox } from "../../../audio/soundBox";
 import { Item } from "../../item";
 
 abstract class ShellGroup implements KartItemEntity {
@@ -36,8 +37,8 @@ abstract class ShellGroup implements KartItemEntity {
 			return sub;
 		});
 
-		nitroAudio.playSound(231, { volume: 2 }, 0, this.item);
-		this.sound = nitroAudio.playSound(227, { volume: 1.5 }, 0, this.item);
+		SoundBox.shellGroupEquip(this.item);
+		this.sound = SoundBox.shellGroupFly(this.item);
 	}
 
 	onlyHeld() {

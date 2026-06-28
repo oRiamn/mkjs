@@ -13,6 +13,7 @@
 //
 
 import { nitroAudio, nitroAudioSound } from "../../audio/nitroAudio";
+import { SoundBox } from "../../audio/soundBox";
 import { Kart } from "../../entities/kart";
 import { ObjDatabase } from "../../entities/objDatabase";
 import { kcl } from "../../formats/kcl";
@@ -321,15 +322,10 @@ export class courseScene implements Scene {
 		if (this.musicRestartTimer > -1) {
 			this.musicRestartTimer++;
 			if (this.musicRestartTimer > this.musicRestart) {
-				this.musicPlayer = nitroAudio.playSound(
-					this.music,
-					{
-						volume: 2,
-						bpmMultiplier: this.musicRestartType == 0 ? 1.25 : 1,
-					},
-					null,
-					null
-				);
+				this.musicPlayer = SoundBox.music(this.music, {
+					volume: 2,
+					bpmMultiplier: this.musicRestartType == 0 ? 1.25 : 1,
+				});
 				this.musicRestartTimer = -1;
 			}
 		}
@@ -520,7 +516,7 @@ export class courseScene implements Scene {
 				//last lap
 				this.musicRestartTimer = 0;
 				nitroAudio.instaKill(this.musicPlayer);
-				this.musicPlayer = nitroAudio.playSound(62, { volume: 2 }, null, null);
+				this.musicPlayer = SoundBox.finalLap();
 			} else if (kart.lapNumber === MKDSCONST.MAX_LAP + 1) {
 				let finishTuple: number[] = [];
 				for (let i = 0; i < this.finishPercents.length; i++) {
@@ -535,8 +531,8 @@ export class courseScene implements Scene {
 				kart.animMode = "raceEnd";
 
 				this.camera = new cameraSpectator(kart);
-				nitroAudio.playSound(finishTuple[1], { volume: 2 }, 0, null);
-				nitroAudio.playSound(finishTuple[2], { volume: 2 }, null, null);
+				SoundBox.sting(finishTuple[1], 0);
+				SoundBox.sting(finishTuple[2], null);
 				nitroAudio.instaKill(this.musicPlayer);
 				kart.playCharacterSound(finishTuple[4], 2);
 				this.musicRestartTimer = 0;
@@ -545,7 +541,7 @@ export class courseScene implements Scene {
 				this.music = finishTuple[3];
 				this.entities.push(new Goal3DUI(this));
 			} else if (kart.lapNumber <= MKDSCONST.MAX_LAP) {
-				nitroAudio.playSound(65, { volume: 2 }, 0, null);
+				SoundBox.lapComplete();
 			}
 		}
 
@@ -607,7 +603,8 @@ export class courseScene implements Scene {
 			switch (mode.id) {
 				case 0:
 					//race init. fade scene in and play init music.
-					nitroAudio.playSound(this.courseObj.battle ? 12 : 11, { volume: 2 }, null, null); //7:race (gp), 11:race2 (vs), 12:battle
+					if (this.courseObj.battle) SoundBox.raceInitBattle();
+					else SoundBox.raceInitVs();
 					break;
 				case 1:
 					//spawn lakitu and countdown animation. allow pre-acceleration.
@@ -619,7 +616,7 @@ export class courseScene implements Scene {
 					for (let i = 0; i < this.karts.length; i++) {
 						this.karts[i].preboost = false;
 					}
-					nitroAudio.playSound(40, { volume: 2, bpmMultiplier: 16 }, 0, null);
+					SoundBox.raceStart();
 					this.entities.push(new Start3DUI(this));
 					break;
 			}
@@ -632,14 +629,14 @@ export class courseScene implements Scene {
 				case 1:
 					if (mode.time > 0) {
 						//beeps for countdown
-						nitroAudio.playSound(39, { bpmMultiplier: 16 }, 0, null);
+						SoundBox.countdownBeep();
 					}
 					break;
 				case 2:
 					//show ui and play this.music at certain time after go
 
 					if (mode.time == 1) {
-						this.musicPlayer = nitroAudio.playSound(this.music, { volume: 2 }, null, null);
+						this.musicPlayer = SoundBox.music(this.music);
 					}
 					//
 					break;

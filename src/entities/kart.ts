@@ -8,6 +8,7 @@
 // /formats/kcl.js
 //
 import { nitroAudio, nitroAudioSound, nitroAudioSoundProps } from "../audio/nitroAudio";
+import { SoundBox } from "../audio/soundBox";
 import { MKDS_COLTYPE } from "../engine/collisionTypes";
 import { IngameRes_character, tires } from "../engine/ingameRes";
 import { lsc } from "../engine/largeSphereCollider";
@@ -71,7 +72,6 @@ export class Kart {
 	private _minimumMove: number;
 	private _MAXSPEED: number;
 	private _BOOSTTIME: number;
-	private _kartSoundBase: number;
 	private _COLBOUNCE_TIME: number;
 	private _COLBOUNCE_STRENGTH: number;
 	private _params: kartphysicalparam_kart;
@@ -181,7 +181,6 @@ export class Kart {
 		this._MAXSPEED = 24;
 		this._BOOSTTIME = 90;
 
-		this._kartSoundBase = 170;
 
 		this._COLBOUNCE_TIME = 20;
 		this._COLBOUNCE_STRENGTH = 4;
@@ -526,7 +525,7 @@ export class Kart {
 				if (this.boostNorm == this._BOOSTTIME || this.boostMT == this._params.miniTurbo) {
 					if (this._sounds.boostSoundTrig) {
 						if (this._sounds.boost != null) nitroAudio.instaKill(this._sounds.boost);
-						const boostSound = nitroAudio.playSound(160, {}, 0, this);
+						const boostSound = SoundBox.boost(this);
 						this._sounds.boost = boostSound;
 						if (boostSound != null) boostSound.gainN.gain.value = this._loopSoundGain();
 						this._sounds.boostSoundTrig = false;
@@ -553,7 +552,7 @@ export class Kart {
 				) {
 					if (this._sounds.drive != null) nitroAudio.kill(this._sounds.drive);
 					if (driveId != null) {
-						const driveSound = nitroAudio.playSound(driveId, {}, 0, this);
+						const driveSound = SoundBox.surface(driveId, this);
 						this._sounds.drive = driveSound;
 						if (driveSound != null) driveSound.gainN.gain.value = this._loopSoundGain();
 					} else {
@@ -576,7 +575,7 @@ export class Kart {
 					) {
 						if (this._sounds.drift != null) nitroAudio.kill(this._sounds.drift);
 						if (driftId != null) {
-							this._sounds.drift = nitroAudio.playSound(driftId, {}, 0, this);
+							this._sounds.drift = SoundBox.surface(driftId, this);
 						} else {
 							this._sounds.drift = null;
 						}
@@ -787,7 +786,7 @@ export class Kart {
 												//play blue spark sound, flare
 												this._setWheelParticles(126, 2); //126 = blue flare, 2 = flare priority
 												if (this.local) {
-													const blue = nitroAudio.playSound(210, {}, 0, this)!;
+													const blue = SoundBox.driftBlueSpark(this)!;
 													blue.gainN.gain.value = this._loopSoundGain();
 												}
 											} else this.driftPSTick = 0;
@@ -808,7 +807,7 @@ export class Kart {
 												this._setWheelParticles(22, 2); //22 = red flare, 2 = flare priority
 												this._setWheelParticles(17, 1); //17 = red mt, 1 = drift priority ... 18 is sparks that come out - but their mode is not working yet (spark mode)
 												if (this.local) {
-													const powerslideSound = nitroAudio.playSound(209, {}, 0, this);
+													const powerslideSound = SoundBox.driftRedSpark(this);
 													this._sounds.powerslide = powerslideSound;
 													if (powerslideSound != null) powerslideSound.gainN.gain.value = this._loopSoundGain();
 												}
@@ -855,7 +854,7 @@ export class Kart {
 								this._onGround = false;
 
 								if (this.local) {
-									const boing = nitroAudio.playSound(207, { transpose: -4 }, 0, this)!;
+									const boing = SoundBox.driftHop(this)!;
 									boing.gainN.gain.value = this._loopSoundGain();
 								}
 							}
@@ -1136,14 +1135,14 @@ export class Kart {
 		this.cannon = id;
 		const c = this._scene.nkm.sections["KTPC"].entries[this.cannon];
 		if (c.id1 != -1 && c.id2 != -1) {
-			nitroAudio.playSound(345, { volume: 2.5 }, 0, this);
+			SoundBox.cannonShort(this);
 		} else {
-			nitroAudio.playSound(347, { volume: 2.5 }, 0, this);
+			SoundBox.cannonLong(this);
 			if (this.local) {
 				if (c.id2 == 0) {
-					nitroAudio.playSound(380, { volume: 2 }, 0, null); //airship fortress
+					SoundBox.cannonVoiceAirship();
 				} else {
-					nitroAudio.playSound(456, { volume: 2 }, 0, null); //waluigi
+					SoundBox.cannonVoiceWaluigi();
 				}
 			}
 		}
@@ -1167,7 +1166,7 @@ export class Kart {
 		if (volume == null) {
 			volume = 1;
 		}
-		nitroAudio.playSound(sound + this._charRes.sndOff, { volume: this._sfxVolume(2 * volume) }, 2, this);
+		SoundBox.characterVoice(sound, this._charRes.sndOff, this, this._sfxVolume(2 * volume));
 	}
 
 	private _sfxVolume(scale = 1) {
@@ -1318,8 +1317,8 @@ export class Kart {
 		//play this kart's horn
 		if (this.kartColTimer == 0) {
 			//not if we're still being bounced
-			nitroAudio.playSound(208, { volume: this._sfxVolume(2) }, 0, this);
-			nitroAudio.playSound(193 + this._charRes.sndOff / 14, { volume: this._sfxVolume(1.5) }, 0, this);
+			SoundBox.kartCollision(this, this._sfxVolume(2));
+			SoundBox.kartHorn(this._charRes.sndOff, this, this._sfxVolume(1.5));
 		}
 
 		this.kartColTimer = this._COLBOUNCE_TIME;
@@ -1365,12 +1364,7 @@ export class Kart {
 		if (mode != this._soundMode) {
 			this._soundMode = mode;
 			if (this._sounds.kart != null) nitroAudio.instaKill(this._sounds.kart);
-			this._sounds.kart = nitroAudio.playSound(
-				this._kartSoundBase + this._soundMode,
-				{ transpose: this._sounds.transpose, volume: 1 },
-				0,
-				this
-			)!;
+			this._sounds.kart = SoundBox.kartEngine(this._soundMode, this._sounds.transpose ?? 0, this)!;
 			//if (mode == 3) sounds.kart.gainN.gain.value = 0.5;
 		} else {
 			//sounds.kart.seq.setTranspose(sounds.transpose);
@@ -1550,7 +1544,7 @@ export class Kart {
 			if (proj < -1) {
 				if (this.kartWallTimer == 0) {
 					if (this._lastColSounds.hit != null)
-						nitroAudio.playSound(this._lastColSounds.hit, { volume: this._sfxVolume(1) }, 0, this);
+						SoundBox.surface(this._lastColSounds.hit, this, { volume: this._sfxVolume(1) });
 					const colObj = {
 						pos: pos,
 						vel: vec3.clone([0, 0, 0]),
@@ -1623,7 +1617,7 @@ export class Kart {
 			if (!this._onGround && !stick) {
 				this._groundAnim = 0;
 				if (this._lastColSounds.land != null)
-					nitroAudio.playSound(this._lastColSounds.land, { volume: this._sfxVolume(1) }, 0, this);
+					SoundBox.surface(this._lastColSounds.land, this, { volume: this._sfxVolume(1) });
 			}
 			this.airTime = 0;
 			this._stuckTo = dat.object;

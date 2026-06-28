@@ -1,6 +1,7 @@
 //item state for a kart. not an entity, just supplemental to one.
 
 import { nitroAudio, nitroAudioSound } from "../audio/nitroAudio";
+import { SoundBox } from "../audio/soundBox";
 import { Item } from "./item";
 import { Kart } from "./kart";
 
@@ -8,9 +9,9 @@ export class KartItems {
 	static items = [
 		"koura_g",
 		"koura_r",
-		// "banana",
-		// "f_box",
-		// "bomb",
+		"banana",
+		"f_box",
+		"bomb",
 		"koura_group_g",
 		"koura_group_r",
 		// 'koura_group-bomb-7' bug (too many bomb)
@@ -87,7 +88,7 @@ export class KartItems {
 						console.log(item);
 					}
 
-					this._sfx(this._specialItems.indexOf(item) == -1 ? 63 : 64);
+					this._sfx(() => SoundBox.itemCarouselPick(this._specialItems.indexOf(item) != -1));
 					this.currentItem = item;
 				} else {
 					//if item button is pressed, we speed up the carousel
@@ -144,14 +145,14 @@ export class KartItems {
 			// 	this.specificItem = specific;
 			// }
 			this.empty = false;
-			this._carouselSfx = this._sfx(62);
+			this._carouselSfx = this._sfx(() => SoundBox.itemCarousel());
 			return true;
 		}
 	}
 
-	private _sfx(id: number): nitroAudioSound | null {
+	private _sfx(play: () => nitroAudioSound | null): nitroAudioSound | null {
 		if (this.kart.local) {
-			return nitroAudio.playSound(id, { volume: 2 }, 0, null);
+			return play();
 		}
 		return null;
 	}

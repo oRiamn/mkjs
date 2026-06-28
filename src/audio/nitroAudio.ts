@@ -136,6 +136,13 @@ export class nitroAudio {
 		nitroAudio.sounds.splice(ind, 1);
 	}
 
+	static killAll() {
+		const sounds = nitroAudio.sounds.slice();
+		for (const sound of sounds) {
+			nitroAudio.instaKill(sound);
+		}
+	}
+
 	static playSound(
 		seqN: number,
 		params: SSEQPlayer_param | null,

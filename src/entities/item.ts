@@ -8,7 +8,7 @@
 // includes: gl-matrix.js (glMatrix 2.0)
 // /formats/kcl.js
 
-import { nitroAudio } from "../audio/nitroAudio";
+import { SoundBox } from "../audio/soundBox";
 import { MKDS_COLTYPE } from "../engine/collisionTypes";
 import { items_IngameRes } from "../engine/ingameRes";
 import { lsc } from "../engine/largeSphereCollider";
@@ -188,7 +188,7 @@ export class Item {
 		else {
 			//default drop and throw. just here for template purposes
 			if (forward > 0) {
-				nitroAudio.playSound(218, { volume: 2 }, 0, this._owner);
+				SoundBox.itemThrow(this._owner);
 				const dir = this._owner.driftOff / 4;
 
 				//offset the kart's drift offset (on direction). add y component
@@ -294,7 +294,7 @@ export class Item {
 		if (this.controller.update) this.controller.update(scene);
 		if (this.holdTime > 0 && this.holdTime-- > 7) {
 			if (this.holdTime == 7) {
-				nitroAudio.playSound(231, { volume: 2 }, 0, this._owner);
+				SoundBox.itemEquip(this._owner);
 			}
 			return;
 		}
