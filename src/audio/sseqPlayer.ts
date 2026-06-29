@@ -46,7 +46,6 @@ export type ThreadM = {
 };
 
 export class SSEQPlayer {
-
 	properties: SSEQPlayer_properties;
 	ctx: AudioContext;
 	trackAlloc: number;

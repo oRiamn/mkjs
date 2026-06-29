@@ -62,18 +62,31 @@ function relativeSign(val: number) {
 	return val / 4096;
 }
 
-/** Parses a Nitro display list and returns local-space Y bounds of emitted vertices. */
-export function modelPolyLocalYBounds(disp: ArrayBuffer): { minY: number; maxY: number } {
+/** Parses a Nitro display list and returns local-space bounds of emitted vertices. */
+export function modelPolyLocalBounds(disp: ArrayBuffer): {
+	min: vec3;
+	max: vec3;
+	width: number;
+	height: number;
+	depth: number;
+	center: vec3;
+} {
 	const view = new DataView(disp);
 	const cVec: vec3 = [0, 0, 0];
 	const vtxScale: vec3 = [1, 1, 1];
-	let minY = Infinity;
-	let maxY = -Infinity;
+	const min: vec3 = [Infinity, Infinity, Infinity];
+	const max: vec3 = [-Infinity, -Infinity, -Infinity];
 
-	const pushY = () => {
+	const pushVertex = () => {
+		const x = cVec[0] * vtxScale[0];
 		const y = cVec[1] * vtxScale[1];
-		if (y < minY) minY = y;
-		if (y > maxY) maxY = y;
+		const z = cVec[2] * vtxScale[2];
+		if (x < min[0]) min[0] = x;
+		if (y < min[1]) min[1] = y;
+		if (z < min[2]) min[2] = z;
+		if (x > max[0]) max[0] = x;
+		if (y > max[1]) max[1] = y;
+		if (z > max[2]) max[2] = z;
 	};
 
 	let off = 0;
@@ -99,37 +112,37 @@ export function modelPolyLocalYBounds(disp: ArrayBuffer): { minY: number; maxY: 
 					cVec[0] = view.getInt16(poff, true) / 4096;
 					cVec[1] = view.getInt16(poff + 2, true) / 4096;
 					cVec[2] = view.getInt16(poff + 4, true) / 4096;
-					pushY();
+					pushVertex();
 					break;
 				case 0x24: {
 					const dat = view.getUint32(poff, true);
 					cVec[0] = tenBitSign(dat);
 					cVec[1] = tenBitSign(dat >> 10);
 					cVec[2] = tenBitSign(dat >> 20);
-					pushY();
+					pushVertex();
 					break;
 				}
 				case 0x25:
 					cVec[0] = view.getInt16(poff, true) / 4096;
 					cVec[1] = view.getInt16(poff + 2, true) / 4096;
-					pushY();
+					pushVertex();
 					break;
 				case 0x26:
 					cVec[0] = view.getInt16(poff, true) / 4096;
 					cVec[2] = view.getInt16(poff + 2, true) / 4096;
-					pushY();
+					pushVertex();
 					break;
 				case 0x27:
 					cVec[1] = view.getInt16(poff, true) / 4096;
 					cVec[2] = view.getInt16(poff + 2, true) / 4096;
-					pushY();
+					pushVertex();
 					break;
 				case 0x28: {
 					const dat = view.getUint32(poff, true);
 					cVec[0] += relativeSign(dat);
 					cVec[1] += relativeSign(dat >> 10);
 					cVec[2] += relativeSign(dat >> 20);
-					pushY();
+					pushVertex();
 					break;
 				}
 			}
@@ -137,8 +150,26 @@ export function modelPolyLocalYBounds(disp: ArrayBuffer): { minY: number; maxY: 
 		}
 	}
 
-	if (!Number.isFinite(minY)) return { minY: 0, maxY: 0 };
-	return { minY, maxY };
+	if (!Number.isFinite(min[0])) {
+		return { min: [0, 0, 0], max: [0, 0, 0], width: 0, height: 0, depth: 0, center: [0, 0, 0] };
+	}
+	const width = max[0] - min[0];
+	const height = max[1] - min[1];
+	const depth = max[2] - min[2];
+	return {
+		min,
+		max,
+		width,
+		height,
+		depth,
+		center: [min[0] + width / 2, min[1] + height / 2, min[2] + depth / 2],
+	};
+}
+
+/** Parses a Nitro display list and returns local-space Y bounds of emitted vertices. */
+export function modelPolyLocalYBounds(disp: ArrayBuffer): { minY: number; maxY: number } {
+	const bounds = modelPolyLocalBounds(disp);
+	return { minY: bounds.min[1], maxY: bounds.max[1] };
 }
 
 /** World-space vertical extent after ObjDecor scale (x16). */
@@ -164,4 +195,40 @@ export function nitroModelWorldYExtent(mdl: nitroModel, scaleY = 1): { bottom: n
 		return { bottom: 0, top: 0, height: 0 };
 	}
 	return modelWorldYExtent(minY, maxY, scaleY);
+}
+
+/** Local-space AABB from a rendered nitro model mesh. */
+export function nitroModelLocalBounds(mdl: nitroModel): {
+	min: vec3;
+	max: vec3;
+	width: number;
+	height: number;
+	depth: number;
+	center: vec3;
+} {
+	const col = mdl.getBoundingCollisionModel(0, 0);
+	const min: vec3 = [Infinity, Infinity, Infinity];
+	const max: vec3 = [-Infinity, -Infinity, -Infinity];
+	for (const tri of col.dat) {
+		for (const v of tri.Vertices) {
+			for (let j = 0; j < 3; j++) {
+				if (v[j] < min[j]) min[j] = v[j];
+				if (v[j] > max[j]) max[j] = v[j];
+			}
+		}
+	}
+	if (!Number.isFinite(min[0])) {
+		return { min: [0, 0, 0], max: [0, 0, 0], width: 0, height: 0, depth: 0, center: [0, 0, 0] };
+	}
+	const width = max[0] - min[0];
+	const height = max[1] - min[1];
+	const depth = max[2] - min[2];
+	return {
+		min,
+		max,
+		width,
+		height,
+		depth,
+		center: [min[0] + width / 2, min[1] + height / 2, min[2] + depth / 2],
+	};
 }

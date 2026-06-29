@@ -42,7 +42,7 @@ enum DossunMoveType {
  *   pos      — target 3D position [x, y, z] (world units)
  *   pointInd — point index within the route
  *   duration — wait delay (frames @ 60 fps) before executing the move toward this point
- *   unknown  — movement type used to reach this point
+ *   unknown1  — movement type used to reach this point
  *   nextOff  — parser-internal offset (unused in-game)
  *
  * Typical case: 2 points at the same X/Z — point 0 on the ground (low y), point 1 in the air (high y).
@@ -52,13 +52,13 @@ enum DossunMoveType {
  * Each step:
  *   1. pos      — destination of the next move (interpolated from current position)
  *   2. duration — hold still for N frames, then execute the move toward this point
- *   3. unknown  — how to get there (rise/fall durations are gameplay constants):
+ *   3. unknown1  — how to get there (rise/fall durations are gameplay constants):
  *        0x1 rise — ascent, 240 frames (4 s)
  *        0x2 fall — drop,   15 frames
  *        0x3 move — generic move, constant speed until the target is reached
  *
  * Route cycle (at point i, target = point (i+1) % numPts):
- *   point 0 → wait target.duration → move with target.unknown toward target.pos
+ *   point 0 → wait target.duration → move with target.unknown1 toward target.pos
  *         → … loop …
  *
  * Extra sequence before a fall (ARM9 behaviour, not described in POIT):
@@ -143,7 +143,7 @@ export class Dossun extends ObjDecor {
 		switch (this._phase) {
 			case DossunPhase.Wait:
 				if (++this._frame >= this._targetPoint.duration) {
-					if (this._targetPoint.unknown === DossunMoveType.Fall) {
+					if (this._targetPoint.unknown1 === DossunMoveType.Fall) {
 						this._beginWiggle();
 					} else {
 						this._beginMove();
@@ -215,7 +215,7 @@ export class Dossun extends ObjDecor {
 		this._phase = DossunPhase.Move;
 		this._frame = 0;
 		vec3.copy(this._moveStartPos, this.pos);
-		this._moveDur = this._moveDuration(this._targetPoint.unknown);
+		this._moveDur = this._moveDuration(this._targetPoint.unknown1);
 		this._updateColType();
 	}
 
@@ -234,7 +234,7 @@ export class Dossun extends ObjDecor {
 
 	private _updateColType() {
 		if (!this._colRes) return;
-		const falling = this._phase === DossunPhase.Move && this._targetPoint.unknown === DossunMoveType.Fall;
+		const falling = this._phase === DossunPhase.Move && this._targetPoint.unknown1 === DossunMoveType.Fall;
 		const colType = falling ? MKDS_COLTYPE.KNOCKBACK_DAMAGE : MKDS_COLTYPE.WALL;
 		const packed = colType << 8;
 		for (let i = 0; i < this._colRes.dat.length; i++) {

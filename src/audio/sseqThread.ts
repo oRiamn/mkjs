@@ -90,7 +90,6 @@ export class SSEQThread {
 		this._gainR.gain.value = parseFloat("1");
 		this._merger = this._ctx.createChannelMerger(2);
 
-
 		this.gain = this._player.ctx.createGain();
 		this.gain.connect(this._gainL);
 		this.gain.connect(this._gainR);

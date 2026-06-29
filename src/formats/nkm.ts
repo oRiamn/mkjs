@@ -38,7 +38,8 @@ export type nkm_section_POIT = {
 	pos: vec3;
 	pointInd: number;
 	duration: number;
-	unknown: number;
+	unknown1: number;
+	unknown2: number;
 	nextOff: number;
 };
 
@@ -283,15 +284,18 @@ export class nkm implements MKJSDataFormator {
 			pos[1] = view.getInt32(off + 4, true) / 4096;
 			pos[2] = view.getInt32(off + 8, true) / 4096;
 
-			const pointInd = view.getUint16(off + 0xc, true);
+			const pointInd = view.getUint8(off + 0xc);
+			const unknown2 = view.getUint8(off + 0x0d);
 			const duration = view.getUint16(off + 0xe, true);
-			const unknown = view.getUint32(off + 0x10, true);
+			const unknown1 = view.getUint32(off + 0x10, true);
+
 			const nextOff = off + 0x14;
 			return {
 				pos,
 				pointInd,
 				duration,
-				unknown,
+				unknown1,
+				unknown2,
 				nextOff,
 			};
 		};

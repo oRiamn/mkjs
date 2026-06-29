@@ -55,7 +55,7 @@ export abstract class ShellC implements KartItemEntity {
 		return false;
 	}
 
-	protected onRelease(_forward: number) { }
+	protected onRelease(_forward: number) {}
 
 	onDie(final: boolean) {
 		if (!final) {
@@ -83,7 +83,7 @@ export abstract class ShellC implements KartItemEntity {
 		}
 	}
 
-	protected updateSteering(_scene: Scene) { }
+	protected updateSteering(_scene: Scene) {}
 
 	protected applyMotion() {
 		this.item.vel = [Math.sin(this.angle) * this.speed, this.item.vel[1], -Math.cos(this.angle) * this.speed];

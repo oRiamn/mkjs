@@ -181,7 +181,6 @@ export class Kart {
 		this._MAXSPEED = 24;
 		this._BOOSTTIME = 90;
 
-
 		this._COLBOUNCE_TIME = 20;
 		this._COLBOUNCE_STRENGTH = 4;
 
@@ -1543,8 +1542,7 @@ export class Kart {
 
 			if (proj < -1) {
 				if (this.kartWallTimer == 0) {
-					if (this._lastColSounds.hit != null)
-						SoundBox.surface(this._lastColSounds.hit, this, { volume: this._sfxVolume(1) });
+					if (this._lastColSounds.hit != null) SoundBox.surface(this._lastColSounds.hit, this, { volume: this._sfxVolume(1) });
 					const colObj = {
 						pos: pos,
 						vel: vec3.clone([0, 0, 0]),
@@ -1616,8 +1614,7 @@ export class Kart {
 			}
 			if (!this._onGround && !stick) {
 				this._groundAnim = 0;
-				if (this._lastColSounds.land != null)
-					SoundBox.surface(this._lastColSounds.land, this, { volume: this._sfxVolume(1) });
+				if (this._lastColSounds.land != null) SoundBox.surface(this._lastColSounds.land, this, { volume: this._sfxVolume(1) });
 			}
 			this.airTime = 0;
 			this._stuckTo = dat.object;

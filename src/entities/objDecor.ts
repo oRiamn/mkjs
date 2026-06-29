@@ -15,6 +15,7 @@ import { nsbtp } from "../formats/nsbtp";
 import { nitroAnimator, nitroAnimator_matStack } from "../render/nitroAnimator";
 import { nitroRender } from "../render/nitroRender";
 export abstract class ObjDecor implements SceneEntityObject {
+	static instanceIndex: number = 0;
 	collidable!: boolean;
 	private _res!: ProvidedRes;
 	protected _staringAtCamera = true;
@@ -29,7 +30,9 @@ export abstract class ObjDecor implements SceneEntityObject {
 	pos: vec3;
 	angle: vec3;
 	scale: vec3;
+	public intanceId: number;
 	constructor(obji: nkm_section_OBJI, _scene: Scene) {
+		this.intanceId = ++ObjDecor.instanceIndex;
 		this._obji = obji;
 
 		this._mat = mat4.create();

@@ -181,12 +181,7 @@ export class SoundBox {
 		return SoundBox._play(SFX.KART_HORN_BASE + sndOff / 14, { volume }, 0, target);
 	}
 
-	static characterVoice(
-		voiceIndex: number,
-		sndOff: number,
-		target: nitroAudioSoundTarget,
-		volume: number
-	): nitroAudioSound | null {
+	static characterVoice(voiceIndex: number, sndOff: number, target: nitroAudioSoundTarget, volume: number): nitroAudioSound | null {
 		return SoundBox._play(voiceIndex + sndOff, { volume }, 2, target);
 	}
 

@@ -32,7 +32,7 @@ const CHOROPU_LURK_PEEK = 0.35;
  *
  * The vertical jump/burrow motion is handled by the original ARM9 object code
  * (likely sinThing-style easing), not by asset animation files.
- * routeID is always 65535 (no path) on DS tracks.
+ * routeID is always OBJI_ROUTE_NONE (no path) on DS tracks.
  */
 export class Choropu extends ObjDecor {
 	colRad: number;

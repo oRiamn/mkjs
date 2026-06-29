@@ -1,3 +1,4 @@
+import { MKDSCONST } from "../../engine/mkdsConst";
 import { nkm_section_OBJI, nkm_section_POIT } from "../../formats/nkm";
 import { Item } from "../item";
 
@@ -44,10 +45,10 @@ export class ObjRoutePlatform implements SceneEntityObject, lsc_taget {
 		this._generateCol();
 
 		this.statDur = this._obji.setting1 & 0xffff;
-		this.route = obji.routeID !== 65535 ? scene.getRoute(obji.routeID) : [];
+		this.route = obji.routeID !== MKDSCONST.OBJI_ROUTE_NONE ? scene.getRoute(obji.routeID) : [];
 		this.routeSpeed = 1 / 6;
 		this.routePos = 0;
-		this.nextNode = this.route[0] ?? { pos: this.pos, pointInd: 0, duration: 1, unknown: 0, nextOff: 0 };
+		this.nextNode = this.route[0] ?? { pos: this.pos, pointInd: 0, duration: 1, unknown1: 0, nextOff: 0 };
 		this.prevPos = this.pos;
 		this.elapsedTime = 0;
 

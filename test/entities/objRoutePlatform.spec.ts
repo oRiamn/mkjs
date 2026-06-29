@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MKDSCONST } from "../../src/engine/mkdsConst";
 import { ObjRoulette } from "../../src/entities/platforms/objRoulette";
 import { nkm } from "../../src/formats/nkm";
 import { loadCourseCarc, romExists } from "../helpers/rom";
@@ -17,9 +18,10 @@ function compilePaths(nkmData: nkm) {
 }
 
 describe.skipIf(!romExists)("ObjRoutePlatform", () => {
-	it("constructs static pinball_course roulette platforms with routeID 65535", () => {
+	it("constructs static pinball_course roulette platforms with OBJI_ROUTE_NONE", () => {
 		const nkmData = new nkm(loadCourseCarc("pinball_course").getFile("/course_map.nkm")!);
 		const roulette = nkmData.sections.OBJI.entries.find((o) => o.ID === 0x00d2)!;
+		expect(roulette.routeID).toBe(MKDSCONST.OBJI_ROUTE_NONE);
 		const scene = { paths: compilePaths(nkmData) } as Scene;
 
 		const ent = new ObjRoulette(roulette, scene);

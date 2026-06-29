@@ -22,6 +22,9 @@ const DAMAGE_FLIP = 1;
 const DAMAGE_EXPLODE = 2;
 const DAMAGE_STOMP = 3;
 
+/** OBJI.routeID sentinel: no linked PATH route (retail u16 0xffff). */
+const OBJI_ROUTE_NONE = 0xffff;
+
 const COURSEDIR = "/data/Course/";
 
 const COURSES: MKCONST_course_obj[] = [
@@ -128,6 +131,7 @@ export const MKDSCONST = {
 	DAMAGE_FLIP,
 	DAMAGE_EXPLODE,
 	DAMAGE_STOMP,
+	OBJI_ROUTE_NONE,
 	COURSEDIR,
 	COURSES,
 	CURRENTCOURSE: readCourse(),
