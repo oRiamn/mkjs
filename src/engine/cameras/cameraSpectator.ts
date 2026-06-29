@@ -8,6 +8,7 @@
 
 import { Kart } from "../../entities/kart";
 import { nkm_section_AREA, nkm_section_CAME, nkm_section_POIT } from "../../formats/nkm";
+import { cameraIngame } from "./cameraIngame";
 
 //
 export class cameraSpectator implements Camera {
@@ -29,6 +30,7 @@ export class cameraSpectator implements Camera {
 	view!: CamView;
 	camAngle: number;
 	camNormal: vec3;
+	povFallback: cameraIngame;
 
 	constructor(kart: Kart) {
 		this.kart = kart;
@@ -48,6 +50,7 @@ export class cameraSpectator implements Camera {
 		this.viewH = 0;
 		this.camAngle = 0;
 		this.camNormal = [0, 1, 0];
+		this.povFallback = new cameraIngame(kart);
 	}
 
 	private initDashCam(_scene: Scene, came: nkm_section_CAME) {
@@ -164,12 +167,27 @@ export class cameraSpectator implements Camera {
 		return { p: p, mv: mat, pos: null };
 	}
 
+	private usePovFallback(scene: Scene): CamView {
+		this.view = this.povFallback.getView(scene);
+		this.targetShadowPos = this.povFallback.targetShadowPos;
+		return this.view;
+	}
+
 	getView(scene: Scene, width: number, height: number) {
 		this.viewW = width;
 		this.viewH = height;
 
-		const cams = scene.nkm.sections["CAME"].entries;
-		const tArea = this.getNearestArea(scene.nkm.sections["AREA"].entries, this.kart.pos);
+		const areas = scene.nkm.sections["AREA"]?.entries;
+		const cams = scene.nkm.sections["CAME"]?.entries;
+		if (!areas?.length || !cams?.length) {
+			return this.usePovFallback(scene);
+		}
+
+		const tArea = this.getNearestArea(areas, this.kart.pos);
+		if (tArea == null || tArea.came >= cams.length) {
+			return this.usePovFallback(scene);
+		}
+
 		if (tArea.came != this.curCamNum) {
 			//restart camera.
 			this.curCamNum = tArea.came;
@@ -216,7 +234,7 @@ export class cameraSpectator implements Camera {
 				this.view = this.dashCamFunc(scene, this.curCam);
 				break;
 			default:
-				break;
+				return this.usePovFallback(scene);
 		}
 
 		this.view.pos = vec3.scale([0, 0, 0], vec3.transformMat4([0, 0, 0], [0, 0, 0], mat4.invert(mat4.create(), this.view.mv)), 1024);
@@ -228,7 +246,7 @@ export class cameraSpectator implements Camera {
 		//(curCam.routeSpeed/20)/vec3.dist(route[routePos].pos, route[(routePos+1)%route.length].pos);
 	}
 
-	private getNearestArea(areas: nkm_section_AREA[], pos: vec3): nkm_section_AREA {
+	private getNearestArea(areas: nkm_section_AREA[], pos: vec3): nkm_section_AREA | null {
 		let smallestDist = Infinity;
 		let closestArea: nkm_section_AREA | null = null;
 		for (let i = 0; i < areas.length; i++) {
@@ -241,7 +259,7 @@ export class cameraSpectator implements Camera {
 				closestArea = a;
 			}
 		}
-		return closestArea!;
+		return closestArea;
 	}
 
 	buildBasis(): number[] {
