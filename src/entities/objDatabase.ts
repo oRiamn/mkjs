@@ -28,6 +28,7 @@ import { CrossTree } from "./objDecor/CrossTree";
 import { DeTree } from "./objDecor/DeTree";
 import { DonkyTree2 } from "./objDecor/DonkyTree2";
 import { Dossun } from "./objDecor/Dossun";
+import { Dram } from "./objDecor/Dram";
 import { EarthenPipe } from "./objDecor/EarthenPipe";
 import { FirePlant } from "./objDecor/FirePlant";
 import { Fireballs } from "./objDecor/Fireballs";
@@ -79,7 +80,6 @@ import { ObjBridge } from "./platforms/objBridge";
 import { ObjKoopaBall } from "./platforms/objKoopaBall";
 import { ObjMovingItemBox } from "./platforms/objMovingItemBox";
 import { ObjRotaryRoom } from "./platforms/objRotaryRoom";
-import { ObjRoulette } from "./platforms/objRoulette";
 import { ObjRouteBasabasa } from "./platforms/objRouteBasabasa";
 import { ObjRoutePlatform } from "./platforms/objRoutePlatform";
 import { ObjPsea } from "./psea";
@@ -113,7 +113,7 @@ export const ObjDatabase = new Map([
 	[0x00cf, ObjKoopaBall],
 	[0x00d0, ObjRotaryRoom],
 	[0x00d1, ObjGear], //rotary bridge
-	[0x00d2, ObjRoulette],
+	[0x00d2, Dram],
 	[0x012d, BeachTree],
 	[0x012e, BeachTree],
 	[0x012f, EarthenPipe],
