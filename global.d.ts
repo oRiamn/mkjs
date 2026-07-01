@@ -47,7 +47,10 @@ declare global {
 	};
 
 	interface Window {
-		debugParticle: boolean;
+		debug: {
+			kartnoupdate: boolean;
+			debugParticle: boolean;
+		}
 		keysArray: boolean[];
 		mobile?: boolean;
 		touches: MKJSTouch[];
@@ -227,4 +230,4 @@ declare global {
 	}
 }
 
-export {};
+export { };

@@ -2,6 +2,7 @@ import { mat2, mat3, mat4, vec2, vec3, vec4 } from "gl-matrix";
 import { TileFlattener } from "./engine/2d/tileFlattener";
 import { IngameRes } from "./engine/ingameRes";
 
+import { cameraFollowObject, focusCameraOn } from "./engine/cameras/cameraFollowObject";
 import { cameraIngame } from "./engine/cameras/cameraIngame";
 import { cameraIntro } from "./engine/cameras/cameraIntro";
 import { cameraSpectator } from "./engine/cameras/cameraSpectator";
@@ -133,6 +134,8 @@ Object.assign(window, {
 	cameraIngame,
 	cameraSpectator,
 	cameraIntro,
+	cameraFollowObject,
+	focusCameraOn,
 	getPlayerControls,
 	controlDefault,
 	controlMobile,

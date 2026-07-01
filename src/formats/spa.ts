@@ -199,8 +199,7 @@ export class spa implements MKJSDataFormator {
 			offset = this.particleTextures[i].nextOff;
 		}
 
-		//window.debugParticle = true;
-		if (window.debugParticle) {
+		if (window.debug.debugParticle) {
 			for (let i = 0; i < particleCount; i++) {
 				const text = document.createElement("textarea");
 				const p = this.particles[i];

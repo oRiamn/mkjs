@@ -50,6 +50,8 @@ type CourseResourceBank = {
 };
 
 export class courseScene implements Scene {
+	static active: courseScene | null = null;
+
 	mainNarc: narc;
 	texNarc: narc;
 	courseObj: MKCONST_course_obj;
@@ -191,6 +193,8 @@ export class courseScene implements Scene {
 			[0.5, 66, 47, 56, 10],
 			[1.1, 67, 48, 57, 11],
 		];
+
+		courseScene.active = this;
 	}
 	getRoute(pathId: number): nkm_section_POIT[] {
 		if (!(pathId in this.paths)) {

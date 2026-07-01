@@ -30,9 +30,9 @@ export abstract class ObjDecor implements SceneEntityObject {
 	pos: vec3;
 	angle: vec3;
 	scale: vec3;
-	public intanceId: number;
+	public instanceId: number;
 	constructor(obji: nkm_section_OBJI, _scene: Scene) {
-		this.intanceId = ++ObjDecor.instanceIndex;
+		this.instanceId = ++ObjDecor.instanceIndex;
 		this._obji = obji;
 
 		this._mat = mat4.create();

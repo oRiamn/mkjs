@@ -469,6 +469,9 @@ export class Kart {
 	}
 
 	update(scene: courseScene) {
+		if (window.debug.kartnoupdate && !this.local) {
+			return
+		}
 		if (this.placement != this.lastPlacement) {
 			if (this.placement < this.lastPlacement) {
 				if (this.charSoundTimer == 0) {
