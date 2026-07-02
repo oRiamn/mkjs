@@ -297,8 +297,13 @@ export class courseScene implements Scene {
 		for (let i = 0; i < this.karts.length; i++) {
 			places.push(this.karts[i]);
 		}
-		places.sort(function (a, b) {
-			return b.getPosition() - a.getPosition();
+		places.sort((a, b) => {
+			const aPos = a.getPosition();
+			const bPos = b.getPosition();
+			if (aPos === bPos) {
+				return 0
+			}
+			return bPos > aPos ? 1 : -1;
 		});
 		for (let i = 0; i < places.length; i++) {
 			places[i].placement = i + 1;

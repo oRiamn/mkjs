@@ -1276,13 +1276,24 @@ export class Kart {
 		}
 	}
 
-	getPosition() {
-		if (this._checkpoints.length == 0 || this._futureChecks.length == 0) return 0;
-		const check = this._checkpoints[this._futureChecks[0]] as nkm_section_CPOI;
+	private _checkpointProgress(check: nkm_section_CPOI) {
 		const dist = vec2.sub([0, 0], [check.x1, check.z1], [this.pos[0], this.pos[2]]);
 		const dot = vec2.dot(dist, [check.sinus, check.cosinus]);
+		return Math.max(0, Math.min(1, 1 - Math.abs(dot) / 0xffff));
+	}
 
-		return this.checkPointNumber + (1 - Math.abs(dot) / 0xffff) + this.lapNumber * this._checkpoints.length;
+	getPosition() {
+		if (this._checkpoints.length == 0) return 0;
+
+		const targets =
+			this._futureChecks.length > 0 ? this._futureChecks : [0];
+		let progress = 0;
+		for (let i = 0; i < targets.length; i++) {
+			const check = this._checkpoints[targets[i]] as nkm_section_CPOI;
+			progress = Math.max(progress, this._checkpointProgress(check));
+		}
+
+		return this.checkPointNumber + progress + this.lapNumber * this._checkpoints.length;
 	}
 
 	private _forwardCrossedKTP(ktp: nkm_section_KTPS, oldPos: vec3, pos: vec3) {
