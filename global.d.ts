@@ -147,6 +147,8 @@ declare global {
 
 	interface SceneEntity {
 		transparent?: boolean;
+		/** 2D HUD drawn last, without depth testing (not the same as map-object transparency). */
+		overlay?: boolean;
 		draw(view: mat4, pMatrix: mat4, gl?: CustomWebGLRenderingContext): void;
 		update(scn: Scene): void;
 		sndUpdate?(view: mat4): void;
@@ -195,6 +197,7 @@ declare global {
 	}
 
 	interface Scene {
+		frame: number;
 		camera: Camera;
 		gameRes: IngameRes;
 		karts: Kart[];

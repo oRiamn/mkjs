@@ -82,39 +82,9 @@ export class nitroShaders {
 	
 	uniform sampler2D uSampler;
 	
-	float indexValue() {
-	    int x = int(mod(gl_FragCoord.x, 4.0));
-	    int y = int(mod(gl_FragCoord.y, 4.0));
-	    int i = (x + y * 4);
-	    if (i == 0) return 0.0;
-	    else if (i == 1) return 8.0;
-	    else if (i == 2) return 2.0;
-	    else if (i == 3) return 10.0;
-	    else if (i == 4) return 12.0;
-	    else if (i == 5) return 4.0;
-	    else if (i == 6) return 14.0;
-	    else if (i == 7) return 6.0;
-	    else if (i == 8) return 3.0;
-	    else if (i == 9) return 11.0;
-	    else if (i == 10) return 1.0;
-	    else if (i == 11) return 9.0;
-	    else if (i == 12) return 15.0;
-	    else if (i == 13) return 7.0;
-	    else if (i == 14) return 13.0;
-	    else if (i == 15) return 5.0;
-	}
-	
-	float dither(float color) {
-	    float closestColor = (color < 0.5) ? 0.0 : 1.0;
-	    float secondClosestColor = 1.0 - closestColor;
-	    float d = indexValue();
-	    float distance = abs(closestColor - color);
-	    return (distance < d) ? closestColor : secondClosestColor;
-	}
-	
 	void main(void) {
 		gl_FragColor = texture2D(uSampler, vTextureCoord)*color;
-		if (gl_FragColor.a < 1.0 && (gl_FragColor.a == 0.0 || dither(gl_FragColor.a) == 0.0)) discard;
+		if (gl_FragColor.a < 0.003) discard;
 	}
 	`;
 

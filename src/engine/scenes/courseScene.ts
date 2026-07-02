@@ -203,6 +203,12 @@ export class courseScene implements Scene {
 		return this.paths[pathId];
 	}
 
+	private _drawKartShadowCasters(mvMatrix: mat4, pMatrix: mat4, gl: CustomWebGLRenderingContext) {
+		for (let i = 0; i < this.karts.length; i++) if (this.karts[i].active) this.karts[i].drawKart(mvMatrix, pMatrix, gl);
+		for (let i = 0; i < this.karts.length; i++) if (this.karts[i].active) this.karts[i].drawWheels(mvMatrix, pMatrix);
+		for (let i = 0; i < this.karts.length; i++) if (this.karts[i].active) this.karts[i].drawChar(mvMatrix, pMatrix);
+	}
+
 	draw(gl: CustomWebGLRenderingContext, pMatrix: mat4, shadow: boolean) {
 		gl.cullFace(gl.BACK);
 
@@ -212,6 +218,7 @@ export class courseScene implements Scene {
 		var mvMatrix = mat.mv;*/
 		const mvMatrix = mat4.create();
 		nitroRender.setAlpha(1);
+		nitroRender.setColMult([1, 1, 1, 1]);
 
 		if (!shadow) {
 			const skyMat = mat4.scale(mat4.create(), mvMatrix, [1 / 64, 1 / 64, 1 / 64]);
@@ -221,15 +228,27 @@ export class courseScene implements Scene {
 			if (!this.courseObj.skyboxShadows) nitroRender.setLightIntensities(0.3, 1);
 		}
 
-		const lvlMat = mat4.scale(mat4.create(), mvMatrix, [1 / 64, 1 / 64, 1 / 64]); //[2, 2, 2]);
-		this.course.setFrame(this.frame);
-		nitroRender.forceFlatNormals = true;
-		nitroRender.setLightIntensities(0, 1);
-		this.course.draw(lvlMat, pMatrix);
-		nitroRender.setLightIntensities(0.3, 1);
-		nitroRender.forceFlatNormals = false;
+		if (!shadow) {
+			const lvlMat = mat4.scale(mat4.create(), mvMatrix, [1 / 64, 1 / 64, 1 / 64]);
+			this.course.setFrame(this.frame);
+			nitroRender.forceFlatNormals = true;
+			nitroRender.setLightIntensities(0.3, 0);
+			this.course.draw(lvlMat, pMatrix, undefined, "opaque");
+			nitroRender.setLightIntensities(0.3, 1);
+			nitroRender.forceFlatNormals = false;
+		}
+
+		if (shadow) {
+			mat4.scale(mvMatrix, mvMatrix, [1 / 1024, 1 / 1024, 1 / 1024]);
+			this._drawKartShadowCasters(mvMatrix, pMatrix, gl);
+			nitroRender.setLightIntensities(0.3, 1);
+			return;
+		}
+
+		const lvlMat = mat4.scale(mat4.create(), mvMatrix, [1 / 64, 1 / 64, 1 / 64]);
 
 		const transE = [];
+		const overlayE = [];
 
 		mat4.scale(mvMatrix, mvMatrix, [1 / 1024, 1 / 1024, 1 / 1024]);
 
@@ -245,18 +264,56 @@ export class courseScene implements Scene {
 
 		for (let i = 0; i < this.entities.length; i++) {
 			const e = this.entities[i];
-			if (e.transparent) transE.push(e);
-			else e.draw(mvMatrix, pMatrix, gl);
+			if (e.overlay) overlayE.push(e);
+			else if (e.transparent) transE.push(e);
+			else {
+				nitroRender.setShadowReceive(false);
+				e.draw(mvMatrix, pMatrix, gl);
+				nitroRender.setShadowReceive(true);
+			}
+		}
+
+		// Course glass / rails after solid geometry; no shadow-map sampling on alpha polys.
+		nitroRender.forceFlatNormals = true;
+		nitroRender.setLightIntensities(0.3, 0);
+		this.course.draw(lvlMat, pMatrix, undefined, "blend");
+		nitroRender.setLightIntensities(0.3, 1);
+		nitroRender.forceFlatNormals = false;
+		nitroRender.setColMult([1, 1, 1, 1]);
+
+		if (transE.length > 0) {
+			gl.depthMask(false);
+			nitroRender.setLightIntensities(0.3, 0);
+			nitroRender.setShadowReceive(false);
+			for (let i = 0; i < transE.length; i++) {
+				transE[i].draw(mvMatrix, pMatrix, gl);
+			}
+			nitroRender.setShadowReceive(true);
+			nitroRender.setLightIntensities(0.3, 1);
+			gl.depthMask(true);
 		}
 
 		nitroRender.setLightIntensities(0, 1);
+		nitroRender.setShadowReceive(false);
 		for (let i = 0; i < this.particles.length; i++) {
 			const e = this.particles[i];
 			e.draw(mvMatrix, pMatrix, gl);
 		}
 
 		this.items.draw(mvMatrix, pMatrix);
+		nitroRender.setShadowReceive(true);
 		nitroRender.setLightIntensities(0.3, 1);
+
+		if (overlayE.length > 0) {
+			gl.disable(gl.DEPTH_TEST);
+			gl.depthMask(false);
+			nitroRender.setColMult([1, 1, 1, 1]);
+			for (let i = 0; i < overlayE.length; i++) {
+				overlayE[i].draw(mvMatrix, pMatrix, gl);
+			}
+			gl.depthMask(true);
+			gl.enable(gl.DEPTH_TEST);
+		}
 	}
 
 	sndUpdate(view: mat4) {

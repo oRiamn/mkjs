@@ -6,6 +6,7 @@ import { nitroRender } from "../render/nitroRender";
 
 export class Goal3DUI implements SceneEntity {
 	transparent!: boolean;
+	overlay!: boolean;
 	scene: Scene;
 	pos: vec3;
 	mat: mat4;
@@ -22,6 +23,8 @@ export class Goal3DUI implements SceneEntity {
 
 	constructor(scene: Scene) {
 		this.scene = scene;
+		this.transparent = false;
+		this.overlay = true;
 
 		this.pos = vec3.clone([0, 0, 0]);
 		this.mat = mat4.create();

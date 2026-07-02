@@ -44,20 +44,20 @@ export class shadowRender {
 		if (lightDist.x<0.0 || lightDist.y<0.0 || lightDist.x>1.0 || lightDist.y>1.0) {
 			vec4 flightDist = (farShadowMat*vec4(pos, 1.0) + vec4(1, 1, 1, 0)) / 2.0;
 			if (texture2D(farLightDSampler, flightDist.xy).r+0.0005 < flightDist.z) {
-				gl_FragColor = col*vec4(0.5, 0.5, 0.7, 1);
+				gl_FragColor = vec4(col.rgb * vec3(0.5, 0.5, 0.7), col.a);
 			} else {
 				gl_FragColor = col;
 			}
 		} else {
 			
 			if (texture2D(lightDSampler, lightDist.xy).r+0.00005 < lightDist.z) {
-				gl_FragColor = col*vec4(0.5, 0.5, 0.7, 1);
+				gl_FragColor = vec4(col.rgb * vec3(0.5, 0.5, 0.7), col.a);
 			} else {
 				gl_FragColor = col;
 			}
 		}
 		
-		if (gl_FragColor.a == 0.0) discard;
+		if (gl_FragColor.a < 0.003) discard;
 	}
 	`;
 
@@ -173,6 +173,9 @@ export class shadowRender {
 	) {
 		gl.useProgram(shadowRender._shadowShader);
 
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
 		gl.uniformMatrix4fv(shadowRender.lightViewUniform, false, lightView);
 		gl.uniformMatrix4fv(shadowRender.lightFarViewUniform, false, lightFarView);
 		gl.uniformMatrix4fv(shadowRender.camViewUniform, false, mat4.invert(mat4.create(), camView));
@@ -200,5 +203,9 @@ export class shadowRender {
 		gl.vertexAttribPointer(shadowRender.textureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+		gl.disable(gl.BLEND);
+		gl.enable(gl.DEPTH_TEST);
+		gl.depthMask(true);
 	}
 }

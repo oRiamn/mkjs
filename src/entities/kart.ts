@@ -1566,17 +1566,15 @@ export class Kart {
 					this._scene.particles.push(new NitroEmitter(this._scene, colObj, 14));
 				}
 				this.kartWallTimer = 15;
+				if (dat.object?.onKartHit) {
+					dat.object.onKartHit();
+				}
 			}
 			vec3.sub(this.vel, this.vel, vec3.scale(vec3.create(), adjN, proj));
 
 			if (colType == MKDS_COLTYPE.KNOCKBACK_DAMAGE && this.damageType == -1) {
-				if (dat.object) {
-					if (dat.object.vel) {
-						vec3.add(this.vel, this.vel, dat.object.vel);
-					}
-					if (dat.object.onKartHit) {
-						dat.object.onKartHit();
-					}
+				if (dat.object?.vel) {
+					vec3.add(this.vel, this.vel, dat.object.vel);
 				}
 				if (xz > 0.001) {
 					vec3.add(this.vel, this.vel, vec3.scale(vec3.create(), adjN, 1.25));

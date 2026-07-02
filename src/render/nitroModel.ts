@@ -27,6 +27,8 @@ export type nitromodel_collisionModel = { dat: nitromodel_collisionModel_dat[]; 
 export type nitromodel_matStack = { built: boolean; dat: Float32Array };
 type nitroModel_textMapper = { tex: {}; pal: {} };
 
+export type nitroDrawPass = 'all' | 'opaque' | 'blend';
+
 export class nitroModel {
 	btx: nsbtx | null;
 	bmd: nsbmd;
@@ -105,10 +107,10 @@ export class nitroModel {
 		this.billboardID = -1;
 	}
 
-	draw(mv: mat4, project: mat4, matStack?: nitromodel_matStack) {
+	draw(mv: mat4, project: mat4, matStack?: nitromodel_matStack, pass: nitroDrawPass = 'all') {
 		const models = this.bmd.modelData.objectData;
 		for (let j = 0; j < models.length; j++) {
-			this._drawModel(models[j], mv, project, j, matStack);
+			this._drawModel(models[j], mv, project, j, matStack, pass);
 		}
 	}
 
@@ -151,12 +153,14 @@ export class nitroModel {
 		//simple func to get collision model for a model. used when I'm too lazy to define my own... REQUIRES TRI MODE ACTIVE!
 		const model = this.bmd.modelData.objectData[modelind];
 		const poly = model.polys.objectData[polyind];
-		if (this._modelBuffers[modelind][polyind] == null)
+		if (this._modelBuffers[modelind][polyind] == null) {
+			nitroRender.setAlpha(1);
 			this._modelBuffers[modelind][polyind] = nitroRender.renderDispList(
 				poly.disp,
 				this._tex[poly.mat],
 				poly.stackID == null ? model.lastStackID : poly.stackID
 			);
+		}
 
 		const tris = this._modelBuffers[modelind][polyind].strips[0].posArray;
 
@@ -287,12 +291,14 @@ export class nitroModel {
 		if (this._collisionModel[modelind][polyind] != null) return this._collisionModel[modelind][polyind];
 		const model = this.bmd.modelData.objectData[modelind];
 		const poly = model.polys.objectData[polyind];
-		if (this._modelBuffers[modelind][polyind] == null)
+		if (this._modelBuffers[modelind][polyind] == null) {
+			nitroRender.setAlpha(1);
 			this._modelBuffers[modelind][polyind] = nitroRender.renderDispList(
 				poly.disp,
 				this._tex[poly.mat],
 				poly.stackID == null ? model.lastStackID : poly.stackID
 			);
+		}
 
 		const tris = this._modelBuffers[modelind][polyind].strips[0].posArray;
 
@@ -460,7 +466,14 @@ export class nitroModel {
 		}
 	}
 
-	private _drawModel(model: nsbmd_modelData, mv: mat4, project: mat4, modelind: number, matStack?: nitromodel_matStack) {
+	private _drawModel(
+		model: nsbmd_modelData,
+		mv: mat4,
+		project: mat4,
+		modelind: number,
+		matStack?: nitromodel_matStack,
+		pass: nitroDrawPass = 'all'
+	) {
 		const polys = model.polys.objectData;
 		if (matStack == null) {
 			matStack = this._matBuf[modelind];
@@ -483,9 +496,36 @@ export class nitroModel {
 			nitroRender.lastMatStack = matStack;
 		}
 
+		const blendPolys: number[] = [];
 		for (let i = 0; i < polys.length; i++) {
-			this._drawPoly(polys[i], modelind, i);
+			const mat = model.materials.objectData[polys[i].mat];
+			const isBlend = this._materialUsesAlphaBlend(mat);
+			if (isBlend) {
+				if (pass !== 'opaque') blendPolys.push(i);
+			} else if (pass !== 'blend') {
+				this._drawPoly(polys[i], modelind, i);
+			}
 		}
+
+		if (blendPolys.length > 0) {
+			gl.depthMask(false);
+			for (let i = 0; i < blendPolys.length; i++) {
+				this._drawPoly(polys[blendPolys[i]], modelind, blendPolys[i]);
+			}
+			gl.depthMask(true);
+		}
+	}
+
+	/** Per-texel alpha (A3I5 / A5I3 / RGB5A1) needs a later blend pass; cutout alpha stays opaque. */
+	private _materialUsesAlphaBlend(material: nsbmd_MatInfos): boolean {
+		if (material.alpha < 0.999) return true;
+		const btx = this.btx ?? this.bmd.tex;
+		if (btx == null || material.texName == null) return false;
+		const texIdx = btx.textureInfoNameToIndex[`$${material.texName}`];
+		if (texIdx == null) return false;
+		const tex = btx.textureInfo.objectData[texIdx];
+		if (tex == null) return false;
+		return tex.format === 1 || tex.format === 6 || tex.format === 7;
 	}
 
 	private _drawPoly(poly: nsbmd_poly, modelind: number, polyind: number) {
@@ -520,12 +560,18 @@ export class nitroModel {
 		}
 
 		if (nitroRender.last.tex != this._tex[pmat]) {
+			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gl.TEXTURE_2D, this._tex[pmat]); //load up material texture
 			nitroRender.last.tex = this._tex[pmat];
 		}
 
 		const material = model.materials.objectData[pmat];
-		nitroRender.setAlpha(material.alpha);
+		const receivingShadow = nitroRender.usingShadowShader();
+		if (receivingShadow) {
+			nitroRender.setAlpha(material.alpha);
+		} else {
+			nitroRender.setAlpha(1);
+		}
 
 		if (this._texAnim != null) {
 			//generate and send texture matrix from data
@@ -550,6 +596,12 @@ export class nitroModel {
 				poly.stackID == null ? model.lastStackID : poly.stackID
 			);
 
+		const applyMaterialAlpha = !receivingShadow && material.alpha < 0.999;
+		const prevColMult = applyMaterialAlpha ? nitroRender.getColMult() : null;
+		if (applyMaterialAlpha) {
+			nitroRender.setColMult([prevColMult![0], prevColMult![1], prevColMult![2], prevColMult![3] * material.alpha]);
+		}
+
 		if (material.cullMode < 3) {
 			gl.enable(gl.CULL_FACE);
 			gl.cullFace(nitroRender.cullModes[material.cullMode]);
@@ -563,11 +615,13 @@ export class nitroModel {
 				gl.cullFace(gl.FRONT);
 				this._drawModelBuffer(this._modelBuffers[modelind][polyind], gl, shader);
 				nitroRender.setNormalFlip(1);
+				if (applyMaterialAlpha) nitroRender.setColMult(prevColMult!);
 				return;
 			}
 			gl.disable(gl.CULL_FACE);
 		}
 		this._drawModelBuffer(this._modelBuffers[modelind][polyind], gl, shader);
+		if (applyMaterialAlpha) nitroRender.setColMult(prevColMult!);
 	}
 
 	private _frameLerp(frame: number, step: number, values: number[]) {
@@ -582,16 +636,26 @@ export class nitroModel {
 	}
 
 	private _matAtFrame(frame: number, anim: nsbta_data_obj) {
-		const mat = mat3.create(); //material texture mat is ignored
+		const mat = mat3.create();
 
-		mat3.scale(mat, mat, [
-			this._frameLerp(frame, anim.frameStep.scaleS, anim.scaleS),
-			this._frameLerp(frame, anim.frameStep.scaleT, anim.scaleT),
-		]);
-		mat3.translate(mat, mat, [
-			-this._frameLerp(frame, anim.frameStep.translateS, anim.translateS),
-			this._frameLerp(frame, anim.frameStep.translateT, anim.translateT),
-		]);
+		const scaleS = this._frameLerp(frame, anim.frameStep.scaleS, anim.scaleS);
+		const scaleT = this._frameLerp(frame, anim.frameStep.scaleT, anim.scaleT);
+		const translateS = this._frameLerp(frame, anim.frameStep.translateS, anim.translateS);
+		const translateT = this._frameLerp(frame, anim.frameStep.translateT, anim.translateT);
+
+		let rotA = 0;
+		let rotB = 1;
+		if (anim.rotation.length >= 2) {
+			const rotFrame = frame >> anim.frameStep.rotation;
+			const rotIdx = Math.min(rotFrame * 2, anim.rotation.length - 2);
+			rotA = anim.rotation[rotIdx];
+			rotB = anim.rotation[rotIdx + 1];
+		}
+
+		mat3.scale(mat, mat, [scaleS, scaleT]);
+		const rot = mat3.fromValues(rotB, rotA, 0, -rotA, rotB, 0, 0, 0, 1);
+		mat3.multiply(mat, mat, rot);
+		mat3.translate(mat, mat, [-translateS, translateT]);
 
 		return mat;
 	}

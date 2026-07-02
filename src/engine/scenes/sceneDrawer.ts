@@ -79,13 +79,10 @@ export class sceneDrawer {
 	}
 
 	drawTest(gl: CustomWebGLRenderingContext, scn: courseScene, x: number, y: number, width: number, height: number) {
-		const shadMat = scn.shadMat;
-		const viewProj = mat4.mul(mat4.create(), scn.camera.view.p, scn.camera.view.mv);
-		const view = {
-			p: viewProj,
-			mv: scn.camera.view.mv,
-		};
+		const view = scn.camera.getView(scn, width, height);
+		const viewProj = mat4.mul(mat4.create(), view.p, view.mv);
 
+		const shadMat = scn.shadMat;
 		nitroRender.unsetShadowMode();
 		nitroRender.flagShadow = true;
 		nitroRender.updateBillboards(scn.lightMat);

@@ -8,6 +8,7 @@ import { nitroRender } from "../render/nitroRender";
 import { getUiScale, uiPx } from "./uiScale";
 export class LapCountUI implements SceneEntity {
 	transparent: boolean;
+	overlay: boolean;
 	scene: Scene;
 	kart: Kart;
 	zoom: number;
@@ -24,6 +25,7 @@ export class LapCountUI implements SceneEntity {
 		this.scene = scene;
 		this.kart = kart;
 		this.transparent = false;
+		this.overlay = true;
 		this.animFrame = 0;
 
 		this.zoom = 1;

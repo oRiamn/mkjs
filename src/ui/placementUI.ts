@@ -8,6 +8,7 @@ import { getUiScale, uiPx } from "./uiScale";
 
 export class PlacementUI implements SceneEntity {
 	transparent: boolean;
+	overlay: boolean;
 	scene: Scene;
 	kart: Kart;
 	zoom: number;
@@ -24,6 +25,7 @@ export class PlacementUI implements SceneEntity {
 		this.scene = scene;
 		this.kart = kart;
 		this.transparent = false;
+		this.overlay = true;
 
 		this.zoom = 1;
 		this.pos = {

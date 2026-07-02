@@ -30,6 +30,7 @@ export type nitroRender_modelBuffer = {
 };
 
 export class nitroRender {
+	static _paused: boolean = false;
 	static cullModes: GLenum[] = [];
 	static billboardID = 0; //incrememts every time billboards need to be updated. cycles &0xFFFFFF to avoid issues
 	static lastMatStack: nitromodel_matStack | null = null; //used to check if we need to send the matStack again. will be used with a versioning system in future.
@@ -63,9 +64,11 @@ export class nitroRender {
 		[x: number]: (view: DataView, off: number) => void;
 	} = {};
 	private static _alphaMul = 1;
+	private static _colMult: [number, number, number, number] = [1, 1, 1, 1];
 	private static _optimiseTriangles = true; //improves draw performance by >10x on most models.
 
-	private static _paused = false;
+	private static _shadowTex: CustomWebGLTexture | null = null;
+	private static _farShadowTex: CustomWebGLTexture | null = null;
 	private static _parameters: { [x: number]: number } = {
 		0: 0,
 		0x10: 1,
@@ -237,7 +240,26 @@ export class nitroRender {
 		nitroRender._gl.uniform1i(nitroRender.nitroShader.uniforms.samplerUniform, 0);
 	}
 
+	static usingShadowShader(): boolean {
+		return nitroRender.nitroShader === nitroRender._shadowShader;
+	}
+
+	private static _bindShadowSamplers() {
+		if (!nitroRender.usingShadowShader() || nitroRender._shadowTex == null || nitroRender._farShadowTex == null) return;
+		const gl = nitroRender._gl;
+		const shader = nitroRender._shadowShader;
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_2D, nitroRender._shadowTex);
+		gl.uniform1i(shader.uniforms.lightSamplerUniform, 1);
+		gl.activeTexture(gl.TEXTURE2);
+		gl.bindTexture(gl.TEXTURE_2D, nitroRender._farShadowTex);
+		gl.uniform1i(shader.uniforms.farLightSamplerUniform, 2);
+		gl.activeTexture(gl.TEXTURE0);
+	}
+
 	static setShadowMode(sTex: CustomWebGLTexture, fsTex: CustomWebGLTexture, sMat: Float32List, fsMat: Float32List, dir: vec3) {
+		nitroRender._shadowTex = sTex;
+		nitroRender._farShadowTex = fsTex;
 		nitroRender.nitroShader = nitroRender._shadowShader;
 		const shader = nitroRender._shadowShader;
 		nitroRender._gl.useProgram(shader.program);
@@ -250,13 +272,7 @@ export class nitroRender {
 
 		nitroRender.resetShadOff();
 		nitroRender.setNormalFlip(1);
-		nitroRender._gl.activeTexture(nitroRender._gl.TEXTURE1);
-		nitroRender._gl.bindTexture(nitroRender._gl.TEXTURE_2D, sTex);
-		nitroRender._gl.uniform1i(shader.uniforms.lightSamplerUniform, 1);
-
-		nitroRender._gl.activeTexture(nitroRender._gl.TEXTURE2);
-		nitroRender._gl.bindTexture(nitroRender._gl.TEXTURE_2D, fsTex);
-		nitroRender._gl.uniform1i(shader.uniforms.farLightSamplerUniform, 2);
+		nitroRender._bindShadowSamplers();
 
 		nitroRender.setColMult([1, 1, 1, 1]);
 		nitroRender.prepareShader();
@@ -267,6 +283,15 @@ export class nitroRender {
 		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
 		nitroRender._gl.uniform1f(shader.uniforms.lightIntensityUniform, intensity);
 		nitroRender._gl.uniform1f(shader.uniforms.shadLightenUniform, 1 - shadIntensity);
+		nitroRender._bindShadowSamplers();
+	}
+
+	/** Toggle shadow-map darkening without changing diffuse lighting. */
+	static setShadowReceive(receive: boolean) {
+		if (nitroRender.nitroShader !== nitroRender._shadowShader) return;
+		const shader = nitroRender._shadowShader;
+		nitroRender._gl.useProgram(shader.program);
+		nitroRender._gl.uniform1f(shader.uniforms.shadLightenUniform, receive ? 0 : 1);
 	}
 
 	static setShadBias(bias: number) {
@@ -280,6 +305,13 @@ export class nitroRender {
 		const shader = <nitroShaders_shadowShader>nitroRender.nitroShader;
 		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
 		nitroRender._gl.uniform1f(shader.uniforms.normalFlipUniform, flip);
+		nitroRender._bindShadowSamplers();
+	}
+
+	/** Compensate negative scale mirroring without inverting cull or normals. */
+	static setMirroredFrontFace(mirrored: boolean) {
+		const gl = nitroRender._gl;
+		gl.frontFace(mirrored ? gl.CW : gl.CCW);
 	}
 
 	static resetShadOff() {
@@ -314,12 +346,17 @@ export class nitroRender {
 		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
 
 		nitroRender.setColMult([1, 1, 1, 1]);
+		nitroRender._bindShadowSamplers();
 		nitroRender.prepareShader();
 	}
 
 	static setColMult(color: number[]) {
-		nitroRender._gl.useProgram(nitroRender.nitroShader.program);
+		nitroRender._colMult = [color[0], color[1], color[2], color[3]];
 		nitroRender._gl.uniform4fv(nitroRender.nitroShader.uniforms.colMultUniform, color);
+	}
+
+	static getColMult(): [number, number, number, number] {
+		return [nitroRender._colMult[0], nitroRender._colMult[1], nitroRender._colMult[2], nitroRender._colMult[3]];
 	}
 
 	static updateBillboards(view: mat4) {

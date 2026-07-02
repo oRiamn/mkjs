@@ -17,9 +17,9 @@ import { nitroRender } from "../render/nitroRender";
 export abstract class ObjDecor implements SceneEntityObject {
 	static instanceIndex: number = 0;
 	collidable!: boolean;
-	private _res!: ProvidedRes;
+	protected _res!: ProvidedRes;
 	protected _staringAtCamera = true;
-	private _obji: nkm_section_OBJI;
+	protected _obji: nkm_section_OBJI;
 	private _mat: mat4;
 	private _anim: nitroAnimator | null;
 	private _animFrame: number;
@@ -45,12 +45,41 @@ export abstract class ObjDecor implements SceneEntityObject {
 		this.scale = vec3.clone(this._obji.scale);
 	}
 
+	debugConfig() {
+		console.log(`[${this.instanceId}]`, {
+			setting1: {
+				raw: this._obji.setting1,
+				hex: this._obji.setting1 & 0xffff,
+				hex16: this._obji.setting1 >> 16
+			},
+			setting2: {
+				raw: this._obji.setting2,
+				hex: this._obji.setting2 & 0xffff,
+				hex16: this._obji.setting2 >> 16
+			},
+			setting3: {
+				raw: this._obji.setting3,
+				hex: this._obji.setting3 & 0xffff,
+				hex16: this._obji.setting3 >> 16
+			},
+			setting4: {
+				raw: this._obji.setting4,
+				hex: this._obji.setting4 & 0xffff,
+				hex16: this._obji.setting4 >> 16
+			}
+		})
+	}
+
 	protected _placementPos(): vec3 {
 		return [this.pos[0], this.pos[1] + this._yOffset, this.pos[2]];
 	}
 
 	draw(view: mat4, pMatrix: mat4) {
-		if (this._staringAtCamera) {
+		nitroRender.setColMult([1, 1, 1, 1]);
+		const billboardDraw = this._staringAtCamera;
+		const cullWasEnabled = billboardDraw && gl.isEnabled(gl.CULL_FACE);
+		if (billboardDraw) {
+			gl.disable(gl.CULL_FACE);
 			nitroRender.setShadBias(0.001);
 		}
 		mat4.translate(this._mat, view, this._placementPos());
@@ -67,8 +96,9 @@ export abstract class ObjDecor implements SceneEntityObject {
 			}
 			this._res.mdl[i].draw(this._mat, pMatrix, i === 0 ? animMat : undefined);
 		}
-		if (this._staringAtCamera) {
+		if (billboardDraw) {
 			nitroRender.resetShadOff();
+			if (cullWasEnabled) gl.enable(gl.CULL_FACE);
 		}
 	}
 
